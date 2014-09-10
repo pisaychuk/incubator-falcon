@@ -1538,6 +1538,14 @@ public class NewPrismProcessUpdateTest extends BaseTestClass {
                 + "identical");
     }
 
+    /**
+     * Gets process definition and checks if request is successful.
+     * @param prism prism server
+     * @param processData process for which definition is needed
+     * @param bool should request be successful
+     * @return process definition
+     * @throws Exception
+     */
     private String getResponse(ColoHelper prism, String processData, boolean bool)
         throws Exception {
         ServiceResponse response = prism.getProcessHelper().getEntityDefinition(processData);
@@ -1553,6 +1561,13 @@ public class NewPrismProcessUpdateTest extends BaseTestClass {
 
     }
 
+    /**
+     * Waits till oozie job reaches desired state.
+     * @param coloHelper cluster on which process is running
+     * @param bundle bundle in which process is defined
+     * @param state desired state
+     * @throws Exception
+     */
     private void waitForProcessToReachACertainState(ColoHelper coloHelper, Bundle bundle,
             Job.Status state)
         throws Exception {
@@ -1576,6 +1591,12 @@ public class NewPrismProcessUpdateTest extends BaseTestClass {
         }
     }
 
+    /**
+     * Usual configuration of bundle.
+     * @param b bundle to be modified
+     * @return configured bundle
+     * @throws Exception
+     */
     private Bundle usualGrind(Bundle b) throws Exception {
         b.setInputFeedDataPath(inputFeedPath);
         String prefix = b.getFeedDataPathPrefix();

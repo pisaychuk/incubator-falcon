@@ -87,6 +87,15 @@ public final class InstanceUtil {
     private static final EnumSet<Status> RUNNING_PREP_SUCCEEDED = EnumSet.of(Status.RUNNING,
         Status.PREP, Status.SUCCEEDED);
 
+    /**
+     * Sends request related to process instance management actions.
+     * @param url url to hit
+     * @param user whose credentials will be used for this action
+     * @return api response
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws AuthenticationException
+     */
     public static APIResult sendRequestProcessInstance(String
             url, String user)
         throws IOException, URISyntaxException, AuthenticationException {
@@ -95,6 +104,16 @@ public final class InstanceUtil {
 
     public static final int INSTANCES_CREATED_TIMEOUT = OSUtil.IS_WINDOWS ? 20 : 10;
 
+    /**
+     * Runs request and converts response to useful form.
+     * @param url url used in request
+     * @param method request method
+     * @param user credentials
+     * @return api response
+     * @throws URISyntaxException
+     * @throws IOException
+     * @throws AuthenticationException
+     */
     public static APIResult hitUrl(String url,
             String method, String user) throws URISyntaxException,
             IOException, AuthenticationException {
@@ -166,7 +185,7 @@ public final class InstanceUtil {
         } else if (
                 (response.getStatusLine().getStatusCode() == 400
                         &&
-                        jsonString.contains("is beforePROCESS  start"))
+                        jsonString.contains("is before PROCESS start"))
                         ||
                         response.getStatusLine().getStatusCode() == 400
                                 &&
@@ -185,11 +204,9 @@ public final class InstanceUtil {
             r = new GsonBuilder().setPrettyPrinting().create()
                     .fromJson(jsonString, InstancesSummaryResult.class);
         } else {
-
             r = new GsonBuilder().create()
                     .fromJson(jsonString, InstancesResult.class);
         }
-
         LOGGER.info("r.getMessage(): " + r.getMessage());
         LOGGER.info("r.getStatusCode(): " + r.getStatusCode());
         LOGGER.info("r.getStatus() " + r.getStatus());
@@ -199,9 +216,9 @@ public final class InstanceUtil {
     /**
      * Checks if API response reflects success and if it's instances match to expected status.
      *
-     * @param r  - kind of response from API which should contain information about instances
-     * @param b  - bundle from which process instances are being analyzed
-     * @param ws - - expected status of instances
+     * @param r  kind of response from API which should contain information about instances
+     * @param b  bundle from which process instances are being analyzed
+     * @param ws expected status of instances
      */
     public static void validateSuccess(InstancesResult r, Bundle b,
             InstancesResult.WorkflowStatus ws) {
@@ -235,11 +252,20 @@ public final class InstanceUtil {
         return runningCount;
     }
 
+    /**
+     * Validates success of response which doesn't contain instances.
+     * @param r response
+     */
     public static void validateSuccessWOInstances(InstancesResult r) {
         AssertUtil.assertSucceeded(r);
         Assert.assertNull(r.getInstances(), "Unexpected :" + Arrays.toString(r.getInstances()));
     }
 
+    /**
+     * Compares actual and expected error code of response.
+     * @param r response
+     * @param expectedErrorCode expected error code
+     */
     public static void validateSuccessWithStatusCode(InstancesResult r,
             int expectedErrorCode) {
         Assert.assertEquals(r.getStatusCode(), expectedErrorCode,
@@ -333,25 +359,25 @@ public final class InstanceUtil {
                 "match expected number of failed instances.");
     }
 
+    /**
+     * Lists either all workflows of a job or workflows filtered by set of desired statuses.
+     * @param prismHelper cluster where job is running
+     * @param processName name of process which job is being analyzed
+     * @param ws a set of desired statuses
+     * @return a list of matching workflows
+     * @throws OozieClientException
+     */
     public static List<String> getWorkflows(ColoHelper prismHelper, String processName,
             WorkflowJob.Status... ws) throws OozieClientException {
-
         String bundleID = OozieUtil.getBundles(prismHelper.getFeedHelper().getOozieClient(),
                 processName, EntityType.PROCESS).get(0);
         OozieClient oozieClient = prismHelper.getClusterHelper().getOozieClient();
-
         List<String> workflows = OozieUtil.getWorkflowJobs(prismHelper, bundleID);
-
         List<String> toBeReturned = new ArrayList<String>();
         for (String jobID : workflows) {
             WorkflowJob wfJob = oozieClient.getJobInfo(jobID);
-            LOGGER.info("wa.getExternalId(): " + wfJob.getId() + " wa"
-                    +
-                    ".getExternalStatus"
-                    +
-                    "():  "
-                    +
-                    wfJob.getStartTime());
+            LOGGER.info("wa.getExternalId(): " + wfJob.getId() + " wa.getExternalStatus(): "
+                + wfJob.getStartTime());
             LOGGER.info("wf id: " + jobID + "  wf status: " + wfJob.getStatus());
             if (ws.length == 0) {
                 toBeReturned.add(jobID);
@@ -366,17 +392,29 @@ public final class InstanceUtil {
         return toBeReturned;
     }
 
+    /**
+     * Checks if workflow is running.
+     */
     public static boolean isWorkflowRunning(OozieClient oozieClient, String workflowID) throws
             OozieClientException {
         String status = oozieClient.getJobInfo(workflowID).getStatus().toString();
         return status.equals("RUNNING");
     }
 
+    /**
+     * Checks actual workflows statuses. Compares their number with expected.
+     * @param oozieClient oozie client where job is running
+     * @param wfIDs expected workflows IDs
+     * @param totalWorkflows expected total workflows number
+     * @param runningWorkflows expected running workflows number
+     * @param killedWorkflows expected killed workflows number
+     * @param succeededWorkflows expected succeeded workflows number
+     * @throws OozieClientException
+     */
     public static void areWorkflowsRunning(OozieClient oozieClient, List<String> wfIDs,
             int totalWorkflows,
             int runningWorkflows, int killedWorkflows,
             int succeededWorkflows) throws OozieClientException {
-
         List<WorkflowJob> wfJobs = new ArrayList<WorkflowJob>();
         for (String wdID : wfIDs) {
             wfJobs.add(oozieClient.getJobInfo(wdID));
@@ -390,9 +428,7 @@ public final class InstanceUtil {
         LOGGER.info("wfJobs: " + wfJobs);
         for (int instanceIndex = 0; instanceIndex < wfJobs.size(); instanceIndex++) {
             LOGGER.info("was.get(" + instanceIndex + ").getStatus(): "
-                    +
-                    wfJobs.get(instanceIndex).getStatus());
-
+                    + wfJobs.get(instanceIndex).getStatus());
             if (wfJobs.get(instanceIndex).getStatus().toString().equals("RUNNING")) {
                 actualRunningWorkflows++;
             } else if (wfJobs.get(instanceIndex).getStatus().toString().equals("KILLED")) {
@@ -412,18 +448,30 @@ public final class InstanceUtil {
         }
     }
 
+    /**
+     * Retrieves all process instances.
+     * @param coloHelper cluster where job is running
+     * @param processName entity name
+     * @param entityType entity type, feed or process
+     * @return a list of process instances
+     * @throws OozieClientException
+     */
     public static List<CoordinatorAction> getProcessInstanceList(ColoHelper coloHelper,
-            String processName,
-            EntityType entityType)
-        throws OozieClientException {
-
+            String processName, EntityType entityType) throws OozieClientException {
         OozieClient oozieClient = coloHelper.getProcessHelper().getOozieClient();
         String coordId = getLatestCoordinatorID(oozieClient, processName, entityType);
-        //String coordId = getDefaultCoordinatorFromProcessName(processName);
         LOGGER.info("default coordID: " + coordId);
         return oozieClient.getCoordJobInfo(coordId).getActions();
     }
 
+    /**
+     * Retrieves default coordinator ID for the latest bundle job.
+     * @param oozieClient oozie client where job is running
+     * @param processName process name
+     * @param entityType entity type, feed or process
+     * @return default coordinator id for the latest bundle job
+     * @throws OozieClientException
+     */
     public static String getLatestCoordinatorID(OozieClient oozieClient, String processName,
             EntityType entityType)
         throws OozieClientException {
@@ -431,9 +479,15 @@ public final class InstanceUtil {
                 getLatestBundleID(oozieClient, processName, entityType));
     }
 
+    /**
+     * Retrieves minimal coordinator id from bundle job.
+     * @param oozieClient oozie client where job is running
+     * @param bundleId bundle job id
+     * @return minimal coordinator id
+     * @throws OozieClientException
+     */
     public static String getDefaultCoordIDFromBundle(OozieClient oozieClient, String bundleId)
         throws OozieClientException {
-
         OozieUtil.waitForCoordinatorJobCreation(oozieClient, bundleId);
         BundleJob bundleInfo = oozieClient.getBundleJobInfo(bundleId);
         List<CoordinatorJob> coords = bundleInfo.getCoordinators();
@@ -450,10 +504,17 @@ public final class InstanceUtil {
         return minString;
     }
 
+    /**
+     * Counts a number of instances with a given status.
+     * @param coloHelper cluster where job is running
+     * @param processName process name
+     * @param status a given status
+     * @param entityType entity type, feed or process
+     * @return number of process instances with a given status
+     * @throws OozieClientException
+     */
     public static int getInstanceCountWithStatus(ColoHelper coloHelper, String processName,
-            org.apache.oozie.client.CoordinatorAction.Status
-                    status,
-            EntityType entityType)
+            org.apache.oozie.client.CoordinatorAction.Status status, EntityType entityType)
         throws OozieClientException {
         List<CoordinatorAction> list = getProcessInstanceList(coloHelper, processName, entityType);
         int instanceCount = 0;
@@ -465,6 +526,14 @@ public final class InstanceUtil {
         return instanceCount;
     }
 
+    /**
+     * Retrieves status of default process coordinator.
+     * @param colohelper cluster where process is running
+     * @param processName process name
+     * @param bundleNumber which bundle job should be used
+     * @return coordinator status
+     * @throws OozieClientException
+     */
     public static Status getDefaultCoordinatorStatus(ColoHelper colohelper, String processName,
             int bundleNumber) throws OozieClientException {
         OozieClient oozieClient = colohelper.getProcessHelper().getOozieClient();
@@ -473,6 +542,14 @@ public final class InstanceUtil {
         return oozieClient.getCoordJobInfo(coordId).getStatus();
     }
 
+    /**
+     * Retrieves dafault coordinator of a process.
+     * @param coloHelper cluster where job is running
+     * @param processName process name
+     * @param bundleNumber which bundle job should be used
+     * @return default coordinator ID
+     * @throws OozieClientException
+     */
     public static String getDefaultCoordinatorFromProcessName(
             ColoHelper coloHelper, String processName, int bundleNumber) throws OozieClientException {
         String bundleID =
@@ -501,7 +578,7 @@ public final class InstanceUtil {
      *
      * @param coloHelper colo helper of cluster job is running on
      * @param entityName name of entity job is related to
-     * @param entityType type of entity - feed or process expected
+     * @param entityType type of entity feed or process expected
      * @return latest bundle ID
      * @throws OozieClientException
      */
@@ -517,7 +594,7 @@ public final class InstanceUtil {
      *
      * @param oozieClient where job is running
      * @param entityName  name of entity job is related to
-     * @param entityType  type of entity - feed or process expected
+     * @param entityType  type of entity feed or process expected
      * @return latest bundle ID
      * @throws OozieClientException
      */
@@ -540,9 +617,9 @@ public final class InstanceUtil {
     /**
      * Retrieves ID of bundle related to some process/feed using its ordinal number.
      *
-     * @param entityName   - name of entity bundle is related to
-     * @param entityType   - feed or process
-     * @param bundleNumber - ordinal number of bundle
+     * @param entityName   name of entity bundle is related to
+     * @param entityType   feed or process
+     * @param bundleNumber ordinal number of bundle
      * @return bundle ID
      * @throws OozieClientException
      */
@@ -556,9 +633,9 @@ public final class InstanceUtil {
     /**
      * Retrieves ID of bundle related to some process/feed using its ordinal number.
      *
-     * @param entityName   - name of entity bundle is related to
-     * @param entityType   - feed or process
-     * @param bundleNumber - ordinal number of bundle
+     * @param entityName   name of entity bundle is related to
+     * @param entityType   feed or process
+     * @param bundleNumber ordinal number of bundle
      * @return bundle ID
      * @throws OozieClientException
      */
@@ -593,12 +670,12 @@ public final class InstanceUtil {
     /**
      * Retrieves status of one instance.
      *
-     * @param coloHelper     - server from which instance status will be retrieved.
-     * @param processName    - name of process which mentioned instance belongs to.
-     * @param bundleNumber   - ordinal number of one of the bundle which are related to that
+     * @param coloHelper     server from which instance status will be retrieved.
+     * @param processName    name of process which mentioned instance belongs to.
+     * @param bundleNumber   ordinal number of one of the bundle which are related to that
      *                       process.
-     * @param instanceNumber - ordinal number of instance which state will be returned.
-     * @return - state of mentioned instance.
+     * @param instanceNumber ordinal number of instance which state will be returned.
+     * @return state of mentioned instance.
      * @throws OozieClientException
      */
     public static CoordinatorAction.Status getInstanceStatus(ColoHelper coloHelper,
@@ -630,6 +707,12 @@ public final class InstanceUtil {
     }
 
 
+    /**
+     * Creates folders on hdfs.
+     * @param helper cluster where folders should be created
+     * @param folderList folders to be created
+     * @throws IOException
+     */
     public static void createHDFSFolders(ColoHelper helper, List<String> folderList)
         throws IOException {
         LOGGER.info("creating folders.....");
@@ -652,9 +735,9 @@ public final class InstanceUtil {
      * @param feedRetention set retention of the feed on the cluster
      * @param clusterName   cluster name, if null would erase all the cluster details from the feed
      * @param clusterType   cluster type
-     * @param partition     - partition where data is available for feed
-     * @param locations     - location where data is picked
-     * @return - string representation of the modified feed
+     * @param partition     partition where data is available for feed
+     * @param locations     location where data is picked
+     * @return string representation of the modified feed
      */
     public static String setFeedCluster(String feed, Validity feedValidity, Retention feedRetention,
             String clusterName,
@@ -679,16 +762,29 @@ public final class InstanceUtil {
         return f.toString();
     }
 
+    /**
+     * Creates catalog table from table URI.
+     */
     private static CatalogTable getCatalogTable(String tableUri) {
         CatalogTable catalogTable = new CatalogTable();
         catalogTable.setUri(tableUri);
         return catalogTable;
     }
 
+    /**
+     * Creates feed cluster object from a set of values.
+     * @param feedValidity validity of the feed on the cluster
+     * @param feedRetention retention of the feed on the cluster
+     * @param clusterName cluster name
+     * @param clusterType cluster type, source or target
+     * @param partition data partitions
+     * @param tableUri table uri
+     * @param locations overriding data locations
+     * @return feed cluster element
+     */
     private static Cluster createFeedCluster(
             Validity feedValidity, Retention feedRetention, String clusterName, ClusterType clusterType,
             String partition, String tableUri, String[] locations) {
-
         Cluster cluster = new Cluster();
         cluster.setName(clusterName);
         cluster.setRetention(feedRetention);
@@ -747,8 +843,8 @@ public final class InstanceUtil {
      * Forms and sends process instance request based on url of action to be performed and it's
      * parameters.
      *
-     * @param colo - servers on which action should be performed
-     * @param user - whose credentials will be used for this action
+     * @param colo servers on which action should be performed
+     * @param user whose credentials will be used for this action
      * @return result from API
      */
     public static APIResult createAndSendRequestProcessInstance(
@@ -777,10 +873,10 @@ public final class InstanceUtil {
     /**
      * Sets one more cluster to process definition.
      *
-     * @param process     - process definition string representation
-     * @param clusterName - name of cluster
-     * @param validity    - cluster validity
-     * @return - string representation of modified process
+     * @param process     process definition string representation
+     * @param clusterName name of cluster
+     * @param validity    cluster validity
+     * @return string representation of modified process
      */
     public static String setProcessCluster(String process, String clusterName,
             org.apache.falcon.entity.v0.process.Validity validity) {
@@ -801,9 +897,9 @@ public final class InstanceUtil {
     /**
      * Adds one input into process.
      *
-     * @param process - where input should be inserted
-     * @param feed    - feed which will be used as input feed
-     * @return - string representation of process definition
+     * @param process where input should be inserted
+     * @param feed    feed which will be used as input feed
+     * @return string representation of process definition
      */
     public static String addProcessInputFeed(String process, String feed, String feedName) {
 
@@ -819,6 +915,14 @@ public final class InstanceUtil {
         return processElement.toString();
     }
 
+    /**
+     * Retrieves specific process instance status from coordinator.
+     * @param ua1 cluster where job is running
+     * @param coordID coordinator ID
+     * @param instanceNumber instance index number
+     * @return instance status
+     * @throws OozieClientException
+     */
     public static org.apache.oozie.client.WorkflowJob.Status getInstanceStatusFromCoord(
             ColoHelper ua1, String coordID, int instanceNumber) throws OozieClientException {
         OozieClient oozieClient = ua1.getProcessHelper().getOozieClient();
@@ -832,6 +936,14 @@ public final class InstanceUtil {
         return actionInfo.getStatus();
     }
 
+    /**
+     *
+     * @param coloHelper
+     * @param coordID
+     * @param instanceNumber
+     * @return
+     * @throws OozieClientException
+     */
     public static List<String> getInputFoldersForInstanceForReplication(
             ColoHelper coloHelper, String coordID, int instanceNumber) throws OozieClientException {
         OozieClient oozieClient = coloHelper.getProcessHelper().getOozieClient();
@@ -853,7 +965,6 @@ public final class InstanceUtil {
         throws OozieClientException {
         OozieClient oozieClient = colo.getProcessHelper().getOozieClient();
         CoordinatorJob coordInfo = oozieClient.getCoordJobInfo(coordID);
-
         WorkflowJob actionInfo =
                 oozieClient.getJobInfo(coordInfo.getActions().get(instanceNumber).getExternalId());
         return actionInfo.getRun();
@@ -878,14 +989,12 @@ public final class InstanceUtil {
             String feedName, String coordType) throws OozieClientException {
         LOGGER.info("feedName: " + feedName);
         int numberOfCoord = 0;
-
         if (OozieUtil.getBundles(helper.getOozieClient(), feedName, EntityType.FEED).size() == 0) {
             return 0;
         }
         List<String> bundleID =
                 OozieUtil.getBundles(helper.getOozieClient(), feedName, EntityType.FEED);
         LOGGER.info("bundleID: " + bundleID);
-
         for (String aBundleID : bundleID) {
             LOGGER.info("aBundleID: " + aBundleID);
             OozieUtil.waitForCoordinatorJobCreation(helper.getOozieClient(), aBundleID);
@@ -920,9 +1029,7 @@ public final class InstanceUtil {
      */
     public static String setProcessName(String process, String newName) {
         ProcessMerlin p = new ProcessMerlin(process);
-
         p.setName(newName);
-
         return p.toString();
     }
 
@@ -937,7 +1044,6 @@ public final class InstanceUtil {
     public static String setProcessValidity(String process,
             String startTime, String endTime) {
         ProcessMerlin processElement = new ProcessMerlin(process);
-
         for (int i = 0; i < processElement.getClusters().getClusters().size(); i++) {
             processElement.getClusters().getClusters().get(i).getValidity().setStart(
                     TimeUtil.oozieDateToDate(startTime).toDate());
@@ -952,10 +1058,8 @@ public final class InstanceUtil {
         throws OozieClientException {
         OozieClient oozieClient = coloHelper.getProcessHelper().getOozieClient();
         List<CoordinatorAction> list = new ArrayList<CoordinatorAction>();
-        LOGGER.info("bundle size for process is "
-                +
-                OozieUtil.getBundles(coloHelper.getFeedHelper().getOozieClient(), processName,
-                        entityType).size());
+        LOGGER.info("bundle size for process is " + OozieUtil.getBundles(coloHelper.getFeedHelper()
+            .getOozieClient(), processName, entityType).size());
         for (String bundleId : OozieUtil.getBundles(coloHelper.getFeedHelper().getOozieClient(),
                 processName, entityType)) {
             BundleJob bundleInfo = oozieClient.getBundleJobInfo(bundleId);
@@ -965,8 +1069,7 @@ public final class InstanceUtil {
                 List<CoordinatorAction> actions =
                         oozieClient.getCoordJobInfo(coord.getId()).getActions();
                 LOGGER.info("number of actions in coordinator " + coord.getId() + " is "
-                        +
-                        actions.size());
+                        + actions.size());
                 list.addAll(actions);
             }
         }
@@ -1021,7 +1124,7 @@ public final class InstanceUtil {
      * @param entityName         name of feed or process
      * @param instancesNumber     instance number for which we wait to reach the required status
      * @param expectedStatus     expected status we are waiting for
-     * @param entityType         type of entity - feed or process expected
+     * @param entityType         type of entity feed or process expected
      * @param totalMinutesToWait time in minutes for which instance state should be polled
      * @throws OozieClientException
      */
@@ -1080,7 +1183,7 @@ public final class InstanceUtil {
             LOGGER.info(String.format("Try %d of %d", (i + 1), maxTries));
             CoordinatorJob coordinatorJob = client.getCoordJobInfo(coordId);
             final Status coordinatorStatus = coordinatorJob.getStatus();
-            if(expectedStatus != CoordinatorAction.Status.TIMEDOUT){
+            if (expectedStatus != CoordinatorAction.Status.TIMEDOUT){
                 Assert.assertTrue(RUNNING_PREP_SUCCEEDED.contains(coordinatorStatus),
                         String.format("Coordinator %s should be running/prep but is %s.", coordId, coordinatorStatus));
             }
@@ -1110,7 +1213,7 @@ public final class InstanceUtil {
      * @param entityName       name of feed or process
      * @param numberOfInstance number of instances which status we are waiting for
      * @param expectedStatus   expected status we are waiting for
-     * @param entityType       type of entity - feed or process expected
+     * @param entityType       type of entity feed or process expected
      */
     public static void waitTillInstanceReachState(OozieClient client, String entityName,
             int numberOfInstance,
@@ -1302,6 +1405,12 @@ public final class InstanceUtil {
         waitTillInstancesAreCreated(coloHelper, entity, bundleSeqNo, sleep);
     }
 
+    /**
+     * Sets feed ACL parameter.
+     * @param feed feed definition
+     * @param ownerGroup users group
+     * @return modified feed
+     */
     public static String setFeedACL(String feed, String... ownerGroup) {
         FeedMerlin feedObject = new FeedMerlin(feed);
         ACL acl = feedObject.getACL();

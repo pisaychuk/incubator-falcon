@@ -19,6 +19,7 @@
 package org.apache.falcon.regression.security;
 
 import org.apache.falcon.regression.core.bundle.Bundle;
+import org.apache.falcon.regression.core.enumsAndConstants.EntityOp;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.interfaces.IEntityManagerHelper;

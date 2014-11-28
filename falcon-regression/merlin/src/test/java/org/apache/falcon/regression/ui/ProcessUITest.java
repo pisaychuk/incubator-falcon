@@ -36,7 +36,7 @@ import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.core.util.Util;
-import org.apache.falcon.regression.lineage.LineageApiTest;
+import org.apache.falcon.regression.metadata.lineage.LineageApiTest;
 import org.apache.falcon.regression.testHelper.BaseUITestClass;
 import org.apache.falcon.regression.ui.pages.EntitiesPage;
 import org.apache.falcon.regression.ui.pages.ProcessPage;

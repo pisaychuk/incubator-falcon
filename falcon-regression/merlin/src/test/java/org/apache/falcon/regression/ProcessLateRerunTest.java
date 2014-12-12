@@ -42,6 +42,7 @@ import java.util.*;
 /**
  * Process late data test.
  */
+@Test(groups = "embedded")
 public class ProcessLateRerunTest extends BaseTestClass {
     private ColoHelper cluster1 = servers.get(0);
     private OozieClient cluster1OC = serverOC.get(0);

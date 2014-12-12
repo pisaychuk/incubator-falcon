@@ -47,6 +47,7 @@ import java.util.List;
  * On adding further late data it checks whether the data has been replicated correctly in the given late cut-off time.
  * Assuming that late frequency set in server is 3 minutes. Although value can be changed according to requirement.
  */
+@Test(groups = "embedded")
 public class FeedLateRerunTest extends BaseTestClass {
 
     private ColoHelper cluster1 = servers.get(0);

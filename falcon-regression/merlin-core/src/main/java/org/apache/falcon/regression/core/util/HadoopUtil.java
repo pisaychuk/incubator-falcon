@@ -477,6 +477,12 @@ public final class HadoopUtil {
             OSUtil.NORMAL_INPUT + "_SUCCESS", OSUtil.NORMAL_INPUT + "log_01.txt");
     }
 
+    /**
+     * Creates empty folders in hdfs.
+     * @param helper target
+     * @param folderList list of folders
+     * @throws IOException
+     */
     public static void createHDFSFolders(ColoHelper helper, List<String> folderList)
         throws IOException {
         LOGGER.info("creating folders.....");
@@ -485,7 +491,6 @@ public final class HadoopUtil {
         final FileSystem fs = FileSystem.get(conf);
         for (final String folder : folderList) {
             if (StringUtils.isNotEmpty(folder)) {
-
                 fs.mkdirs(new Path(folder));
             }
         }

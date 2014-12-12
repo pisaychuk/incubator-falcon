@@ -67,10 +67,8 @@ public class FeedLateRerunTest extends BaseTestClass {
     public void setUp(Method method) throws JAXBException, IOException {
         LOGGER.info("test name: " + method.getName());
         Bundle bundle = BundleUtil.readFeedReplicationBundle();
-
         bundles[0] = new Bundle(bundle, cluster1);
         bundles[1] = new Bundle(bundle, cluster2);
-
         bundles[0].generateUniqueBundle();
         bundles[1].generateUniqueBundle();
     }
@@ -109,29 +107,22 @@ public class FeedLateRerunTest extends BaseTestClass {
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(targetDataLocation)
                 .build()).toString();
-
         String entityName = Util.readEntityName(feed);
 
         //submit and schedule feed
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
         //check if coordinator exists
-
         InstanceUtil.waitTillInstancesAreCreated(cluster2, feed, 0);
-
         Assert.assertEquals(InstanceUtil
-            .checkIfFeedCoordExist(cluster2.getFeedHelper(), entityName,
-                "REPLICATION"), 1);
-
+            .checkIfFeedCoordExist(cluster2.getFeedHelper(), entityName, "REPLICATION"), 1);
 
         //Finding bundleId of replicated instance on target
         String bundleId = InstanceUtil.getLatestBundleID(cluster2, entityName, EntityType.FEED);
 
-
         //Finding and creating missing dependencies
         List<String> missingDependencies = getAndCreateDependencies(
             cluster1, cluster1FS, cluster2, cluster2OC, bundleId, false, entityName);
-
         int count = 1;
         for (String location : missingDependencies) {
             if (count==1) {
@@ -139,25 +130,17 @@ public class FeedLateRerunTest extends BaseTestClass {
                 count++;
             }
         }
-
         source=splitPathFromIp(source, "8020");
         LOGGER.info("source : " + source);
         target = source.replace("source", "target");
         LOGGER.info("target : " + target);
-
-
-        /*
-        Sleep for some time ( as is defined in runtime property of server ).
-        Let the instance rerun and then it should succeed.
-         */
-
+        /* Sleep for some time ( as is defined in runtime property of server ).
+           Let the instance rerun and then it should succeed.*/
         int sleepMins = 8;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
         }
-
-
         String bundleID = InstanceUtil.getLatestBundleID(cluster2, entityName, EntityType.FEED);
         OozieUtil.validateRetryAttempts(cluster2, bundleID, EntityType.FEED, 1);
 
@@ -166,12 +149,8 @@ public class FeedLateRerunTest extends BaseTestClass {
             .getAllFilesRecursivelyHDFS(cluster1FS, new Path(source));
         List<Path> cluster2ReplicatedData = HadoopUtil
             .getAllFilesRecursivelyHDFS(cluster2FS, new Path(target));
-
         AssertUtil.checkForListSizes(cluster1ReplicatedData, cluster2ReplicatedData);
-
-
     }
-
 
     @Test(enabled = true)
     public void feedLateRerunTestWithData()
@@ -202,20 +181,15 @@ public class FeedLateRerunTest extends BaseTestClass {
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(targetDataLocation)
                 .build()).toString();
-
         String entityName = Util.readEntityName(feed);
 
         //submit and schedule feed
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
         //check if coordinator exists
-
         InstanceUtil.waitTillInstancesAreCreated(cluster2, feed, 0);
-
         Assert.assertEquals(InstanceUtil
-            .checkIfFeedCoordExist(cluster2.getFeedHelper(), entityName,
-                "REPLICATION"), 1);
-
+            .checkIfFeedCoordExist(cluster2.getFeedHelper(), entityName, "REPLICATION"), 1);
 
         //Finding bundleId of replicated instance on target
         String bundleId = InstanceUtil.getLatestBundleID(cluster2, entityName, EntityType.FEED);
@@ -223,7 +197,6 @@ public class FeedLateRerunTest extends BaseTestClass {
         //Finding and creating missing dependencies
         List<String> missingDependencies = getAndCreateDependencies(
             cluster1, cluster1FS, cluster2, cluster2OC, bundleId, true, entityName);
-
         int count = 1;
         for (String location : missingDependencies) {
             if (count==1) {
@@ -231,26 +204,18 @@ public class FeedLateRerunTest extends BaseTestClass {
                 count++;
             }
         }
-
         LOGGER.info("source : " + source);
         source=splitPathFromIp(source, "8020");
         LOGGER.info("source : " + source);
         target = source.replace("source", "target");
         LOGGER.info("target : " + target);
-
-
-        /*
-        Sleep for some time ( as is defined in runtime property of server ).
-        Let the instance rerun and then it should succeed.
-         */
-
+        /* Sleep for some time ( as is defined in runtime property of server ).
+           Let the instance rerun and then it should succeed.*/
         int sleepMins = 8;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
         }
-
-
         String bundleID = InstanceUtil.getLatestBundleID(cluster2, entityName, EntityType.FEED);
         OozieUtil.validateRetryAttempts(cluster2, bundleID, EntityType.FEED, 1);
 
@@ -259,9 +224,7 @@ public class FeedLateRerunTest extends BaseTestClass {
             .getAllFilesRecursivelyHDFS(cluster1FS, new Path(source));
         List<Path> cluster2ReplicatedData = HadoopUtil
             .getAllFilesRecursivelyHDFS(cluster2FS, new Path(target));
-
         AssertUtil.checkForListSizes(cluster1ReplicatedData, cluster2ReplicatedData);
-
     }
 
     private String splitPathFromIp(String src, String port) {
@@ -274,7 +237,6 @@ public class FeedLateRerunTest extends BaseTestClass {
                 }
             }
         }
-
         if (tempSrc.isEmpty()) {
             reqSrc = src;
         } else {
@@ -283,16 +245,12 @@ public class FeedLateRerunTest extends BaseTestClass {
         return reqSrc;
     }
 
-    /*
-    prismHelper1 - source colo
-    prismHelper2 - target colo
-     */
+    /* prismHelper1 - source colo, prismHelper2 - target colo */
     private List<String> getAndCreateDependencies(ColoHelper prismHelper1, FileSystem clusterFS1,
                                                   ColoHelper prismHelper2,
                                                   OozieClient oozieClient2, String bundleId,
                                                   boolean dataFlag, String entityName)
         throws OozieClientException, IOException {
-
         List<String> missingDependencies = OozieUtil.getMissingDependencies(prismHelper2, bundleId);
         for (int i = 0; i < 10 && missingDependencies == null; ++i) {
             TimeUtil.sleepSeconds(30);
@@ -300,15 +258,12 @@ public class FeedLateRerunTest extends BaseTestClass {
             missingDependencies = OozieUtil.getMissingDependencies(prismHelper2, bundleId);
         }
         Assert.assertNotNull(missingDependencies, "Missing dependencies not found.");
-
         //print missing dependencies
         for (String dependency : missingDependencies) {
             LOGGER.info("dependency from job: " + dependency);
         }
-
         // Creating missing dependencies
         InstanceUtil.createHDFSFolders(prismHelper1, missingDependencies);
-
         //Adding data to empty folders depending on dataFlag
         if (dataFlag) {
             int tempCount = 1;
@@ -320,13 +275,10 @@ public class FeedLateRerunTest extends BaseTestClass {
                 }
             }
         }
-
         //replication should start, wait while it ends
         InstanceUtil.waitTillInstanceReachState(oozieClient2, entityName, 1,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED);
-
         // Adding data for late rerun
-
         int tempCounter = 1;
         for (String dependency : missingDependencies) {
             if (tempCounter==1) {
@@ -335,10 +287,6 @@ public class FeedLateRerunTest extends BaseTestClass {
             }
             tempCounter++;
         }
-
         return missingDependencies;
-
     }
-
-
 }

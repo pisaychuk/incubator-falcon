@@ -264,7 +264,7 @@ public class FeedLateRerunTest extends BaseTestClass {
             LOGGER.info("dependency from job: " + dependency);
         }
         // Creating missing dependencies
-        InstanceUtil.createHDFSFolders(prismHelper1, missingDependencies);
+        HadoopUtil.createHDFSFolders(prismHelper1, missingDependencies);
         //Adding data to empty folders depending on dataFlag
         if (dataFlag) {
             int tempCount = 1;

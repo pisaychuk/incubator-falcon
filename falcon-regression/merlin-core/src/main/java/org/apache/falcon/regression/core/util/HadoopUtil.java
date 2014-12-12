@@ -20,6 +20,8 @@ package org.apache.falcon.regression.core.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.falcon.regression.core.helpers.ColoHelper;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -473,5 +475,20 @@ public final class HadoopUtil {
         createFolders(fs, folderPrefix, folderPaths);
         copyDataToFolders(fs, folderPrefix, folderPaths,
             OSUtil.NORMAL_INPUT + "_SUCCESS", OSUtil.NORMAL_INPUT + "log_01.txt");
+    }
+
+    public static void createHDFSFolders(ColoHelper helper, List<String> folderList)
+        throws IOException {
+        LOGGER.info("creating folders.....");
+        Configuration conf = new Configuration();
+        conf.set("fs.default.name", "hdfs://" + helper.getFeedHelper().getHadoopURL());
+        final FileSystem fs = FileSystem.get(conf);
+        for (final String folder : folderList) {
+            if (StringUtils.isNotEmpty(folder)) {
+
+                fs.mkdirs(new Path(folder));
+            }
+        }
+        LOGGER.info("created folders.....");
     }
 }

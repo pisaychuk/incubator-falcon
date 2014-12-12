@@ -148,12 +148,12 @@ public final class HadoopUtil {
      * @param srcFileLocation source location
      * @throws IOException
      */
-    public static void copyDataToFolder(final FileSystem fs, final String dstHdfsDir,
+    public static void copyDataToFolder(final FileSystem fs, String dstHdfsDir,
                                         final String srcFileLocation)
         throws IOException {
         LOGGER.info(String.format("Copying local dir %s to hdfs location %s on %s",
             srcFileLocation, dstHdfsDir, fs.getUri()));
-        fs.copyFromLocalFile(new Path(srcFileLocation), new Path(dstHdfsDir));
+        fs.copyFromLocalFile(new Path(srcFileLocation), new Path(cutProtocol(dstHdfsDir)));
     }
 
     /**
@@ -491,7 +491,7 @@ public final class HadoopUtil {
         final FileSystem fs = FileSystem.get(conf);
         for (final String folder : folderList) {
             if (StringUtils.isNotEmpty(folder)) {
-                fs.mkdirs(new Path(folder));
+                fs.mkdirs(new Path(cutProtocol(folder)));
             }
         }
         LOGGER.info("created folders.....");

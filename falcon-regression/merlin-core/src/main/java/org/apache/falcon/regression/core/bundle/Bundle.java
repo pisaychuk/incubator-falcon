@@ -26,6 +26,7 @@ import org.apache.falcon.entity.v0.cluster.Interfaces;
 import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.feed.CatalogTable;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.entity.v0.feed.LateArrival;
 import org.apache.falcon.entity.v0.feed.Location;
 import org.apache.falcon.entity.v0.feed.LocationType;
 import org.apache.falcon.entity.v0.process.Cluster;
@@ -571,6 +572,13 @@ public class Bundle {
         processData = processElement.toString();
     }
 
+    public void setFeedLateArrival(int delay, String delayUnits) {
+        LateArrival lateArrival = new LateArrival();
+        lateArrival.setCutOff(new Frequency(delayUnits + "(" + delay + ")"));
+        FeedMerlin feedMerlin = new FeedMerlin(dataSets.get(0));
+        feedMerlin.setLateArrival(lateArrival);
+        writeFeedElement(feedMerlin, feedMerlin.getName());
+    }
 
     public void verifyDependencyListing(ColoHelper coloHelper)
         throws InterruptedException, IOException, AuthenticationException, URISyntaxException {

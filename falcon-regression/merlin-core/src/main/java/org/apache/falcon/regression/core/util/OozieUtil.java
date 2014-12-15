@@ -27,6 +27,7 @@ import org.apache.oozie.client.OozieClient;
 import org.apache.oozie.client.OozieClientException;
 import org.apache.oozie.client.Job;
 import org.apache.oozie.client.CoordinatorJob;
+import org.apache.oozie.client.WorkflowJob;
 import org.apache.oozie.client.XOozieClient;
 import org.joda.time.DateTime;
 import org.apache.log4j.Logger;
@@ -511,7 +512,8 @@ public final class OozieUtil {
                                              int attempts) throws OozieClientException {
         OozieClient oozieClient = helper.getClusterHelper().getOozieClient();
         CoordinatorJob coord = getDefaultOozieCoord(helper, bundleId, type);
-        int actualRun = oozieClient.getJobInfo(coord.getActions().get(0).getExternalId()).getRun();
+        WorkflowJob wfJob = oozieClient.getJobInfo(coord.getActions().get(0).getExternalId());
+        int actualRun = wfJob.getRun();
         LOGGER.info("Actual run count: " + actualRun); // wrt 0
         Assert.assertEquals(actualRun, attempts, "Rerun attempts did not match");
     }

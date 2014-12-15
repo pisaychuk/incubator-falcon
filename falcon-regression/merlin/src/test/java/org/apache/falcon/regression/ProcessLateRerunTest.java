@@ -30,12 +30,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.*;
 import org.testng.Assert;
-import org.testng.TestNGException;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -98,7 +98,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 1);
 
-        int sleepMins = 6;
+        int sleepMins = 1;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
@@ -140,7 +140,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, true, 1);
 
-        int sleepMins = 6;
+        int sleepMins = 4;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
@@ -186,7 +186,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 3);
 
-        int sleepMins = 6;
+        int sleepMins = 4;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
@@ -243,7 +243,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 7);
 
-        int sleepMins = 6;
+        int sleepMins = 4;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);
@@ -266,70 +266,67 @@ public class ProcessLateRerunTest extends BaseTestClass {
      */
     private void getAndCreateDependencies(ColoHelper prismHelper, Bundle bundle,
                                           OozieClient oozieClient, FileSystem clusterFS,
-                                          boolean dataFlag, int dataFolder) {
-        try {
-            List<String> bundles = null;
-            for (int i = 0; i < 10; ++i) {
-                bundles = OozieUtil.getBundles(prismHelper.getFeedHelper().getOozieClient(),
-                    Util.getProcessName(bundle.getProcessData()), EntityType.PROCESS);
-                if (bundles.size() > 0) {
-                    break;
-                }
-                TimeUtil.sleepSeconds(30);
+                                          boolean dataFlag, int dataFolder)
+        throws OozieClientException, IOException {
+        List<String> bundles = null;
+        for (int i = 0; i < 10; ++i) {
+            bundles = OozieUtil.getBundles(prismHelper.getFeedHelper().getOozieClient(),
+                Util.getProcessName(bundle.getProcessData()), EntityType.PROCESS);
+            if (bundles.size() > 0) {
+                break;
             }
-            Assert.assertTrue(bundles != null && bundles.size() > 0, "Bundle job not created.");
-            String bundleID = bundles.get(0);
-            LOGGER.info("bundle id: " + bundleID);
-            List<String> missingDependencies = OozieUtil.getMissingDependencies(prismHelper, bundleID);
-            for (int i = 0; i < 10 && missingDependencies == null; ++i) {
-                TimeUtil.sleepSeconds(30);
-                missingDependencies = OozieUtil.getMissingDependencies(prismHelper, bundleID);
-            }
-            Assert.assertNotNull(missingDependencies, "Missing dependencies not found.");
-
-            //print missing dependencies
-            for (String dependency : missingDependencies) {
-                LOGGER.info("dependency from job: " + dependency);
-            }
-
-            //create missing dependencies
-            LOGGER.info("Creating missing dependencies...");
-            OozieUtil.createMissingDependencies(prismHelper, EntityType.PROCESS,
-                Util.getProcessName(bundle.getProcessData()), 0, 0);
-
-            //Adding data to empty folders depending on dataFlag
-            if (dataFlag) {
-                int tempCount = 1;
-                for (String location : missingDependencies) {
-                    if (tempCount==1) {
-                        LOGGER.info("Transferring data to : " + location);
-                        HadoopUtil.copyDataToFolder(clusterFS, location, OSUtil.RESOURCES + "feed-s4Replication.xml");
-                        tempCount++;
-                    }
-                }
-            }
-
-            //Process succeeding on empty folders
-            LOGGER.info("Waiting for process to succeed...");
-            InstanceUtil.waitTillInstanceReachState(oozieClient,
-                Util.getProcessName(bundle.getProcessData()), 1,
-                CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
-
             TimeUtil.sleepSeconds(30);
+        }
+        Assert.assertTrue(bundles != null && bundles.size() > 0, "Bundle job not created.");
+        String bundleId = bundles.get(0);
+        LOGGER.info("bundle id: " + bundleId);
+        List<String> missingDependencies = OozieUtil.getMissingDependencies(prismHelper, bundleId);
+        for (int i = 0; i < 10 && missingDependencies == null; ++i) {
+            TimeUtil.sleepSeconds(30);
+            LOGGER.info("sleeping...");
+            missingDependencies = OozieUtil.getMissingDependencies(prismHelper, bundleId);
+        }
+        Assert.assertNotNull(missingDependencies, "Missing dependencies not found.");
+        //print missing dependencies
+        for (String dependency : missingDependencies) {
+            LOGGER.info("dependency from job: " + dependency);
+        }
 
-            //Adding data to check late rerun
-            int tempCounter = 1;
-            for (String dependency : missingDependencies) {
-                if (tempCounter==dataFolder) {
-                    LOGGER.info("Transferring late data to : " + dependency);
-                    HadoopUtil.copyDataToFolder(clusterFS, dependency, OSUtil.RESOURCES + "log4j.properties");
+        //create missing dependencies
+        LOGGER.info("Creating missing dependencies...");
+        OozieUtil.createMissingDependencies(prismHelper, EntityType.PROCESS,
+            Util.getProcessName(bundle.getProcessData()), 0, 0);
+
+        //Adding data to empty folders depending on dataFlag
+        if (dataFlag) {
+            int tempCount = 1;
+            for (String location : missingDependencies) {
+                if (tempCount == 1) {
+                    LOGGER.info("Transferring data to : " + location);
+                    HadoopUtil.copyDataToFolder(clusterFS, location,
+                        OSUtil.RESOURCES + "feed-s4Replication.xml");
+                    tempCount++;
                 }
-                tempCounter++;
             }
+        }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new TestNGException(e);
+        //Process succeeding on empty folders
+        LOGGER.info("Waiting for process to succeed...");
+        InstanceUtil.waitTillInstanceReachState(oozieClient,
+            Util.getProcessName(bundle.getProcessData()), 1,
+            CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
+
+        TimeUtil.sleepSeconds(30);
+
+        //Adding data to check late rerun
+        int tempCounter = 1;
+        for (String dependency : missingDependencies) {
+            if (tempCounter == dataFolder) {
+                LOGGER.info("Transferring late data to : " + dependency);
+                HadoopUtil
+                    .copyDataToFolder(clusterFS, dependency, OSUtil.RESOURCES + "log4j.properties");
+            }
+            tempCounter++;
         }
     }
 

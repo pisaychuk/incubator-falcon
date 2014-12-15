@@ -109,7 +109,7 @@ public class FeedLateRerunTest extends BaseTestClass {
                 .withDataLocation(targetDataLocation)
                 .build()).toString();
         String entityName = Util.readEntityName(feed);
-
+        bundles[0].setFeedLateArrival(3, "minutes");
         //submit and schedule feed
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
@@ -137,7 +137,7 @@ public class FeedLateRerunTest extends BaseTestClass {
         LOGGER.info("target : " + target);
         /* Sleep for some time ( as is defined in runtime property of server ).
            Let the instance rerun and then it should succeed.*/
-        int sleepMins = 8;
+        int sleepMins = 5;
         for(int i=0; i < sleepMins; i++) {
             LOGGER.info("Waiting...");
             TimeUtil.sleepSeconds(60);

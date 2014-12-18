@@ -24,14 +24,10 @@ import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.supportClasses.ExecResult;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
-import org.apache.falcon.regression.core.util.HadoopUtil;
-import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -41,20 +37,10 @@ import java.lang.reflect.Method;
 /**
  * Tests falcon client's working in presence of ACL errors.
  */
-@Test(groups = "authorization")
+@Test(groups = "authorization,embedded")
 public class FalconClientTest extends BaseTestClass {
     private static final Logger LOGGER = Logger.getLogger(AclValidationTest.class);
-
     private final ColoHelper cluster = servers.get(0);
-    private final FileSystem clusterFS = serverFS.get(0);
-    private final String baseTestDir = baseHDFSDir + "/AuthorizationTest";
-    private final String aggregateWorkflowDir = baseTestDir + "/aggregator";
-    private final String feedInputPath = baseTestDir + "/input" + MINUTE_DATE_PATTERN;
-
-    @BeforeClass(alwaysRun = true)
-    public void uploadWorkflow() throws Exception {
-        HadoopUtil.uploadDir(clusterFS, aggregateWorkflowDir, OSUtil.RESOURCES_OOZIE);
-    }
 
     @BeforeMethod(alwaysRun = true)
     public void setup(Method method) throws Exception {
@@ -62,15 +48,13 @@ public class FalconClientTest extends BaseTestClass {
         Bundle bundle = BundleUtil.readELBundle();
         bundles[0] = new Bundle(bundle, cluster);
         bundles[0].generateUniqueBundle();
-        bundles[0].setInputFeedDataPath(feedInputPath);
-        bundles[0].setProcessWorkflow(aggregateWorkflowDir);
     }
 
     /**
      * Test error thrown by falcon client, when acl of the submitted cluster has bad values.
      * @throws Exception
      */
-    @Test (enabled = false)
+    @Test (enabled = true)
     public void badClusterSubmit() throws Exception {
         bundles[0].setCLusterACL(MerlinConstants.DIFFERENT_USER_NAME,
             MerlinConstants.CURRENT_USER_GROUP, "*");
@@ -84,7 +68,7 @@ public class FalconClientTest extends BaseTestClass {
      * able to delete
      * @throws Exception
      */
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void badClusterDelete() throws Exception {
         bundles[0].submitClusters(prism);
         final String clusterXml = bundles[0].getClusters().get(0);

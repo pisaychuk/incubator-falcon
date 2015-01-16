@@ -31,6 +31,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -98,15 +99,59 @@ public class HiveDR extends BaseTestClass {
     }
 
     @Test
-    public void testDP() throws SQLException {
+    public void dynamicPartitionsTest() throws SQLException, IOException {
         final Connection connection = cluster.getClusterHelper().getHiveJdbcConnection();
         HiveUtil.runSql(connection, "show tables");
         HiveUtil.runSql(connection, "drop database if exists hdr_sdb1 cascade");
         HiveUtil.runSql(connection, "create database hdr_sdb1");
         HiveUtil.runSql(connection, "use hdr_sdb1");
-        for(int i = 0 ; i < 4; i++){
+        //create table with static partitions
+        createPartitionedTable(connection, "global_store_sales", false);
 
+        final Connection connection2 = cluster2.getClusterHelper().getHiveJdbcConnection();
+        HiveUtil.runSql(connection2, "show tables");
+        HiveUtil.runSql(connection2, "drop database if exists hdr_tdb1 cascade");
+        HiveUtil.runSql(connection2, "create database hdr_tdb1");
+        HiveUtil.runSql(connection2, "use hdr_tdb1");
+        //create table with dynamic partitions
+        createPartitionedTable(connection2, "global_store_sales", true);
+
+        //check that both tables are equal
+        HiveAssert.assertTableEqual(
+            cluster, clusterHC.getTable("hdr_sdb1", "global_store_sales"),
+            cluster2, clusterHC2.getTable("hdr_tdb1", "global_store_sales"), new SoftAssert()
+        ).assertAll();
+    }
+
+    private void createPartitionedTable(Connection connection, String tableName,
+                                        boolean dynamic) throws SQLException {
+        String [][] partitions = {
+            {"us", "Kansas", },
+            {"us", "California", },
+            {"au", "Queensland", },
+            {"au", "Victoria", },
+        };
+        //create table
+        HiveUtil.runSql(connection, "drop table " + tableName);
+        HiveUtil.runSql(connection, "create table " + tableName
+            + "(customer_id string, item_id string, quantity float, price float, time timestamp) "
+            + "partitioned by (country string, state string)");
+        //provide data
+        String query;
+        if (dynamic) {
+            //disable strict mode, thus both partitions can be used as dynamic
+            HiveUtil.runSql(connection, "set hive.exec.dynamic.partition.mode=nonstrict");
+            query = "insert into table " + tableName + " partition"
+                + "(country, state) values('c%3$s', 'i%3$s', '%3$s', '%3$s', "
+                + "'2001-01-01 01:01:0%3$s', '%1$s', '%2$s')";
+        } else {
+            query = "insert into table " + tableName + " partition"
+                + "(country = '%1$s', state = '%2$s') values('c%3$s', 'i%3$s', '%3$s', '%3$s', "
+                + "'2001-01-01 01:01:0%3$s')";
         }
-        HiveObjectCreator.createTableDPInsert(connection);
+        for(int i = 0 ; i < partitions.length; i++){
+            HiveUtil.runSql(connection, String.format(query, partitions[i][0], partitions[i][1], i+1));
+        }
+        HiveUtil.runSql(connection, "select * from global_store_sales");
     }
 }

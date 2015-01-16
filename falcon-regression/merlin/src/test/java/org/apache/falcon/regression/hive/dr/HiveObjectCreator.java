@@ -98,4 +98,35 @@ class HiveObjectCreator {
             + "('c2', 'i2', '2', '2', '2001-01-01 01:01:02')");
         HiveUtil.runSql(connection, "select * from store_sales");
     }
+
+    /**
+     *
+     * @param connection jdbc connection object to use for issuing queries to hive
+     * @throws SQLException
+     */
+    static void createTableDPInsert(Connection connection) throws SQLException {
+        //create plain table with 2 partitions
+        HiveUtil.runSql(connection, "drop table global_store_sales");
+        HiveUtil.runSql(connection, "create table global_store_sales "
+            + "(customer_id string, item_id string, quantity float, price float, time timestamp) "
+            + "partitioned by (country string, state string)");
+        //provide table with data. In strict mode at least 1 partition must be static(predefined).
+        HiveUtil.runSql(connection,
+            "insert into table global_store_sales partition (country = 'us', state) values"
+                + "('c1', 'i1', '1', '1', '2001-01-01 01:01:01', 'California')");
+        HiveUtil.runSql(connection,
+            "insert into table global_store_sales partition (country = 'au', state) values"
+                + "('c2', 'i2', '2', '2', '2001-01-01 01:01:02', 'Queensland')");
+
+        //setting up non-strict mode. Both partitions will be allowed to be defined dynamically.
+        HiveUtil.runSql(connection, "set hive.exec.dynamic.partition.mode=nonstrict");
+        HiveUtil.runSql(connection,
+            "insert into table global_store_sales partition (country, state) values"
+                + "('c3', 'i3', '3', '3', '2001-01-01 01:01:03', 'us', 'Kansas')");
+        HiveUtil.runSql(connection,
+            "insert into table global_store_sales partition (country, state) values"
+                + "('c4', 'i4', '4', '4', '2001-01-01 01:01:04', 'au', 'Victoria')");
+        //check the data
+        HiveUtil.runSql(connection, "select * from global_store_sales");
+    }
 }

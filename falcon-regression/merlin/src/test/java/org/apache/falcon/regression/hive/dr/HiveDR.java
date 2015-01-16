@@ -32,6 +32,7 @@ import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Hive DR Testing.
@@ -96,4 +97,16 @@ public class HiveDR extends BaseTestClass {
         ).assertAll();
     }
 
+    @Test
+    public void testDP() throws SQLException {
+        final Connection connection = cluster.getClusterHelper().getHiveJdbcConnection();
+        HiveUtil.runSql(connection, "show tables");
+        HiveUtil.runSql(connection, "drop database if exists hdr_sdb1 cascade");
+        HiveUtil.runSql(connection, "create database hdr_sdb1");
+        HiveUtil.runSql(connection, "use hdr_sdb1");
+        for(int i = 0 ; i < 4; i++){
+
+        }
+        HiveObjectCreator.createTableDPInsert(connection);
+    }
 }

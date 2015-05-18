@@ -210,12 +210,12 @@ public class PageHeader {
         return processPage;
     }
 
-    public NewMirrorPage doCreateMirror() {
+    public MirrorWizardPage doCreateMirror() {
         UIAssert.assertDisplayed(mirrorCreateButton, "Mirror create button");
         Assert.assertEquals(mirrorCreateButton.getText(), "Mirror",
             "Unexpected text on create mirror button");
         mirrorCreateButton.click();
-        final NewMirrorPage mirrorPage = PageFactory.initElements(driver, NewMirrorPage.class);
+        final MirrorWizardPage mirrorPage = PageFactory.initElements(driver, MirrorWizardPage.class);
         mirrorPage.checkPage();
         return mirrorPage;
     }

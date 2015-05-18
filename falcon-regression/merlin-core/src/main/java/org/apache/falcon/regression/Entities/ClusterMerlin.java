@@ -111,18 +111,6 @@ public class ClusterMerlin extends Cluster {
         }
     }  
 
-    public String getInterfaceEndpoint(final Interfacetype interfaceType) {
-        String value = null;
-        for (Interface anInterface : getInterfaces().getInterfaces()) {
-            if (anInterface.getType() == interfaceType) {
-                value = anInterface.getEndpoint();
-            }
-        }
-        LOGGER.info("Cluster: " + getName() + " interfaceType: " + interfaceType
-            + " value:" + value);
-        return value;
-    }
-
     public String getProperty(final String propName) {
         String value = null;
         for (Property property : getProperties().getProperties()) {
@@ -297,6 +285,18 @@ public class ClusterMerlin extends Cluster {
     @Override
     public EntityType getEntityType() {
         return EntityType.CLUSTER;
+    }
+
+    public String getInterfaceEndpoint(final Interfacetype interfaceType) {
+        String value = null;
+        for (Interface anInterface : getInterfaces().getInterfaces()) {
+            if (anInterface.getType() == interfaceType) {
+                value = anInterface.getEndpoint();
+            }
+        }
+        LOGGER.info("Cluster: " + getName() + " interfaceType: " + interfaceType
+            + " value:" + value);
+        return value;
     }
 
 }

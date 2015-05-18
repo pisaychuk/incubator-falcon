@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +55,11 @@ public class RecipeMerlin {
     private String template;
     private AbstractFileConfiguration properties;
     private String workflow;
+
+    public FalconCLI.RecipeOperation getRecipeOperation() {
+        return recipeOperation;
+    }
+
     private FalconCLI.RecipeOperation recipeOperation;
 
     private RecipeMerlin() {
@@ -83,7 +89,7 @@ public class RecipeMerlin {
         properties.setProperty("sourceHiveServer2Uri", srcCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("sourceServicePrincipal",
         //    srcCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("sourceStagingPath", srcCluster.getLocation("STAGING"));
+        properties.setProperty("sourceStagingPath", srcCluster.getLocation("staging"));
         properties.setProperty("sourceNN", srcCluster.getInterfaceEndpoint(Interfacetype.WRITE));
         properties.setProperty("sourceRM", srcCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
@@ -95,7 +101,7 @@ public class RecipeMerlin {
         properties.setProperty("targetHiveServer2Uri", tgtCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("targetServicePrincipal",
         //    tgtCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("targetStagingPath", tgtCluster.getLocation("STAGING"));
+        properties.setProperty("targetStagingPath", tgtCluster.getLocation("staging"));
         properties.setProperty("targetNN", tgtCluster.getInterfaceEndpoint(Interfacetype.WRITE));
         properties.setProperty("targetRM", tgtCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
@@ -232,6 +238,24 @@ public class RecipeMerlin {
         Collections.addAll(cmd, "recipe", "-name", getName(),
             "-operation", recipeOperation.toString());
         return cmd;
+    }
+
+    /**
+     * Set tags for recipe
+     */
+    public List<String> getTags() {
+        final String tagsStr = properties.getString("falcon.recipe.tags");
+        if (StringUtils.isEmpty(tagsStr)) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(tagsStr.split(","));
+    }
+
+    /**
+     * Set tags for recipe
+     */
+    public void setTags(List<String> tags) {
+        properties.setProperty("falcon.recipe.tags", StringUtils.join(tags, ','));
     }
 
 }

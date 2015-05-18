@@ -140,4 +140,10 @@ public class ClusterMerlin extends Cluster {
         LOGGER.info("Cluster: " + getName() + " locationType: " + locationType + " value:" + value);
         return value;
     }
+
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.CLUSTER;
+    }
+
 }

@@ -29,6 +29,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.falcon.cli.FalconCLI;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.cluster.Interfacetype;
+import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.util.Config;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.log4j.Logger;
@@ -156,6 +157,9 @@ public class RecipeMerlin {
         instance.properties.clearProperty("sourceTable");
         instance.properties.clearProperty("targetDatabase");
         instance.properties.clearProperty("targetTable");
+        instance.properties.setProperty("falcon.recipe.acl.owner", MerlinConstants.CURRENT_USER_NAME);
+        instance.properties.setProperty("falcon.recipe.acl.group", MerlinConstants.CURRENT_USER_GROUP);
+        instance.properties.setProperty("falcon.recipe.acl.permission", "*");
 
         final Collection<File> templatesFiles = FileUtils.listFiles(directory,
             new RegexFileFilter(".*-template\\.xml"), FalseFileFilter.INSTANCE);

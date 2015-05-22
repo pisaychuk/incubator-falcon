@@ -28,6 +28,10 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.Select;
+import org.testng.Assert;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -68,6 +72,41 @@ public abstract class AbstractSearchPage extends Page {
             webElement.sendKeys(str);
         }
 
+    }
+
+    public static void clearAndSet(WebElement webElement, String val) {
+        webElement.clear();
+        webElement.sendKeys(val);
+    }
+
+    protected WebElement findElementByNgModel(String ngModelName) {
+        // trying to get an xpath that looks like: "//*[@ng-model='UIModel.retry.policy']"
+        final String xpathExpression = "//*[@ng-model='" + ngModelName + "']";
+        final List<WebElement> webElements = driver.findElements(By.xpath(xpathExpression));
+        Assert.assertEquals(webElements.size(), 1, "Element is not unique.");
+        return webElements.get(0);
+    }
+
+    protected void selectNgModelByVisibleText(String ngModelName, String visibleText) {
+        final WebElement webElement = findElementByNgModel(ngModelName);
+        final Select select = new Select(webElement);
+        select.selectByVisibleText(visibleText);
+    }
+
+    protected void clearAndSetByNgModel(String ngModelName, String value) {
+        final WebElement webElement = findElementByNgModel(ngModelName);
+        clearAndSet(webElement, value);
+    }
+
+    protected void clickById(String id) {
+        final List<WebElement> webElements = driver.findElements(By.id(id));
+        Assert.assertEquals(webElements.size(), 1, "Element is not unique.");
+        webElements.get(0).click();
+    }
+
+    protected void clickByNgModel(String ngModelName) {
+        final WebElement webElement = findElementByNgModel(ngModelName);
+        webElement.click();
     }
 
     protected void waitForAngularToFinish() {

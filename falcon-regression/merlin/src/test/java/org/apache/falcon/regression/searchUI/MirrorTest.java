@@ -50,7 +50,7 @@ public class MirrorTest extends BaseUITestClass {
     private final String baseTestDir = cleanAndGetTestDir();
     private final String hdfsSrcDir = cleanAndGetTestDir() + "/hdfsSrcDir";
     private final String hdfsTgtDir = cleanAndGetTestDir() + "/hdfsTgtDir";
-    private static final String DB_NAME = "hdr_sdb1";
+    private static final String DB_NAME = "MirrorTest";
     private final ColoHelper cluster = servers.get(0);
     private final ColoHelper cluster2 = servers.get(1);
     private final FileSystem clusterFS = serverFS.get(0);
@@ -63,8 +63,6 @@ public class MirrorTest extends BaseUITestClass {
     Connection connection;
     Connection connection2;
     MirrorWizardPage mirrorPage;
-    ClusterMerlin srcCluster;
-    ClusterMerlin tgtCluster;
     /**
      * Submit one cluster, 2 feeds and 10 processes with 1 to 10 tags (1st process has 1 tag,
      * 2nd - two tags.. 10th has 10 tags).
@@ -85,8 +83,8 @@ public class MirrorTest extends BaseUITestClass {
         bundles[1] = new Bundle(bundles[0], cluster2);
         bundles[0].generateUniqueBundle(this);
         bundles[1].generateUniqueBundle(this);
-        srcCluster = bundles[0].getClusterElement();
-        tgtCluster = bundles[1].getClusterElement();
+        final ClusterMerlin srcCluster = bundles[0].getClusterElement();
+        final ClusterMerlin tgtCluster = bundles[1].getClusterElement();
         Bundle.submitCluster(bundles[0], bundles[1]);
 
         recipeMerlin = RecipeMerlin.readFromDir("HiveDrRecipe",
@@ -97,7 +95,7 @@ public class MirrorTest extends BaseUITestClass {
             .withFrequency(new Frequency("5", Frequency.TimeUnit.minutes))
             .withValidity(TimeUtil.getTimeWrtSystemTime(-5), TimeUtil.getTimeWrtSystemTime(5));
         recipeMerlin.setUniqueName(this.getClass().getSimpleName());
-
+        recipeMerlin.withSourceDb(DB_NAME);
 /*
         connection = cluster.getClusterHelper().getHiveJdbcConnection();
         runSql(connection, "drop database if exists hdr_sdb1 cascade");
@@ -138,13 +136,35 @@ public class MirrorTest extends BaseUITestClass {
      */
     @Test
     public void testHiveDefaultScenario() throws Exception {
+        recipeMerlin.withSourceDb(DB_NAME);
+        final ClusterMerlin srcCluster = recipeMerlin.getSrcCluster();
+        final ClusterMerlin tgtCluster = recipeMerlin.getTgtCluster();
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
+
         mirrorPage.setName(recipeMerlin.getName());
         mirrorPage.setTags(recipeMerlin.getTags());
+        mirrorPage.setMirrorType(recipeMerlin.getRecipeOperation());
+
         mirrorPage.setSrcName(srcCluster.getName());
-        mirrorPage.setSrcPath(hdfsSrcDir);
+        mirrorPage.setReplication(recipeMerlin);
+        //mirrorPage.setSrcPath(hdfsSrcDir);
         mirrorPage.setTgtName(tgtCluster.getName());
-        mirrorPage.setTgtPath(hdfsTgtDir);
+        //mirrorPage.setTgtPath(hdfsTgtDir);
+        mirrorPage.setRunLocation(MirrorWizardPage.RunLocation.RUN_AT_SOURCE);
+        mirrorPage.setStartTime(recipeMerlin.getValidityStart());
+        mirrorPage.setEndTime(recipeMerlin.getValidityEnd());
+        mirrorPage.toggleAdvancedOptions();
+        mirrorPage.setFrequency(recipeMerlin.getFrequency());
+        mirrorPage.setDistCpMaxMaps(recipeMerlin.getDistCpMaxMaps());
+        mirrorPage.setReplicationMaxMaps(recipeMerlin.getReplicationMaxMaps());
+        mirrorPage.setMaxEvents(recipeMerlin.getMaxEvents());
+        mirrorPage.setMaxBandwidth(recipeMerlin.getMapBandwidth());
+        mirrorPage.setSourceInfo(recipeMerlin.getSrcCluster());
+        mirrorPage.setTargetInfo(recipeMerlin.getTgtCluster());
+        mirrorPage.setRetry(recipeMerlin.getRetry());
+        mirrorPage.setAcl(recipeMerlin.getAcl());
+        mirrorPage.next();
+        mirrorPage.save();
     }
 
 }

@@ -21,9 +21,11 @@ package org.apache.falcon.regression.searchUI;
 import org.apache.falcon.cli.FalconCLI;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.regression.Entities.ClusterMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.Entities.RecipeMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
+import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.testHelper.BaseUITestClass;
@@ -165,6 +167,10 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.setAcl(recipeMerlin.getAcl());
         mirrorPage.next();
         mirrorPage.save();
+        //hack to get status for the recipe
+        final ProcessMerlin processObject = bundles[0].getProcessObject();
+        processObject.setName(recipeMerlin.getName());
+        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(processObject.toString()));
     }
 
 }

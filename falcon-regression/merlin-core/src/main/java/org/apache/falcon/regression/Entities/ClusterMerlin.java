@@ -299,16 +299,4 @@ public class ClusterMerlin extends Cluster {
         return EntityType.CLUSTER;
     }
 
-    public String getInterfaceEndpoint(final Interfacetype interfaceType) {
-        String value = null;
-        for (Interface anInterface : getInterfaces().getInterfaces()) {
-            if (anInterface.getType() == interfaceType) {
-                value = anInterface.getEndpoint();
-            }
-        }
-        LOGGER.info("Cluster: " + getName() + " interfaceType: " + interfaceType
-            + " value:" + value);
-        return value;
-    }
-
 }

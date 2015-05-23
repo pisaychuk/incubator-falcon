@@ -180,7 +180,7 @@ public class RecipeMerlin {
     }
 
     public String getMapBandwidth() {
-        return properties.getString("mapBandwidth");
+        return properties.getString("distcpMapBandwidth");
     }
 
     public Retry getRetry() {

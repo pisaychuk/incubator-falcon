@@ -216,7 +216,8 @@ public class MirrorWizardPage extends AbstractSearchPage {
     }
 
     public void next() {
-        driver.findElement(By.xpath("//button[contains(.,'Next')]"));
+        final WebElement nextButton = driver.findElement(By.xpath("//button[contains(.,'Next')]"));
+        nextButton.click();
     }
 
     public void cancel() {
@@ -224,7 +225,9 @@ public class MirrorWizardPage extends AbstractSearchPage {
     }
 
     public void save() {
-        driver.findElement(By.xpath("//button[contains(.,'Save')]"));
+        final WebElement saveButton = driver.findElement(By.xpath("//button[contains(.,'Save')]"));
+        UIAssert.assertDisplayed(saveButton, "Save button in not displayed.");
+        saveButton.click();
     }
 
 }

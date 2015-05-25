@@ -30,6 +30,9 @@ import org.apache.falcon.cli.FalconCLI;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
+import org.apache.falcon.entity.v0.process.ACL;
+import org.apache.falcon.entity.v0.process.PolicyType;
+import org.apache.falcon.entity.v0.process.Retry;
 import org.apache.falcon.regression.core.util.Config;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.log4j.Logger;
@@ -39,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +58,27 @@ public class RecipeMerlin {
     private String template;
     private AbstractFileConfiguration properties;
     private String workflow;
+    private ClusterMerlin recipeCluster;
+    private ClusterMerlin srcCluster;
+    private ClusterMerlin tgtCluster;
+
+
+    public ClusterMerlin getRecipeCluster() {
+        return recipeCluster;
+    }
+
+    public ClusterMerlin getSrcCluster() {
+        return srcCluster;
+    }
+
+    public ClusterMerlin getTgtCluster() {
+        return tgtCluster;
+    }
+
+    public FalconCLI.RecipeOperation getRecipeOperation() {
+        return recipeOperation;
+    }
+
     private FalconCLI.RecipeOperation recipeOperation;
 
     private RecipeMerlin() {
@@ -67,9 +92,17 @@ public class RecipeMerlin {
         properties.setProperty(RECIPE_NAME_KEY, prefix + UUID.randomUUID().toString().split("-")[0]);
     }
 
+    public String getSourceDb() {
+        return properties.getString("sourceDatabase");
+    }
+
     public RecipeMerlin withSourceDb(final String srcDatabase) {
         properties.setProperty("sourceDatabase", srcDatabase);
         return this;
+    }
+
+    public String getSourceTable() {
+        return properties.getString("sourceTable");
     }
 
     public RecipeMerlin withSourceTable(final String tgtTable) {
@@ -78,30 +111,33 @@ public class RecipeMerlin {
     }
 
     public RecipeMerlin withSourceCluster(ClusterMerlin srcCluster) {
+        this.srcCluster = srcCluster;
         properties.setProperty("sourceCluster", srcCluster.getName());
         properties.setProperty("sourceMetastoreUri", srcCluster.getProperty("hive.metastore.uris"));
         properties.setProperty("sourceHiveServer2Uri", srcCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("sourceServicePrincipal",
         //    srcCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("sourceStagingPath", srcCluster.getLocation("STAGING"));
+        properties.setProperty("sourceStagingPath", srcCluster.getLocation("staging"));
         properties.setProperty("sourceNN", srcCluster.getInterfaceEndpoint(Interfacetype.WRITE));
         properties.setProperty("sourceRM", srcCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
     }
 
     public RecipeMerlin withTargetCluster(ClusterMerlin tgtCluster) {
+        this.tgtCluster = tgtCluster;
         properties.setProperty("targetCluster", tgtCluster.getName());
         properties.setProperty("targetMetastoreUri", tgtCluster.getProperty("hive.metastore.uris"));
         properties.setProperty("targetHiveServer2Uri", tgtCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("targetServicePrincipal",
         //    tgtCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("targetStagingPath", tgtCluster.getLocation("STAGING"));
+        properties.setProperty("targetStagingPath", tgtCluster.getLocation("staging"));
         properties.setProperty("targetNN", tgtCluster.getInterfaceEndpoint(Interfacetype.WRITE));
         properties.setProperty("targetRM", tgtCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
     }
 
     public RecipeMerlin withRecipeCluster(ClusterMerlin recipeCluster) {
+        this.recipeCluster = recipeCluster;
         properties.setProperty("falcon.recipe.cluster.name", recipeCluster.getName());
         properties.setProperty("falcon.recipe.cluster.hdfs.writeEndPoint",
             recipeCluster.getInterfaceEndpoint(Interfacetype.WRITE));
@@ -114,10 +150,59 @@ public class RecipeMerlin {
         return this;
     }
 
+    public String getValidityStart() {
+        return properties.getString("falcon.recipe.cluster.validity.start");
+    }
+
+    public String getValidityEnd() {
+        return properties.getString("falcon.recipe.cluster.validity.end");
+    }
+
     public RecipeMerlin withFrequency(final Frequency frequency) {
-        properties.setProperty("falcon.recipe.process.frequency", frequency);
+        properties.setProperty("falcon.recipe.process.frequency", frequency.toString());
         return this;
     }
+
+    public Frequency getFrequency() {
+        return Frequency.fromString(properties.getString("falcon.recipe.process.frequency"));
+    }
+
+    public String getMaxEvents() {
+        return properties.getString("maxEvents");
+    }
+
+    public String getReplicationMaxMaps() {
+        return properties.getString("replicationMaxMaps");
+    }
+
+    public String getDistCpMaxMaps() {
+        return properties.getString("distcpMaxMaps");
+    }
+
+    public String getMapBandwidth() {
+        return properties.getString("distcpMapBandwidth");
+    }
+
+    public Retry getRetry() {
+        final int retryAttempts = properties.getInt("falcon.recipe.retry.attempts");
+        final String retryDelay = properties.getString("falcon.recipe.retry.delay");
+        final String retryPolicy = properties.getString("falcon.recipe.retry.policy");
+
+        Retry retry = new Retry();
+        retry.setAttempts(retryAttempts);
+        retry.setDelay(Frequency.fromString(retryDelay));
+        retry.setPolicy(PolicyType.fromValue(retryPolicy));
+        return retry;
+    }
+
+    public ACL getAcl() {
+        ACL acl = new ACL();
+        acl.setOwner(properties.getString("falcon.recipe.acl.owner"));
+        acl.setGroup(properties.getString("falcon.recipe.acl.group"));
+        acl.setPermission(properties.getString("falcon.recipe.acl.permission"));
+        return acl;
+    }
+
 
     /**
      * Read recipe from a given directory. Expecting that recipe will follow these conventions.
@@ -232,6 +317,24 @@ public class RecipeMerlin {
         Collections.addAll(cmd, "recipe", "-name", getName(),
             "-operation", recipeOperation.toString());
         return cmd;
+    }
+
+    /**
+     * Set tags for recipe
+     */
+    public List<String> getTags() {
+        final String tagsStr = properties.getString("falcon.recipe.tags");
+        if (StringUtils.isEmpty(tagsStr)) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(tagsStr.split(","));
+    }
+
+    /**
+     * Set tags for recipe
+     */
+    public void setTags(List<String> tags) {
+        properties.setProperty("falcon.recipe.tags", StringUtils.join(tags, ','));
     }
 
 }

@@ -36,7 +36,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.FindBys;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /** Page object of the Mirror creation page. */
 public class MirrorWizardPage extends AbstractSearchPage {
@@ -112,21 +114,6 @@ public class MirrorWizardPage extends AbstractSearchPage {
         }
     }
 
-    public enum RunLocation {
-        RUN_AT_SOURCE,
-        RUN_AT_TARGET
-    }
-
-    public void setRunLocation(RunLocation runLocation) {
-        switch (runLocation) {
-        case RUN_AT_SOURCE:
-            clickById("runJobOnSourceRadio");
-            break;
-        case RUN_AT_TARGET:
-            clickById("runJobOnTargetRadio");
-            break;
-        }
-    }
 
     public void setStartTime(String validityStartStr) {
         final DateTime startDate = TimeUtil.oozieDateToDate(validityStartStr);
@@ -228,6 +215,81 @@ public class MirrorWizardPage extends AbstractSearchPage {
         final WebElement saveButton = driver.findElement(By.xpath("//button[contains(.,'Save')]"));
         UIAssert.assertDisplayed(saveButton, "Save button in not displayed.");
         saveButton.click();
+    }
+
+    public ClusterBlock getSourceBlock() {
+        return new ClusterBlock("Source");
+    }
+
+    public ClusterBlock getTargetBlock() {
+        return new ClusterBlock("Target");
+    }
+
+    /**
+     * Block of source or target cluster with parameters.
+     */
+    public final class ClusterBlock {
+        private final WebElement mainBlock;
+        private final WebElement runHereButton;
+
+        private ClusterBlock(String type) {
+            mainBlock = driver.findElement(By.xpath("//h3[contains(.,'" + type + "')]/.."));
+            runHereButton = mainBlock.findElement(By.id("runJobOn" + type + "Radio"));
+        }
+
+        public Set<Location> getAvailableLocationTypes() {
+            List<WebElement> inputs = getLocationBox().findElements(By.xpath(".//input"));
+            Set<Location> result = EnumSet.noneOf(Location.class);
+            for (WebElement input : inputs) {
+                result.add(Location.getByInput(input));
+            }
+            return result;
+        }
+
+        public Location getSelectedLocationType() {
+            WebElement selected = getLocationBox()
+                .findElement(By.xpath("//input[contains(@class,'ng-valid-parse')]"));
+            return Location.getByInput(selected);
+        }
+
+        public void setLocationType(Location type) {
+            getLocationBox().findElement(By.xpath(
+                String.format(".//input[translate(@value,'azures','AZURES')='%s']", type.toString()))).click();
+        }
+
+        public void selectRunHere() {
+            runHereButton.click();
+        }
+
+        public boolean isRunHereSelected() {
+            return runHereButton.getAttribute("class").contains("ng-valid-parse");
+        }
+
+        public boolean isRunHereAvailable() {
+            return runHereButton.getAttribute("disabled") == null;
+        }
+
+
+        private WebElement getLocationBox() {
+            return mainBlock.findElement(By.className("locationBox"));
+        }
+
+
+
+    }
+
+    /**
+     * Types of source/target location.
+     */
+    public enum Location {
+        HDFS,
+        AZURE,
+        S3;
+
+        private static Location getByInput(WebElement input) {
+            return Location.valueOf(input.getAttribute("value").trim().toUpperCase());
+        }
+
     }
 
 }

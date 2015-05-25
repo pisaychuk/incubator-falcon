@@ -152,7 +152,7 @@ public class MirrorTest extends BaseUITestClass {
         //mirrorPage.setSrcPath(hdfsSrcDir);
         mirrorPage.setTgtName(tgtCluster.getName());
         //mirrorPage.setTgtPath(hdfsTgtDir);
-        mirrorPage.setRunLocation(MirrorWizardPage.RunLocation.RUN_AT_SOURCE);
+        mirrorPage.getSourceBlock().selectRunHere();
         mirrorPage.setStartTime(recipeMerlin.getValidityStart());
         mirrorPage.setEndTime(recipeMerlin.getValidityEnd());
         mirrorPage.toggleAdvancedOptions();

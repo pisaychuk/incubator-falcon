@@ -233,7 +233,7 @@ public class PageHeader {
     }
 
     private WebElement getLogoutButton() {
-        return loginHeaderBox.findElement(By.tagName("button"));
+        return loginHeaderBox.findElements(By.tagName("button")).get(1);
     }
 
     public LoginPage doLogout() {

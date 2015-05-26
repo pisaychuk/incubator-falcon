@@ -176,6 +176,23 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
             "Clusters available via API are not the same as on Target for HIVE replication");
     }
 
+    @Test
+    public void testInvalidValidity() {
+        mirrorPage.setName(bundles[0].getProcessName());
+        String baseTestDir = cleanAndGetTestDir();
+        source.setPath(baseTestDir);
+        source.selectCluster(bundles[0].getClusterNames().get(0));
+        target.setPath(baseTestDir);
+        target.selectCluster(bundles[0].getClusterNames().get(0));
+
+        mirrorPage.setStartTime("2010-01-01T02:00Z");
+        mirrorPage.setEndTime("2010-01-01T01:00Z");
+        mirrorPage.next();
+        mirrorPage.save();
+        Assert.assertTrue(mirrorPage.getActiveAlertText().contains("should be before process end"),
+            "Warning about wrong Validity should be present");
+    }
+
     @AfterClass(alwaysRun = true)
     public void tearDownClass() {
         removeTestClassEntities();

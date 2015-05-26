@@ -60,13 +60,6 @@ public class MirrorWizardPage extends AbstractSearchPage {
         UIAssert.assertDisplayed(mirrorBox, "Mirror box");
     }
 
-    private WebElement getSrcPath() {
-        return driver.findElement(By.name("sourceClusterPathInput"));
-    }
-
-    private WebElement getTgtPath() {
-        return driver.findElement(By.name("targetClusterPathInput"));
-    }
 
     public void setName(String name) {
         clearAndSetByNgModel("UIModel.name", name);
@@ -87,23 +80,6 @@ public class MirrorWizardPage extends AbstractSearchPage {
         }
     }
 
-    public void setSrcName(String clusterName) {
-        selectNgModelByVisibleText("UIModel.source.cluster", clusterName);
-    }
-
-    public void setSrcPath(String srcPath) {
-        final WebElement srcPathElement = getSrcPath();
-        clearAndSet(srcPathElement, srcPath);
-    }
-
-    public void setTgtName(String clusterName) {
-        selectNgModelByVisibleText("UIModel.target.cluster", clusterName);
-    }
-
-    public void setTgtPath(String srcPath) {
-        final WebElement tgtPathElement = getTgtPath();
-        clearAndSet(tgtPathElement, srcPath);
-    }
 
     public void setReplication(RecipeMerlin recipeMerlin) {
         if (StringUtils.isNotEmpty(recipeMerlin.getSourceTable())) {
@@ -233,8 +209,10 @@ public class MirrorWizardPage extends AbstractSearchPage {
     public final class ClusterBlock {
         private final WebElement mainBlock;
         private final WebElement runHereButton;
+        private final String blockType;
 
         private ClusterBlock(String type) {
+            this.blockType = type;
             mainBlock = driver.findElement(By.xpath("//h3[contains(.,'" + type + "')]/.."));
             runHereButton = mainBlock.findElement(By.id("runJobOn" + type + "Radio"));
         }
@@ -275,6 +253,15 @@ public class MirrorWizardPage extends AbstractSearchPage {
             return clusters;
         }
 
+        public void selectCluster(String clusterName) {
+            selectNgModelByVisibleText("UIModel." + blockType.toLowerCase() + ".cluster", clusterName);
+        }
+
+        public void setPath(String path) {
+            final WebElement srcPathElement = getPath();
+            clearAndSet(srcPathElement, path);
+        }
+
         public boolean isRunHereSelected() {
             return runHereButton.getAttribute("class").contains("ng-valid-parse");
         }
@@ -286,6 +273,10 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
         private WebElement getLocationBox() {
             return mainBlock.findElement(By.className("locationBox"));
+        }
+
+        private WebElement getPath() {
+            return mainBlock.findElement(By.name(blockType.toLowerCase() + "ClusterPathInput"));
         }
 
 

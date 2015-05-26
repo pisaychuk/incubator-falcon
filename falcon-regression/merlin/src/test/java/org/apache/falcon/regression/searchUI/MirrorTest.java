@@ -147,10 +147,10 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.setTags(recipeMerlin.getTags());
         mirrorPage.setMirrorType(recipeMerlin.getRecipeOperation());
 
-        mirrorPage.setSrcName(srcCluster.getName());
+        mirrorPage.getSourceBlock().selectCluster(srcCluster.getName());
         mirrorPage.setReplication(recipeMerlin);
         //mirrorPage.setSrcPath(hdfsSrcDir);
-        mirrorPage.setTgtName(tgtCluster.getName());
+        mirrorPage.getTargetBlock().selectCluster(tgtCluster.getName());
         //mirrorPage.setTgtPath(hdfsTgtDir);
         mirrorPage.getSourceBlock().selectRunHere();
         mirrorPage.setStartTime(recipeMerlin.getValidityStart());

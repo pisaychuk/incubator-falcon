@@ -35,10 +35,12 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.FindBys;
+import org.openqa.selenium.support.ui.Select;
 
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /** Page object of the Mirror creation page. */
 public class MirrorWizardPage extends AbstractSearchPage {
@@ -259,6 +261,18 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
         public void selectRunHere() {
             runHereButton.click();
+        }
+
+        public Set<String> getAvailableClusters() {
+            Select select = new Select(mainBlock.findElement(By.tagName("select")));
+            Set<String> clusters = new TreeSet<>();
+            for (WebElement option : select.getOptions()) {
+                String cluster = option.getText();
+                if (!cluster.equals("-Select cluster-")) {
+                    clusters.add(cluster);
+                }
+            }
+            return clusters;
         }
 
         public boolean isRunHereSelected() {

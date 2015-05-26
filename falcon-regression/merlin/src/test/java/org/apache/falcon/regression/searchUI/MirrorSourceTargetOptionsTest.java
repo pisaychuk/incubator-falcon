@@ -19,6 +19,7 @@
 package org.apache.falcon.regression.searchUI;
 
 import org.apache.falcon.cli.FalconCLI;
+import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -27,6 +28,7 @@ import org.apache.falcon.regression.ui.search.LoginPage;
 import org.apache.falcon.regression.ui.search.MirrorWizardPage;
 import org.apache.falcon.regression.ui.search.MirrorWizardPage.Location;
 import org.apache.falcon.regression.ui.search.SearchPage;
+import org.apache.falcon.resource.EntityList;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -34,12 +36,16 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.EnumSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /** UI tests for mirror creation. */
 public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
     private final ColoHelper cluster = servers.get(0);
     private SearchPage searchPage;
     private MirrorWizardPage mirrorPage;
+    private MirrorWizardPage.ClusterBlock source;
+    private MirrorWizardPage.ClusterBlock target;
 
     @BeforeClass(alwaysRun = true)
     public void setup() throws Exception {
@@ -53,17 +59,16 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
     }
 
     @BeforeMethod(alwaysRun = true)
-    public void submitEntities() throws Exception {
+    public void refreshMirrorPage() throws Exception {
         searchPage.refresh();
         mirrorPage = searchPage.getPageHeader().doCreateMirror();
+        source = mirrorPage.getSourceBlock();
+        target = mirrorPage.getTargetBlock();
     }
 
 
     @Test
     public void testExclusiveWhereToRunJob() {
-        MirrorWizardPage.ClusterBlock source = mirrorPage.getSourceBlock();
-        MirrorWizardPage.ClusterBlock target = mirrorPage.getTargetBlock();
-
         source.selectRunHere();
         target.selectRunHere();
         Assert.assertFalse(source.isRunHereSelected(), "'Run job here' shouldn't be selected on Source");
@@ -105,8 +110,6 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
 
     @Test
     public void testExclusiveFSOptions() {
-        MirrorWizardPage.ClusterBlock source = mirrorPage.getSourceBlock();
-        MirrorWizardPage.ClusterBlock target = mirrorPage.getTargetBlock();
         source.setLocationType(Location.HDFS);
         Assert.assertEquals(target.getAvailableLocationTypes(),
                 EnumSet.allOf(Location.class), "All target types should be available if source=HDFS");
@@ -133,6 +136,44 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
         target.setLocationType(Location.S3);
         Assert.assertEquals(source.getAvailableLocationTypes(),
                 EnumSet.of(Location.HDFS), "Only HDFS should be available as source if target=S3");
+    }
+
+    @Test
+    public void testClustersDropDownList() throws Exception {
+        //add more clusters
+        ClusterMerlin cluster = bundles[0].getClusterElement();
+        String clusterName = cluster.getName() + '-';
+        for (int i = 0; i < 5; i++) {
+            cluster.setName(clusterName + i);
+            prism.getClusterHelper().submitEntity(cluster.toString());
+        }
+        EntityList result =
+            prism.getClusterHelper().listAllEntities(null, null).getEntityList();
+        Assert.assertNotNull(result.getElements(),
+            "There should be more than 5 clusters in result");
+        Set<String> apiClusterNames = new TreeSet<>();
+        for (EntityList.EntityElement element : result.getElements()) {
+            apiClusterNames.add(element.name);
+        }
+
+        //refresh page to get new clusters on UI
+        refreshMirrorPage();
+
+        mirrorPage.setMirrorType(FalconCLI.RecipeOperation.HDFS_REPLICATION);
+        source.setLocationType(Location.HDFS);
+        target.setLocationType(Location.HDFS);
+
+        Assert.assertEquals(source.getAvailableClusters(), apiClusterNames,
+            "Clusters available via API are not the same as on Source for HDFS replication");
+        Assert.assertEquals(target.getAvailableClusters(), apiClusterNames,
+            "Clusters available via API are not the same as on Target for HDFS replication");
+
+        mirrorPage.setMirrorType(FalconCLI.RecipeOperation.HIVE_DISASTER_RECOVERY);
+
+        Assert.assertEquals(source.getAvailableClusters(), apiClusterNames,
+            "Clusters available via API are not the same as on Source for HIVE replication");
+        Assert.assertEquals(target.getAvailableClusters(), apiClusterNames,
+            "Clusters available via API are not the same as on Target for HIVE replication");
     }
 
     @AfterClass(alwaysRun = true)

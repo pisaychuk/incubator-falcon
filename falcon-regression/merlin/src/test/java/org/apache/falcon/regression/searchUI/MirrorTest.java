@@ -130,6 +130,54 @@ public class MirrorTest extends BaseUITestClass {
 
     /**
      * Create DB on source with 1 table.
+     * Select Dataset type as FileSystem. Select source and target as hdfs.
+     * Populate all fields (name, source, target, validity etc.) with correct and existing values.
+     * Click next. Create mirror.
+     * Using get entity definition API check that entity has been created.
+     * @throws Exception
+     */
+    @Test
+    public void testHdfsDefaultScenario() throws Exception {
+        final ClusterMerlin srcCluster = bundles[0].getClusterElement();
+        final ClusterMerlin tgtCluster = bundles[1].getClusterElement();
+        RecipeMerlin hdfsRecipe = RecipeMerlin.readFromDir("HdfsRecipe",
+            FalconCLI.RecipeOperation.HDFS_REPLICATION)
+            .withRecipeCluster(srcCluster);
+        hdfsRecipe.withSourceCluster(srcCluster)
+            .withTargetCluster(tgtCluster)
+            .withFrequency(new Frequency("5", Frequency.TimeUnit.minutes))
+            .withValidity(TimeUtil.getTimeWrtSystemTime(-5), TimeUtil.getTimeWrtSystemTime(5));
+        hdfsRecipe.setUniqueName(this.getClass().getSimpleName());
+        hdfsRecipe.withSourceDir(hdfsSrcDir).withTargetDir(hdfsTgtDir);
+        hdfsRecipe.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
+
+        mirrorPage.setName(hdfsRecipe.getName());
+        mirrorPage.setTags(hdfsRecipe.getTags());
+        mirrorPage.setMirrorType(hdfsRecipe.getRecipeOperation());
+
+        mirrorPage.getSourceBlock().selectCluster(srcCluster.getName());
+        mirrorPage.getSourceBlock().setPath(hdfsRecipe.getSourceDir());
+        mirrorPage.getTargetBlock().selectCluster(tgtCluster.getName());
+        mirrorPage.getTargetBlock().setPath(hdfsRecipe.getTargetDir());
+        mirrorPage.getSourceBlock().selectRunHere();
+        mirrorPage.setStartTime(hdfsRecipe.getValidityStart());
+        mirrorPage.setEndTime(hdfsRecipe.getValidityEnd());
+        mirrorPage.toggleAdvancedOptions();
+        mirrorPage.setFrequency(hdfsRecipe.getFrequency());
+        mirrorPage.setHdfsDistCpMaxMaps(hdfsRecipe.getDistCpMaxMaps());
+        mirrorPage.setHdfsMaxBandwidth(hdfsRecipe.getDistCpMaxMaps());
+        mirrorPage.setRetry(hdfsRecipe.getRetry());
+        mirrorPage.setAcl(hdfsRecipe.getAcl());
+        mirrorPage.next();
+        mirrorPage.save();
+        //hack to get status for the recipe
+        final ProcessMerlin processObject = bundles[0].getProcessObject();
+        processObject.setName(hdfsRecipe.getName());
+        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(processObject.toString()));
+    }
+
+    /**
+     * Create DB on source with 1 table.
      * Select Dataset type as Hive.
      * Populate all fields (name, source, target, validity etc.) with correct and existing values.
      * Click next. Create mirror.
@@ -148,7 +196,7 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.setMirrorType(recipeMerlin.getRecipeOperation());
 
         mirrorPage.getSourceBlock().selectCluster(srcCluster.getName());
-        mirrorPage.setReplication(recipeMerlin);
+        mirrorPage.setHiveReplication(recipeMerlin);
         //mirrorPage.setSrcPath(hdfsSrcDir);
         mirrorPage.getTargetBlock().selectCluster(tgtCluster.getName());
         //mirrorPage.setTgtPath(hdfsTgtDir);
@@ -157,10 +205,10 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.setEndTime(recipeMerlin.getValidityEnd());
         mirrorPage.toggleAdvancedOptions();
         mirrorPage.setFrequency(recipeMerlin.getFrequency());
-        mirrorPage.setDistCpMaxMaps(recipeMerlin.getDistCpMaxMaps());
-        mirrorPage.setReplicationMaxMaps(recipeMerlin.getReplicationMaxMaps());
+        mirrorPage.setHiveDistCpMaxMaps(recipeMerlin.getDistCpMaxMaps());
+        mirrorPage.setHiveReplicationMaxMaps(recipeMerlin.getReplicationMaxMaps());
         mirrorPage.setMaxEvents(recipeMerlin.getMaxEvents());
-        mirrorPage.setMaxBandwidth(recipeMerlin.getMapBandwidth());
+        mirrorPage.setHiveMaxBandwidth(recipeMerlin.getMapBandwidth());
         mirrorPage.setSourceInfo(recipeMerlin.getSrcCluster());
         mirrorPage.setTargetInfo(recipeMerlin.getTgtCluster());
         mirrorPage.setRetry(recipeMerlin.getRetry());

@@ -83,7 +83,7 @@ public abstract class AbstractSearchPage extends Page {
         // trying to get an xpath that looks like: "//*[@ng-model='UIModel.retry.policy']"
         final String xpathExpression = "//*[@ng-model='" + ngModelName + "']";
         final List<WebElement> webElements = driver.findElements(By.xpath(xpathExpression));
-        Assert.assertEquals(webElements.size(), 1, "Element is not unique.");
+        Assert.assertEquals(webElements.size(), 1, "Element is not unique for ng-model: " + ngModelName);
         return webElements.get(0);
     }
 

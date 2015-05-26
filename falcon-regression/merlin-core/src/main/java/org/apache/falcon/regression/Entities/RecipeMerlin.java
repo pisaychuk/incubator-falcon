@@ -92,6 +92,24 @@ public class RecipeMerlin {
         properties.setProperty(RECIPE_NAME_KEY, prefix + UUID.randomUUID().toString().split("-")[0]);
     }
 
+    public String getSourceDir() {
+        return properties.getString("drSourceDir");
+    }
+
+    public RecipeMerlin withSourceDir(final String srcDir) {
+        properties.setProperty("drSourceDir", srcDir);
+        return this;
+    }
+
+    public String getTargetDir() {
+        return properties.getString("drTargetDir");
+    }
+
+    public RecipeMerlin withTargetDir(final String tgtDir) {
+        properties.setProperty("drTargetDir", tgtDir);
+        return this;
+    }
+
     public String getSourceDb() {
         return properties.getString("sourceDatabase");
     }
@@ -313,7 +331,7 @@ public class RecipeMerlin {
      */
     public List<String> getSubmissionCommand() {
         write();
-        final List<String> cmd = new ArrayList<String>();
+        final List<String> cmd = new ArrayList<>();
         Collections.addAll(cmd, "recipe", "-name", getName(),
             "-operation", recipeOperation.toString());
         return cmd;

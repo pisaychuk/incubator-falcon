@@ -137,7 +137,7 @@ public class ClusterMerlin extends Cluster {
     public String getLocation(final String locationType) {
         String value = null;
         for (Location location : getLocations().getLocations()) {
-            if (location.getName().name().trim().toLowerCase().equals(locationType.trim().toLowerCase())) {
+            if (location.getName().name().trim().equalsIgnoreCase(locationType.trim().toLowerCase())) {
                 value = location.getPath();
             }
         }

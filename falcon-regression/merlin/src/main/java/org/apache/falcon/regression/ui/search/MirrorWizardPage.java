@@ -81,7 +81,7 @@ public class MirrorWizardPage extends AbstractSearchPage {
     }
 
 
-    public void setReplication(RecipeMerlin recipeMerlin) {
+    public void setHiveReplication(RecipeMerlin recipeMerlin) {
         if (StringUtils.isNotEmpty(recipeMerlin.getSourceTable())) {
             clickById("targetHIVETablesRadio");
             clearAndSetByNgModel("UIModel.source.hiveDatabase", recipeMerlin.getSourceDb());
@@ -130,18 +130,26 @@ public class MirrorWizardPage extends AbstractSearchPage {
         advanceOption.click();
     }
 
-
     public void setFrequency(Frequency frequency) {
-        clearAndSetByNgModel("UIModel.frequency.number", frequency.getFrequencyAsInt() + "");
+        clearAndSetByNgModel("UIModel.frequency.number", frequency.getFrequency());
         selectNgModelByVisibleText("UIModel.frequency.unit", frequency.getTimeUnit().name().toLowerCase());
     }
 
-    public void setDistCpMaxMaps(String distCpMaxMaps) {
+    public void setHdfsDistCpMaxMaps(String distCpMaxMaps) {
+        clearAndSetByNgModel("UIModel.allocation.hdfs.maxMaps", distCpMaxMaps);
+    }
+
+
+    public void setHdfsMaxBandwidth(String replicationMaxMaps) {
+        clearAndSetByNgModel("UIModel.allocation.hdfs.maxBandwidth", replicationMaxMaps);
+    }
+
+    public void setHiveDistCpMaxMaps(String distCpMaxMaps) {
         clearAndSetByNgModel("UIModel.allocation.hive.maxMapsDistcp", distCpMaxMaps);
     }
 
 
-    public void setReplicationMaxMaps(String replicationMaxMaps) {
+    public void setHiveReplicationMaxMaps(String replicationMaxMaps) {
         clearAndSetByNgModel("UIModel.allocation.hive.maxMapsMirror", replicationMaxMaps);
     }
 
@@ -149,7 +157,7 @@ public class MirrorWizardPage extends AbstractSearchPage {
         clearAndSetByNgModel("UIModel.allocation.hive.maxMapsEvents", maxEvents);
     }
 
-    public void setMaxBandwidth(String maxBandWidth) {
+    public void setHiveMaxBandwidth(String maxBandWidth) {
         clearAndSetByNgModel("UIModel.allocation.hive.maxBandwidth", maxBandWidth);
     }
 
@@ -168,9 +176,9 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
     public void setRetry(Retry retry) {
         selectNgModelByVisibleText("UIModel.retry.policy", retry.getPolicy().toString().toUpperCase());
-        clearAndSetByNgModel("UIModel.retry.delay.number", retry.getDelay().getFrequencyAsInt() + "");
+        clearAndSetByNgModel("UIModel.retry.delay.number", retry.getDelay().getFrequency());
         selectNgModelByVisibleText("UIModel.retry.delay.unit", retry.getDelay().getTimeUnit().name().toLowerCase());
-        clearAndSetByNgModel("UIModel.retry.attempts", retry.getAttempts() + "");
+        clearAndSetByNgModel("UIModel.retry.attempts", String.valueOf(retry.getAttempts()));
     }
 
 
@@ -193,6 +201,7 @@ public class MirrorWizardPage extends AbstractSearchPage {
         final WebElement saveButton = driver.findElement(By.xpath("//button[contains(.,'Save')]"));
         UIAssert.assertDisplayed(saveButton, "Save button in not displayed.");
         saveButton.click();
+        waitForAngularToFinish();
     }
 
     public ClusterBlock getSourceBlock() {

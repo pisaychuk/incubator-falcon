@@ -31,6 +31,9 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.Select;
 import org.testng.Assert;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.util.List;
 
 
@@ -108,6 +111,17 @@ public abstract class AbstractSearchPage extends Page {
         final WebElement webElement = findElementByNgModel(ngModelName);
         webElement.click();
     }
+
+    // Utility method to get Dropdown Values
+    public List<String> getDropdownValues(Select element){
+        List<WebElement> allOptions = element.getOptions();
+        List<String> values = new ArrayList<>();
+        for (WebElement option:allOptions){
+            values.add(option.getText());
+        }
+        return values;
+    }
+
 
     protected void waitForAngularToFinish() {
         final String javaScript = "return (window.angular != null) && "

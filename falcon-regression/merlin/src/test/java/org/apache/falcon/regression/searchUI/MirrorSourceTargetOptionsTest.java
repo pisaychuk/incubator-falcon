@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /** UI tests for mirror creation. */
+@Test(groups = "search-ui")
 public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
     private final ColoHelper cluster = servers.get(0);
     private SearchPage searchPage;

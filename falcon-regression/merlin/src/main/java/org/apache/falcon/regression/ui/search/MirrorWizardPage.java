@@ -35,7 +35,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.FindBys;
-import org.openqa.selenium.support.ui.Select;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -284,13 +283,10 @@ public class MirrorWizardPage extends AbstractSearchPage {
         }
 
         public Set<String> getAvailableClusters() {
-            Select select = new Select(mainBlock.findElement(By.tagName("select")));
+            List<WebElement> options = mainBlock.findElements(By.xpath(".//option[not(@disabled)]"));
             Set<String> clusters = new TreeSet<>();
-            for (WebElement option : select.getOptions()) {
-                String cluster = option.getText();
-                if (!cluster.equals("-Select cluster-")) {
-                    clusters.add(cluster);
-                }
+            for (WebElement option : options) {
+                clusters.add(option.getText());
             }
             return clusters;
         }

@@ -183,9 +183,9 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
 
     public void setAcl(ACL acl) {
-        clearAndSetByNgModel("UIModel.acl.owner", acl.getOwner());
-        clearAndSetByNgModel("UIModel.acl.group", acl.getGroup());
-        clearAndSetByNgModel("UIModel.acl.permissions", acl.getPermission());
+        clearAndSetSlowlyByNgModel("UIModel.acl.owner", acl.getOwner());
+        clearAndSetSlowlyByNgModel("UIModel.acl.group", acl.getGroup());
+        clearAndSetSlowlyByNgModel("UIModel.acl.permissions", acl.getPermission());
     }
 
     public void next() {
@@ -212,6 +212,39 @@ public class MirrorWizardPage extends AbstractSearchPage {
         return new ClusterBlock("Target");
     }
 
+    public void applyRecipe(RecipeMerlin recipe) {
+        final ClusterMerlin srcCluster = recipe.getSrcCluster();
+        final ClusterMerlin tgtCluster = recipe.getTgtCluster();
+        setName(recipe.getName());
+        setTags(recipe.getTags());
+        setMirrorType(recipe.getRecipeOperation());
+        getSourceBlock().selectCluster(srcCluster.getName());
+        getTargetBlock().selectCluster(tgtCluster.getName());
+        getSourceBlock().selectRunHere();
+        setStartTime(recipe.getValidityStart());
+        setEndTime(recipe.getValidityEnd());
+        toggleAdvancedOptions();
+        switch (recipe.getRecipeOperation()) {
+            case HDFS_REPLICATION:
+                getSourceBlock().setPath(recipe.getSourceDir());
+                getTargetBlock().setPath(recipe.getTargetDir());
+                setHdfsDistCpMaxMaps(recipe.getDistCpMaxMaps());
+                setHdfsMaxBandwidth(recipe.getDistCpMaxMaps());
+                break;
+            case HIVE_DISASTER_RECOVERY:
+                setHiveReplication(recipe);
+                setHiveDistCpMaxMaps(recipe.getDistCpMaxMaps());
+                setHiveReplicationMaxMaps(recipe.getReplicationMaxMaps());
+                setMaxEvents(recipe.getMaxEvents());
+                setHiveMaxBandwidth(recipe.getMapBandwidth());
+                setSourceInfo(recipe.getSrcCluster());
+                setTargetInfo(recipe.getTgtCluster());
+                break;
+        }
+        setFrequency(recipe.getFrequency());
+        setRetry(recipe.getRetry());
+        setAcl(recipe.getAcl());
+    }
     /**
      * Block of source or target cluster with parameters.
      */

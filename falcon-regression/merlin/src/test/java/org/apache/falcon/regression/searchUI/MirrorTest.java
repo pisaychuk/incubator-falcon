@@ -20,10 +20,12 @@ package org.apache.falcon.regression.searchUI;
 
 import org.apache.falcon.cli.FalconCLI;
 import org.apache.falcon.entity.v0.Frequency;
+import org.apache.falcon.entity.v0.process.ACL;
 import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.Entities.RecipeMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
+import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -39,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.xml.bind.JAXBException;
@@ -151,29 +154,12 @@ public class MirrorTest extends BaseUITestClass {
         hdfsRecipe.withSourceDir(hdfsSrcDir).withTargetDir(hdfsTgtDir);
         hdfsRecipe.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
 
-        mirrorPage.setName(hdfsRecipe.getName());
-        mirrorPage.setTags(hdfsRecipe.getTags());
-        mirrorPage.setMirrorType(hdfsRecipe.getRecipeOperation());
-
-        mirrorPage.getSourceBlock().selectCluster(srcCluster.getName());
-        mirrorPage.getSourceBlock().setPath(hdfsRecipe.getSourceDir());
-        mirrorPage.getTargetBlock().selectCluster(tgtCluster.getName());
-        mirrorPage.getTargetBlock().setPath(hdfsRecipe.getTargetDir());
-        mirrorPage.getSourceBlock().selectRunHere();
-        mirrorPage.setStartTime(hdfsRecipe.getValidityStart());
-        mirrorPage.setEndTime(hdfsRecipe.getValidityEnd());
-        mirrorPage.toggleAdvancedOptions();
-        mirrorPage.setFrequency(hdfsRecipe.getFrequency());
-        mirrorPage.setHdfsDistCpMaxMaps(hdfsRecipe.getDistCpMaxMaps());
-        mirrorPage.setHdfsMaxBandwidth(hdfsRecipe.getDistCpMaxMaps());
-        mirrorPage.setRetry(hdfsRecipe.getRetry());
-        mirrorPage.setAcl(hdfsRecipe.getAcl());
+        mirrorPage.applyRecipe(hdfsRecipe);
         mirrorPage.next();
         mirrorPage.save();
-        //hack to get status for the recipe
-        final ProcessMerlin processObject = bundles[0].getProcessObject();
-        processObject.setName(hdfsRecipe.getName());
-        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(processObject.toString()));
+
+        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
+            createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
     }
 
     /**
@@ -187,38 +173,59 @@ public class MirrorTest extends BaseUITestClass {
     @Test
     public void testHiveDefaultScenario() throws Exception {
         recipeMerlin.withSourceDb(DB_NAME);
-        final ClusterMerlin srcCluster = recipeMerlin.getSrcCluster();
-        final ClusterMerlin tgtCluster = recipeMerlin.getTgtCluster();
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
-
-        mirrorPage.setName(recipeMerlin.getName());
-        mirrorPage.setTags(recipeMerlin.getTags());
-        mirrorPage.setMirrorType(recipeMerlin.getRecipeOperation());
-
-        mirrorPage.getSourceBlock().selectCluster(srcCluster.getName());
-        mirrorPage.setHiveReplication(recipeMerlin);
-        //mirrorPage.setSrcPath(hdfsSrcDir);
-        mirrorPage.getTargetBlock().selectCluster(tgtCluster.getName());
-        //mirrorPage.setTgtPath(hdfsTgtDir);
-        mirrorPage.getSourceBlock().selectRunHere();
-        mirrorPage.setStartTime(recipeMerlin.getValidityStart());
-        mirrorPage.setEndTime(recipeMerlin.getValidityEnd());
-        mirrorPage.toggleAdvancedOptions();
-        mirrorPage.setFrequency(recipeMerlin.getFrequency());
-        mirrorPage.setHiveDistCpMaxMaps(recipeMerlin.getDistCpMaxMaps());
-        mirrorPage.setHiveReplicationMaxMaps(recipeMerlin.getReplicationMaxMaps());
-        mirrorPage.setMaxEvents(recipeMerlin.getMaxEvents());
-        mirrorPage.setHiveMaxBandwidth(recipeMerlin.getMapBandwidth());
-        mirrorPage.setSourceInfo(recipeMerlin.getSrcCluster());
-        mirrorPage.setTargetInfo(recipeMerlin.getTgtCluster());
-        mirrorPage.setRetry(recipeMerlin.getRetry());
-        mirrorPage.setAcl(recipeMerlin.getAcl());
+        mirrorPage.applyRecipe(recipeMerlin);
         mirrorPage.next();
         mirrorPage.save();
-        //hack to get status for the recipe
-        final ProcessMerlin processObject = bundles[0].getProcessObject();
-        processObject.setName(recipeMerlin.getName());
-        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(processObject.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
+            createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
     }
+
+    /**
+     * Test recipe with bad acls.
+     * Set owner/group as invalid string (utf-8, special chars, number).
+     * Check that user is not allowed to go to the next step and has been notified with an alert.
+     * Set permissions as 4digit number, negative, string, 000. Check the same.
+     */
+    @Test(dataProvider = "generateInvalidAcl")
+    public void testInvalidAcl(final ACL acl) {
+        recipeMerlin.withSourceDb(DB_NAME);
+        recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
+        mirrorPage.applyRecipe(recipeMerlin);
+        mirrorPage.setAcl(acl);
+        mirrorPage.next();
+    }
+
+    @DataProvider
+    private Object[][] generateInvalidAcl() {
+        final String goodUser = MerlinConstants.CURRENT_USER_NAME;
+        final String goodGroup = MerlinConstants.CURRENT_USER_GROUP;
+        final String goodPermission = "*";
+        return new Object[][]{
+            {createAcl("123", goodGroup, goodPermission)},
+        };
+    }
+
+    private ACL createAcl(final String owner, final String group, final String permission) {
+        final ACL acl = new ACL();
+        acl.setOwner(owner);
+        acl.setGroup(group);
+        acl.setPermission(permission);
+        return acl;
+    }
+
+
+    /**
+     * Hack to work with process corresponding to recipe
+     * @param processMerlin process merlin to be modified
+     *                      (ideally we want to get rid of this and use recipe to generate a fake process xml)
+     * @param recipe recipe object that need to be faked
+     * @return
+     */
+    private String createFakeProcessForRecipe(ProcessMerlin processMerlin, RecipeMerlin recipe) {
+        processMerlin.setName(recipe.getName());
+        return processMerlin.toString();
+    }
+
 
 }

@@ -82,6 +82,11 @@ public abstract class AbstractSearchPage extends Page {
         webElement.sendKeys(val);
     }
 
+    public static void clearAndSetSlowly(WebElement webElement, String val) {
+        webElement.clear();
+        sendKeysSlowly(webElement, val);
+    }
+
     protected WebElement findElementByNgModel(String ngModelName) {
         // trying to get an xpath that looks like: "//*[@ng-model='UIModel.retry.policy']"
         final String xpathExpression = "//*[@ng-model='" + ngModelName + "']";
@@ -99,6 +104,11 @@ public abstract class AbstractSearchPage extends Page {
     protected void clearAndSetByNgModel(String ngModelName, String value) {
         final WebElement webElement = findElementByNgModel(ngModelName);
         clearAndSet(webElement, value);
+    }
+
+    protected void clearAndSetSlowlyByNgModel(String ngModelName, String value) {
+        final WebElement webElement = findElementByNgModel(ngModelName);
+        clearAndSetSlowly(webElement, value);
     }
 
     protected void clickById(String id) {

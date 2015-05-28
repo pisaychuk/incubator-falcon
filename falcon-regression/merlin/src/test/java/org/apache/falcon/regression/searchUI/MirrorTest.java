@@ -30,18 +30,21 @@ import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.supportClasses.NotifyingAssert;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
+import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.testHelper.BaseUITestClass;
 import org.apache.falcon.regression.ui.search.LoginPage;
 import org.apache.falcon.regression.ui.search.MirrorWizardPage;
 import org.apache.falcon.regression.ui.search.SearchPage;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.xml.bind.JAXBException;
@@ -50,11 +53,14 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.util.Arrays;
 
+/** UI tests for Mirror Setup Wizard. */
+@Test(groups = "search-ui")
 public class MirrorTest extends BaseUITestClass {
     private static final Logger LOGGER = Logger.getLogger(MirrorTest.class);
     private final String baseTestDir = cleanAndGetTestDir();
-    private final String hdfsSrcDir = cleanAndGetTestDir() + "/hdfsSrcDir";
-    private final String hdfsTgtDir = cleanAndGetTestDir() + "/hdfsTgtDir";
+    private final String hdfsSrcDir = baseTestDir + "/hdfsSrcDir";
+    private final String hdfsTgtDir = baseTestDir + "/hdfsTgtDir";
+    private final String hdfsStrictDir = baseTestDir + "/strictDir";
     private static final String DB_NAME = "MirrorTest";
     private final ColoHelper cluster = servers.get(0);
     private final ColoHelper cluster2 = servers.get(1);
@@ -77,7 +83,7 @@ public class MirrorTest extends BaseUITestClass {
      * @throws InterruptedException
      * @throws JAXBException
      */
-    @BeforeClass(alwaysRun = true)
+    @BeforeMethod(alwaysRun = true)
     public void setup() throws Exception {
 /*
         clusterHC = cluster.getClusterHelper().getHCatClient();
@@ -112,7 +118,10 @@ public class MirrorTest extends BaseUITestClass {
         runSql(connection2, "create database hdr_sdb1");
         runSql(connection2, "use hdr_sdb1");
 */
-
+        HadoopUtil.recreateDir(clusterFS, hdfsStrictDir);
+        HadoopUtil.recreateDir(clusterFS2, hdfsStrictDir);
+        clusterFS.setPermission(new Path(hdfsStrictDir), FsPermission.valueOf("drwx------"));
+        clusterFS2.setPermission(new Path(hdfsStrictDir), FsPermission.valueOf("drwx------"));
         openBrowser();
         SearchPage searchPage = LoginPage.open(getDriver()).doDefaultLogin();
         mirrorPage = searchPage.getPageHeader().doCreateMirror();
@@ -120,7 +129,7 @@ public class MirrorTest extends BaseUITestClass {
     }
 
 
-    @AfterClass(alwaysRun = true)
+    @AfterMethod(alwaysRun = true)
     public void tearDown() throws IOException {
         removeTestClassEntities();
         closeBrowser();
@@ -274,6 +283,53 @@ public class MirrorTest extends BaseUITestClass {
             if (mirrorPage.getStepNumber() == 2) {
                 notifyingAssert.fail(
                     "Navigation to page 2 should not be allowed as target staging path is bad: " + path);
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setTargetStaging(goodTgtStaging);
+            //check error disappeared
+        }
+        notifyingAssert.assertAll();
+    }
+
+    /**
+     * Select Hive as dataset type.
+     * Set source/target staging paths as path pointing to directories with strict permissions
+     * (another owner, 700 permissions).
+     * Check that user is not allowed to go to the next step and has been notified with an alert.
+     */
+    @Test
+    public void testHiveAdvancedStagingAcl() throws Exception {
+        recipeMerlin.withSourceDb(DB_NAME);
+        recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
+        mirrorPage.applyRecipe(recipeMerlin);
+        NotifyingAssert notifyingAssert = new NotifyingAssert(true);
+        final String goodSrcStaging = recipeMerlin.getSrcCluster().getLocation(ClusterLocationType.STAGING).getPath();
+        final String goodTgtStaging = recipeMerlin.getTgtCluster().getLocation(ClusterLocationType.STAGING).getPath();
+        final String[] badTestPaths = new String[] {"/apps", hdfsStrictDir};
+        for (String path : badTestPaths) {
+            mirrorPage.setSourceStaging(path);
+            //check error
+            mirrorPage.next();
+            if (mirrorPage.getStepNumber() == 2) {
+                notifyingAssert.fail(
+                    "Navigation to page 2 should not be allowed as source staging path is bad: " + path
+                        + " (" + clusterFS.getFileStatus(new Path(path)) + ")");
+
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setSourceStaging(goodSrcStaging);
+            //check error disappeared
+        }
+        for (String path : badTestPaths) {
+            mirrorPage.setTargetStaging(path);
+            //check error
+            mirrorPage.next();
+            if (mirrorPage.getStepNumber() == 2) {
+                notifyingAssert.fail(
+                    "Navigation to page 2 should not be allowed as target staging path is bad: " + path
+                        + " (" + clusterFS.getFileStatus(new Path(path)) + ")");
                 mirrorPage.silentPrevious();
                 mirrorPage.toggleAdvancedOptions();
             }

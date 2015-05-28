@@ -285,14 +285,15 @@ public class ClusterMerlin extends Cluster {
         return true;
     }
 
-    public List<Location> getLocation(ClusterLocationType type) {
+    public Location getLocation(ClusterLocationType type) {
         List<Location> locationsOfType = new ArrayList<>();
         for(Location location : locations.getLocations()) {
             if (location.getName() == type) {
                 locationsOfType.add(location);
             }
         }
-        return locationsOfType;
+        Assert.assertEquals(locationsOfType.size(), 1, "Unexpected number of " + type + " locations in: " + this);
+        return locationsOfType.get(0);
     }
     @Override
     public EntityType getEntityType() {

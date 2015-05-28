@@ -20,13 +20,14 @@ package org.apache.falcon.regression.searchUI;
 
 import org.apache.falcon.cli.FalconCLI;
 import org.apache.falcon.entity.v0.Frequency;
-import org.apache.falcon.entity.v0.process.ACL;
+import org.apache.falcon.entity.v0.cluster.ClusterLocationType;
 import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.Entities.RecipeMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
+import org.apache.falcon.regression.core.supportClasses.NotifyingAssert;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
@@ -41,7 +42,6 @@ import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.xml.bind.JAXBException;
@@ -187,33 +187,101 @@ public class MirrorTest extends BaseUITestClass {
      * Check that user is not allowed to go to the next step and has been notified with an alert.
      * Set permissions as 4digit number, negative, string, 000. Check the same.
      */
-    @Test(dataProvider = "generateInvalidAcl")
-    public void testInvalidAcl(final ACL acl) {
+    @Test
+    public void testInvalidAcl() {
+        recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
+        final String goodAclOwner = MerlinConstants.CURRENT_USER_NAME;
+        final String goodAclGroup = MerlinConstants.CURRENT_USER_GROUP;
+        final String goodAclPerms = "777";
+        mirrorPage.applyRecipe(recipeMerlin);
+        NotifyingAssert notifyingAssert = new NotifyingAssert(true);
+        for(String badAclOwner: new String[] {"utf8\u20ACchar","speci@l", "123"}) {
+            mirrorPage.setAclOwner(badAclOwner);
+            notifyingAssert.assertTrue(mirrorPage.isAclOwnerWarningDisplayed(),
+                "Expecting invalid owner warning to be displayed for bad acl owner: " + badAclOwner);
+            mirrorPage.next(); //should not go through
+            if (mirrorPage.getStepNumber() == 2) {
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setAclOwner(goodAclOwner);
+            notifyingAssert.assertFalse(mirrorPage.isAclOwnerWarningDisplayed(),
+                "Expecting invalid owner warning to not be displayed for good acl owner: " + goodAclOwner);
+        }
+
+        for(String badAclGroup: new String[] {"utf8\u20ACchar","speci@l", "123"}) {
+            mirrorPage.setAclGroup(badAclGroup);
+            notifyingAssert.assertTrue(mirrorPage.isAclGroupWarningDisplayed(),
+                "Expecting invalid group warning to be displayed for bad acl group: " + badAclGroup);
+            mirrorPage.next(); //should not go through
+            if (mirrorPage.getStepNumber() == 2) {
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setAclGroup(goodAclGroup);
+            notifyingAssert.assertFalse(mirrorPage.isAclGroupWarningDisplayed(),
+                "Expecting invalid group warning to not be displayed for good acl group: " + goodAclGroup);
+        }
+
+        for(String badAclPermission: new String[] {"1234","-123", "str", "000", "1*", "*1"}) {
+            mirrorPage.setAclPermission(badAclPermission);
+            notifyingAssert.assertTrue(mirrorPage.isAclPermissionWarningDisplayed(),
+                "Expecting invalid permission warning to be displayed for bad acl permission: " + badAclPermission);
+            mirrorPage.next(); //should not go through
+            if (mirrorPage.getStepNumber() == 2) {
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setAclPermission(goodAclPerms); //clear error
+            notifyingAssert.assertFalse(mirrorPage.isAclPermissionWarningDisplayed(),
+                "Expecting invalid permission warning to not be displayed for good acl permission: " + goodAclPerms);
+        }
+        notifyingAssert.assertAll();
+    }
+
+    /**
+     * Select Hive as dataset type.
+     * Set source/target staging paths as path with invalid pattern, digit, empty value, special/utf-8 symbols. Check
+     * that user is not allowed
+     to go to the next step and has been notified with an alert.
+     */
+    @Test
+    public void testHiveAdvancedInvalidStaging() {
         recipeMerlin.withSourceDb(DB_NAME);
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
         mirrorPage.applyRecipe(recipeMerlin);
-        mirrorPage.setAcl(acl);
-        mirrorPage.next();
+        NotifyingAssert notifyingAssert = new NotifyingAssert(true);
+        final String goodSrcStaging = recipeMerlin.getSrcCluster().getLocation(ClusterLocationType.STAGING).getPath();
+        final String goodTgtStaging = recipeMerlin.getTgtCluster().getLocation(ClusterLocationType.STAGING).getPath();
+        final String[] badTestPaths = new String[] {"not_a_path", "", "not/allowed"};
+        for (String path : badTestPaths) {
+            mirrorPage.setSourceStaging(path);
+            //check error
+            mirrorPage.next();
+            if (mirrorPage.getStepNumber() == 2) {
+                notifyingAssert.fail(
+                    "Navigation to page 2 should not be allowed as source staging path is bad: " + path);
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setSourceStaging(goodSrcStaging);
+            //check error disappeared
+        }
+        for (String path : badTestPaths) {
+            mirrorPage.setTargetStaging(path);
+            //check error
+            mirrorPage.next();
+            if (mirrorPage.getStepNumber() == 2) {
+                notifyingAssert.fail(
+                    "Navigation to page 2 should not be allowed as target staging path is bad: " + path);
+                mirrorPage.silentPrevious();
+                mirrorPage.toggleAdvancedOptions();
+            }
+            mirrorPage.setTargetStaging(goodTgtStaging);
+            //check error disappeared
+        }
+        notifyingAssert.assertAll();
     }
-
-    @DataProvider
-    private Object[][] generateInvalidAcl() {
-        final String goodUser = MerlinConstants.CURRENT_USER_NAME;
-        final String goodGroup = MerlinConstants.CURRENT_USER_GROUP;
-        final String goodPermission = "*";
-        return new Object[][]{
-            {createAcl("123", goodGroup, goodPermission)},
-        };
-    }
-
-    private ACL createAcl(final String owner, final String group, final String permission) {
-        final ACL acl = new ACL();
-        acl.setOwner(owner);
-        acl.setGroup(group);
-        acl.setPermission(permission);
-        return acl;
-    }
-
 
     /**
      * Hack to work with process corresponding to recipe

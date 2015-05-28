@@ -162,15 +162,29 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
 
     public void setSourceInfo(ClusterMerlin srcCluster) {
-        clearAndSetByNgModel("UIModel.hiveOptions.source.stagingPath", srcCluster.getLocation("staging"));
-        clearAndSetByNgModel("UIModel.hiveOptions.source.hiveServerToEndpoint",
-            srcCluster.getInterfaceEndpoint(Interfacetype.REGISTRY));
+        setSourceStaging(srcCluster.getLocation("staging"));
+        setSourceHiveEndpoint(srcCluster.getInterfaceEndpoint(Interfacetype.REGISTRY));
+    }
+
+    public void setSourceHiveEndpoint(String hiveEndpoint) {
+        clearAndSetByNgModel("UIModel.hiveOptions.source.hiveServerToEndpoint", hiveEndpoint);
+    }
+
+    public void setSourceStaging(String stagingLocation) {
+        clearAndSetByNgModel("UIModel.hiveOptions.source.stagingPath", stagingLocation);
     }
 
     public void setTargetInfo(ClusterMerlin tgtCluster) {
-        clearAndSetByNgModel("UIModel.hiveOptions.target.stagingPath", tgtCluster.getLocation("staging"));
-        clearAndSetByNgModel("UIModel.hiveOptions.target.hiveServerToEndpoint",
-            tgtCluster.getInterfaceEndpoint(Interfacetype.REGISTRY));
+        setTargetStaging(tgtCluster.getLocation("staging"));
+        setTargetHiveEndpoint(tgtCluster.getInterfaceEndpoint(Interfacetype.REGISTRY));
+    }
+
+    public void setTargetHiveEndpoint(String hiveEndPoint) {
+        clearAndSetByNgModel("UIModel.hiveOptions.target.hiveServerToEndpoint", hiveEndPoint);
+    }
+
+    public void setTargetStaging(String hiveEndpoint) {
+        clearAndSetByNgModel("UIModel.hiveOptions.target.stagingPath", hiveEndpoint);
     }
 
     public void setRetry(Retry retry) {
@@ -182,14 +196,59 @@ public class MirrorWizardPage extends AbstractSearchPage {
 
 
     public void setAcl(ACL acl) {
-        clearAndSetSlowlyByNgModel("UIModel.acl.owner", acl.getOwner());
-        clearAndSetSlowlyByNgModel("UIModel.acl.group", acl.getGroup());
-        clearAndSetSlowlyByNgModel("UIModel.acl.permissions", acl.getPermission());
+        setAclOwner(acl.getOwner());
+        setAclGroup(acl.getGroup());
+        setAclPermission(acl.getPermission());
+    }
+
+    public void setAclOwner(String aclOwner) {
+        clearAndSetSlowlyByNgModel("UIModel.acl.owner", aclOwner);
+    }
+
+    public boolean isAclOwnerWarningDisplayed() {
+        final WebElement warning =
+            findElementByNgModel("UIModel.acl.owner").findElement(By.xpath("./following-sibling::*"));
+        waitForAngularToFinish();
+        return warning.isDisplayed();
+    }
+
+    public void setAclGroup(String aclGroup) {
+        clearAndSetSlowlyByNgModel("UIModel.acl.group", aclGroup);
+    }
+
+    public boolean isAclGroupWarningDisplayed() {
+        final WebElement warning =
+            findElementByNgModel("UIModel.acl.group").findElement(By.xpath("./following-sibling::*"));
+        waitForAngularToFinish();
+        return warning.isDisplayed();
+    }
+
+    public void setAclPermission(String aclPermission) {
+        clearAndSetSlowlyByNgModel("UIModel.acl.permissions", aclPermission);
+    }
+
+    public boolean isAclPermissionWarningDisplayed() {
+        final WebElement warning =
+            findElementByNgModel("UIModel.acl.permissions").findElement(By.xpath("./following-sibling::*"));
+        waitForAngularToFinish();
+        return warning.isDisplayed();
     }
 
     public void next() {
         final WebElement nextButton = driver.findElement(By.xpath("//button[contains(.,'Next')]"));
         nextButton.click();
+    }
+
+    public void previous() {
+        final WebElement prevButton = driver.findElement(By.xpath("//button[contains(.,'Previous')]"));
+        prevButton.click();
+    }
+
+    public void silentPrevious() {
+        try {
+            previous();
+        } catch (Exception ignore) {
+        }
     }
 
     public void cancel() {
@@ -244,6 +303,16 @@ public class MirrorWizardPage extends AbstractSearchPage {
         setRetry(recipe.getRetry());
         setAcl(recipe.getAcl());
     }
+
+    public int getStepNumber() {
+        try {
+            driver.findElement(By.xpath("//button[contains(.,'Previous')]"));
+            return 2;
+        } catch (Exception ignore) {
+        }
+        return 1;
+    }
+
     /**
      * Block of source or target cluster with parameters.
      */

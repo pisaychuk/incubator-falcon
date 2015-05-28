@@ -225,10 +225,10 @@ public class ClusterSetupTest extends BaseUITestClass{
     @Test
     public void testLocationsBadPermissions() throws IOException {
         //reverse staging and working location dirs
-        String staging = sourceCluster.getLocation(ClusterLocationType.STAGING).get(0).getPath();
-        String working = sourceCluster.getLocation(ClusterLocationType.WORKING).get(0).getPath();
-        sourceCluster.getLocation(ClusterLocationType.WORKING).get(0).setPath(staging);
-        sourceCluster.getLocation(ClusterLocationType.STAGING).get(0).setPath(working);
+        String staging = sourceCluster.getLocation(ClusterLocationType.STAGING).getPath();
+        String working = sourceCluster.getLocation(ClusterLocationType.WORKING).getPath();
+        sourceCluster.getLocation(ClusterLocationType.WORKING).setPath(staging);
+        sourceCluster.getLocation(ClusterLocationType.STAGING).setPath(working);
         clusterSetup.fillForm(sourceCluster);
         clusterSetup.clickNext();
         clusterSetup.clickSave();
@@ -244,7 +244,7 @@ public class ClusterSetupTest extends BaseUITestClass{
     @Test
     public void testLocationsNonExistent() throws IOException {
         String nonExistent = "/non-existent-directory";
-        sourceCluster.getLocation(ClusterLocationType.STAGING).get(0).setPath(nonExistent);
+        sourceCluster.getLocation(ClusterLocationType.STAGING).setPath(nonExistent);
         clusterSetup.fillForm(sourceCluster);
         clusterSetup.clickNext();
         clusterSetup.clickSave();

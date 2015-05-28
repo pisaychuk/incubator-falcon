@@ -36,10 +36,14 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.FindBys;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Page object of the Mirror creation page. */
 public class MirrorWizardPage extends AbstractSearchPage {
@@ -311,6 +315,98 @@ public class MirrorWizardPage extends AbstractSearchPage {
         } catch (Exception ignore) {
         }
         return 1;
+    }
+
+    public Map<Summary, String> getSummaryProperties() {
+        String formText = driver.findElement(By.id("formSummaryBox")).getText();
+        Map<Summary, String> props = new EnumMap<>(Summary.class);
+        props.put(Summary.NAME, getBetween(formText, "Name", "Type"));
+        props.put(Summary.TYPE, getBetween(formText, "Type", "Tags"));
+        props.put(Summary.TAGS, getBetween(formText, "Tags", "Source"));
+        props.put(Summary.RUN_ON, getBetween(formText, "Run On", "Schedule"));
+        props.put(Summary.START, getBetween(formText, "Start on:", "End on:"));
+        props.put(Summary.END, getBetween(formText, "End on:", "Max Maps"));
+        props.put(Summary.MAX_MAPS, getBetween(formText, "Max Maps", "Max Bandwidth"));
+        props.put(Summary.MAX_BANDWIDTH, getBetween(formText, "Max Bandwidth", "ACL"));
+
+        props.put(Summary.ACL_OWNER, getBetween(formText, "Owner:", "Group:"));
+        props.put(Summary.ACL_GROUP, getBetween(formText, "Group:", "Permissions:"));
+        props.put(Summary.ACL_PERMISSIONS, getBetween(formText, "Permissions:", "Retry"));
+
+        props.put(Summary.RETRY_POLICY, getBetween(formText, "Policy:", "delay:"));
+        props.put(Summary.RETRY_DELAY, getBetween(formText, "delay:", "Attempts:"));
+        props.put(Summary.RETRY_ATTEMPTS, getBetween(formText, "Attempts:", "Frequency"));
+
+        props.put(Summary.FREQUENCY, getBetween(formText, "Frequency", "Previous"));
+
+        String source = getBetween(formText, "Source", "Target");
+        String target = getBetween(formText, "Target", "Run On");
+        if ("HDFS".equals(props.get(Summary.TYPE))) {
+            props.put(Summary.SOURCE_LOCATION, getBetween(source, "Location", "Path"));
+            props.put(Summary.TARGET_LOCATION, getBetween(target, "Location", "Path"));
+            if ("HDFS".equals(props.get(Summary.SOURCE_LOCATION))) {
+                props.put(Summary.SOURCE_CLUSTER, getBetween(source, "^", "Location"));
+                props.put(Summary.SOURCE_PATH, getBetween(source, "Path:", "$"));
+
+            } else {
+                props.put(Summary.SOURCE_PATH, getBetween(source, "Path:", "URL"));
+                props.put(Summary.SOURCE_URL, getBetween(source, "URL:", "$"));
+
+            }
+            if ("HDFS".equals(props.get(Summary.TARGET_LOCATION))) {
+                props.put(Summary.TARGET_CLUSTER, getBetween(target, "^", "Location"));
+                props.put(Summary.TARGET_PATH, getBetween(target, "Path:", "$"));
+
+            } else {
+                props.put(Summary.TARGET_PATH, getBetween(target, "Path:", "URL"));
+                props.put(Summary.TARGET_URL, getBetween(target, "URL:", "$"));
+
+            }
+
+        } else {
+            //TODO Read info for HIVE replication
+        }
+
+
+        return props;
+    }
+
+    public enum Summary {
+        NAME,
+        TYPE,
+        TAGS,
+        RUN_ON,
+        START,
+        END,
+        MAX_MAPS,
+        MAX_BANDWIDTH,
+        ACL_OWNER,
+        ACL_GROUP,
+        ACL_PERMISSIONS,
+        RETRY_POLICY,
+        RETRY_DELAY,
+        RETRY_ATTEMPTS,
+        FREQUENCY,
+        SOURCE_LOCATION,
+        SOURCE_PATH,
+        SOURCE_CLUSTER,
+        SOURCE_URL,
+        TARGET_LOCATION,
+        TARGET_PATH,
+        TARGET_CLUSTER,
+        TARGET_URL,
+
+    }
+
+    private static String getBetween(String text, String first, String second) {
+        Pattern pattern = Pattern.compile(".*" + first + "(.+)" + second + ".*", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        } else {
+            System.out.println("first: " + first + "; second: " + second);
+            return null;
+        }
     }
 
     /**

@@ -38,7 +38,10 @@ import org.apache.falcon.entity.v0.process.Property;
 import org.apache.falcon.entity.v0.process.Validity;
 import org.apache.falcon.entity.v0.process.Workflow;
 import org.apache.falcon.regression.core.util.TimeUtil;
+import org.apache.falcon.regression.core.util.Util;
+import org.apache.log4j.Logger;
 import org.testng.Assert;
+import org.testng.asserts.SoftAssert;
 
 import javax.xml.bind.JAXBException;
 import java.io.StringWriter;
@@ -48,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 /** Class for representing a process xml. */
 public class ProcessMerlin extends Process {
+    private static final Logger LOGGER = Logger.getLogger(ProcessMerlin.class);
     public ProcessMerlin(String processData) {
         this((Process) TestEntityUtil.fromString(EntityType.PROCESS, processData));
     }
@@ -85,6 +89,31 @@ public class ProcessMerlin extends Process {
             }
         }
         return null;
+    }
+
+    /**
+     * Compares two process cluster lists, if they are equal or not.
+     */
+    public static void assertClustersEqual(List<Cluster> clusters1, List<Cluster> clusters2) {
+        if (clusters1.size() != clusters2.size()) {
+            Assert.fail("Cluster sizes are different.");
+        }
+        SoftAssert softAssert = new SoftAssert();
+    nextCluster:
+        for (Cluster cluster1 : clusters1) {
+            Validity validity1 = cluster1.getValidity();
+            for (Cluster cluster2 : clusters2) {
+                if (cluster2.getName().equals(cluster1.getName())) {
+                    Validity validity2 = cluster2.getValidity();
+                    if (validity2.getStart().equals(validity1.getStart())
+                        && validity2.getEnd().equals(validity1.getEnd())) {
+                        continue nextCluster;
+                    }
+                }
+            }
+            softAssert.fail("There are no equal clusters for " + cluster1.getName());
+        }
+        softAssert.assertAll();
     }
 
     public Input getInputByName(String name) {
@@ -332,8 +361,6 @@ public class ProcessMerlin extends Process {
         getOutputs().getOutputs().add(out2);
     }
 
-
-
     /**
      * Adds one input into process.
      */
@@ -348,7 +375,6 @@ public class ProcessMerlin extends Process {
         in2.setOptional(in1.isOptional());
         getInputs().getInputs().add(in2);
     }
-
 
     public void setInputFeedWithEl(String inputFeedName, String startEl, String endEl) {
         Inputs inputs = new Inputs();
@@ -387,7 +413,6 @@ public class ProcessMerlin extends Process {
         }
         this.setOutputs(outputs);
     }
-
 
     /**
      * Sets partition for each input, according to number of supplied partitions.
@@ -432,8 +457,6 @@ public class ProcessMerlin extends Process {
         this.setTimeout(frq);
     }
 
-
-
     public void setWorkflow(String wfPath, String libPath, EngineType engineType) {
         Workflow w = this.getWorkflow();
         if (engineType != null) {
@@ -455,6 +478,144 @@ public class ProcessMerlin extends Process {
         return EntityType.PROCESS;
     }
 
+    public void assertGeneralProperties(ProcessMerlin newProcess){
+        SoftAssert softAssert = new SoftAssert();
+        // Assert all the the General Properties
+        softAssert.assertEquals(newProcess.getName(), getName(),
+            "Process Name is different");
+        softAssert.assertEquals(newProcess.getTags(), getTags(),
+            "Process Tags Value is different");
+        softAssert.assertEquals(newProcess.getWorkflow().getName(), getWorkflow().getName(),
+            "Process Workflow Name is different");
+        if (getWorkflow().getEngine() == EngineType.OOZIE || getWorkflow().getEngine() == null) {
+            softAssert.assertTrue(newProcess.getWorkflow().getEngine() == EngineType.OOZIE
+                || newProcess.getWorkflow().getEngine() == null, "Process Workflow Engine is different");
+        } else {
+            softAssert.assertEquals(newProcess.getWorkflow().getEngine().toString(),
+                getWorkflow().getEngine().toString(),
+                "Process Workflow Engine is different");
+        }
+        softAssert.assertEquals(newProcess.getWorkflow().getPath(), getWorkflow().getPath(),
+            "Process Workflow Path is different");
+        softAssert.assertEquals(newProcess.getACL().getOwner(), getACL().getOwner(),
+            "Process ACL Owner is different");
+        softAssert.assertEquals(newProcess.getACL().getGroup(), getACL().getGroup(),
+            "Process ACL Group is different");
+        softAssert.assertEquals(newProcess.getACL().getPermission(), getACL().getPermission(),
+            "Process ACL Permission is different");
+        softAssert.assertAll();
+    }
+
+    public void assertPropertiesInfo(ProcessMerlin newProcess){
+        SoftAssert softAssert = new SoftAssert();
+        // Assert all the Properties Info
+        softAssert.assertEquals(newProcess.getTimezone().getID(), getTimezone().getID(),
+            "Process TimeZone is different");
+        softAssert.assertEquals(newProcess.getFrequency().getFrequency(), getFrequency().getFrequency(),
+            "Process Frequency is different");
+        softAssert.assertEquals(newProcess.getFrequency().getTimeUnit().toString(),
+            getFrequency().getTimeUnit().toString(),
+            "Process Frequency Unit is different");
+        softAssert.assertEquals(newProcess.getParallel(), getParallel(),
+            "Process Parallel is different");
+        softAssert.assertEquals(newProcess.getOrder(), getOrder(),
+            "Process Order is different");
+        softAssert.assertEquals(newProcess.getRetry().getPolicy().value(),
+            getRetry().getPolicy().value(),
+            "Process Retry Policy is different");
+        softAssert.assertEquals(newProcess.getRetry().getAttempts(),
+            getRetry().getAttempts(),
+            "Process Retry Attempts is different");
+        softAssert.assertEquals(newProcess.getRetry().getDelay().getFrequency(),
+            getRetry().getDelay().getFrequency(),
+            "Process Delay Frequency is different");
+        softAssert.assertEquals(newProcess.getRetry().getDelay().getTimeUnit().name(),
+            getRetry().getDelay().getTimeUnit().name(),
+            "Process Delay Unit is different");
+        softAssert.assertAll();
+    }
+
+    /**
+     * Asserts equality of process inputs.
+     */
+    public void assertInputValues(ProcessMerlin newProcess){
+        Assert.assertEquals(newProcess.getInputs().getInputs().size(), getInputs().getInputs().size(),
+            "Processes have different number of inputs.");
+        SoftAssert softAssert = new SoftAssert();
+        // Assert all the Input values
+        for (int i = 0; i < newProcess.getInputs().getInputs().size(); i++) {
+            softAssert.assertEquals(newProcess.getInputs().getInputs().get(i).getName(),
+                getInputs().getInputs().get(i).getName(),
+                "Process Input Name is different");
+            softAssert.assertEquals(newProcess.getInputs().getInputs().get(i).getFeed(),
+                getInputs().getInputs().get(i).getFeed(),
+                "Process Input Feed is different");
+            softAssert.assertEquals(newProcess.getInputs().getInputs().get(i).getStart(),
+                getInputs().getInputs().get(i).getStart(),
+                "Process Input Start is different");
+            softAssert.assertEquals(newProcess.getInputs().getInputs().get(i).getEnd(),
+                getInputs().getInputs().get(i).getEnd(),
+                "Process Input End is different");
+        }
+        softAssert.assertAll();
+    }
+
+    /**
+     * Asserts equality of process outputs.
+     */
+    public void assertOutputValues(ProcessMerlin newProcess){
+        SoftAssert softAssert = new SoftAssert();
+        // Assert all the Output values
+        softAssert.assertEquals(newProcess.getOutputs().getOutputs().get(0).getName(),
+            getOutputs().getOutputs().get(0).getName(),
+            "Process Output Name is different");
+        softAssert.assertEquals(newProcess.getOutputs().getOutputs().get(0).getFeed(),
+            getOutputs().getOutputs().get(0).getFeed(),
+            "Process Output Feed is different");
+        softAssert.assertEquals(newProcess.getOutputs().getOutputs().get(0).getInstance(),
+            getOutputs().getOutputs().get(0).getInstance(),
+            "Process Output Instance is different");
+        softAssert.assertAll();
+    }
+
+    /**
+     * Asserts equality of two processes.
+     */
+    public void assertEquals(ProcessMerlin process) {
+        LOGGER.info(String.format("Comparing General Properties: source: %n%s%n and process: %n%n%s",
+            Util.prettyPrintXml(toString()), Util.prettyPrintXml(process.toString())));
+        assertGeneralProperties(process);
+        assertInputValues(process);
+        assertOutputValues(process);
+        assertPropertiesInfo(process);
+        assertClustersEqual(getClusters().getClusters(), process.getClusters().getClusters());
+    }
+
+    /**
+     * Creates an empty process definition.
+     */
+    public static ProcessMerlin getEmptyProcess(ProcessMerlin process) {
+        ProcessMerlin draft = new ProcessMerlin(process.toString());
+        draft.setName("");
+        draft.setTags("");
+        draft.setACL(null);
+        draft.getInputs().getInputs().clear();
+        draft.getOutputs().getOutputs().clear();
+        draft.setRetry(null);
+        draft.clearProcessCluster();
+        draft.getProperties().getProperties().clear();
+        draft.setFrequency(null);
+        draft.setOrder(null);
+        draft.setTimezone(null);
+        draft.setParallel(0);
+        Workflow workflow = new Workflow();
+        workflow.setName(null);
+        workflow.setPath(null);
+        workflow.setVersion(null);
+        workflow.setEngine(null);
+        draft.setWorkflow(null, null, null);
+        return draft;
+    }
 }
 
 

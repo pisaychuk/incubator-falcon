@@ -111,7 +111,7 @@ public class RecipeMerlin {
     }
 
     public String getSourceDb() {
-        return properties.getString("sourceDatabase");
+        return StringUtils.join(properties.getStringArray("sourceDatabase"), ',');
     }
 
     public RecipeMerlin withSourceDb(final String srcDatabase) {
@@ -120,7 +120,7 @@ public class RecipeMerlin {
     }
 
     public String getSourceTable() {
-        return properties.getString("sourceTable");
+        return StringUtils.join(properties.getStringArray("sourceTable"), ',');
     }
 
     public RecipeMerlin withSourceTable(final String tgtTable) {

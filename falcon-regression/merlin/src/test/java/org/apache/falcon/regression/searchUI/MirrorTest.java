@@ -45,6 +45,7 @@ import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.xml.bind.JAXBException;
@@ -62,6 +63,9 @@ public class MirrorTest extends BaseUITestClass {
     private final String hdfsTgtDir = baseTestDir + "/hdfsTgtDir";
     private final String hdfsStrictDir = baseTestDir + "/strictDir";
     private static final String DB_NAME = "MirrorTest";
+    private static final String DB2_NAME = "MirrorTest2";
+    private static final String TBL1_NAME = "MirrorTable1";
+    private static final String TBL2_NAME = "MirrorTable2";
     private final ColoHelper cluster = servers.get(0);
     private final ColoHelper cluster2 = servers.get(1);
     private final FileSystem clusterFS = serverFS.get(0);
@@ -179,15 +183,25 @@ public class MirrorTest extends BaseUITestClass {
      * Using get entity definition API check that entity has been created.
      * @throws Exception
      */
-    @Test
-    public void testHiveDefaultScenario() throws Exception {
-        recipeMerlin.withSourceDb(DB_NAME);
+    @Test(dataProvider = "getDbsAndTbls")
+    public void testHiveDefaultScenario(String dbName, String tblName) throws Exception {
+        recipeMerlin.withSourceDb(dbName);
+        recipeMerlin.withSourceTable(tblName);
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
         mirrorPage.applyRecipe(recipeMerlin);
         mirrorPage.next();
         mirrorPage.save();
         AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
             createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
+    }
+
+    @DataProvider
+    public Object[][] getDbsAndTbls() {
+        return new String[][]{
+            {DB_NAME, ""},
+            {DB_NAME + ',' + DB2_NAME, ""},
+            {DB_NAME, TBL1_NAME + ',' + TBL2_NAME}
+        };
     }
 
     /**

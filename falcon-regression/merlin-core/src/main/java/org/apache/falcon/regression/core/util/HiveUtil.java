@@ -19,6 +19,8 @@
 package org.apache.falcon.regression.core.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
@@ -47,14 +49,25 @@ public final class HiveUtil {
 
     private static final Logger LOGGER = Logger.getLogger(HiveUtil.class);
 
-    public static Connection getHiveJdbcConnection(final String jdbcUrl, final String user, final String password)
+    public static Connection getHiveJdbcConnection(final String jdbcUrl, final String user, final String password,
+                                                   final String hivePrincipal)
         throws ClassNotFoundException, SQLException, IOException, InterruptedException {
+        final String transportMode = new HiveConf().get("hive.server2.transport.mode", "binary");
+        String connectionStringSuffix = "";
+        if (transportMode.equalsIgnoreCase("http")) {
+            connectionStringSuffix += "transportMode=http;httpPath=cliservice;";
+        }
+        if (MerlinConstants.IS_SECURE) {
+            connectionStringSuffix += String.format("principal=%s;kerberosAuthType=fromSubject;", hivePrincipal);
+        }
+        final String connectionStringSuffix2 = connectionStringSuffix;
         final UserGroupInformation ugi = KerberosHelper.getUGI(user);
         final Connection conn = ugi.doAs(new PrivilegedExceptionAction<Connection>() {
             @Override
             public Connection run() throws Exception {
                 Class.forName(DRIVER_NAME);
-                return DriverManager.getConnection(jdbcUrl, ugi.getShortUserName(), password);
+                return DriverManager.getConnection(jdbcUrl + "/;" + connectionStringSuffix2, ugi.getShortUserName(),
+                    password);
             }
         });
 

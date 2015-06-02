@@ -125,7 +125,7 @@ public abstract class AbstractEntityHelper {
         if (null == hiveJdbcConnection) {
             try {
                 hiveJdbcConnection =
-                    HiveUtil.getHiveJdbcConnection(hiveJdbcUrl, hiveJdbcUser, hiveJdbcPassword);
+                    HiveUtil.getHiveJdbcConnection(hiveJdbcUrl, hiveJdbcUser, hiveJdbcPassword, hiveMetaStorePrincipal);
             } catch (ClassNotFoundException | SQLException | InterruptedException | IOException e) {
                 Assert.fail("Unable to create hive jdbc connection because of exception:\n"
                     + ExceptionUtils.getStackTrace(e));

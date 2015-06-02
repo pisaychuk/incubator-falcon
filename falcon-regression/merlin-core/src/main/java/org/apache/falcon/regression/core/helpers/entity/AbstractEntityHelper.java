@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** Abstract class for helper classes. */
@@ -128,10 +126,7 @@ public abstract class AbstractEntityHelper {
             try {
                 hiveJdbcConnection =
                     HiveUtil.getHiveJdbcConnection(hiveJdbcUrl, hiveJdbcUser, hiveJdbcPassword);
-            } catch (ClassNotFoundException e) {
-                Assert.fail("Unable to create hive jdbc connection because of exception:\n"
-                    + ExceptionUtils.getStackTrace(e));
-            } catch (SQLException e) {
+            } catch (ClassNotFoundException | SQLException | InterruptedException | IOException e) {
                 Assert.fail("Unable to create hive jdbc connection because of exception:\n"
                     + ExceptionUtils.getStackTrace(e));
             }

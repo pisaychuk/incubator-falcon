@@ -19,9 +19,11 @@
 package org.apache.falcon.regression.core.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.hive.jdbc.HiveConnection;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -45,10 +47,18 @@ public final class HiveUtil {
 
     private static final Logger LOGGER = Logger.getLogger(HiveUtil.class);
 
-    public static Connection getHiveJdbcConnection(String jdbcUrl, String user, String password)
-        throws ClassNotFoundException, SQLException {
-        Class.forName(DRIVER_NAME);
-        return DriverManager.getConnection(jdbcUrl, user, password);
+    public static Connection getHiveJdbcConnection(final String jdbcUrl, final String user, final String password)
+        throws ClassNotFoundException, SQLException, IOException, InterruptedException {
+        final UserGroupInformation ugi = KerberosHelper.getUGI(user);
+        final Connection conn = ugi.doAs(new PrivilegedExceptionAction<Connection>() {
+            @Override
+            public Connection run() throws Exception {
+                Class.forName(DRIVER_NAME);
+                return DriverManager.getConnection(jdbcUrl, ugi.getShortUserName(), password);
+            }
+        });
+
+        return conn;
     }
 
     /**

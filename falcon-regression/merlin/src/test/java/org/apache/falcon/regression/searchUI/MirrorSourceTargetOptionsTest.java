@@ -180,6 +180,7 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
     @Test
     public void testInvalidValidity() {
         mirrorPage.setName(bundles[0].getProcessName());
+        mirrorPage.setMirrorType(FalconCLI.RecipeOperation.HDFS_REPLICATION);
         String baseTestDir = cleanAndGetTestDir();
         source.setPath(baseTestDir);
         source.selectCluster(bundles[0].getClusterNames().get(0));

@@ -65,11 +65,6 @@ public final class OozieUtil {
         return client.getBundleJobsInfo(filter, start, len);
     }
 
-    public static List<String> getBundleIds(OozieClient client, String filter, int start, int len)
-        throws OozieClientException {
-        return getBundleIds(getBundles(client, filter, start, len));
-    }
-
     public static List<String> getBundleIds(List<BundleJob> bundles) {
         List<String> ids = new ArrayList<>();
         for (BundleJob bundle : bundles) {
@@ -77,11 +72,6 @@ public final class OozieUtil {
             ids.add(bundle.getId());
         }
         return ids;
-    }
-
-    public static List<Job.Status> getBundleStatuses(OozieClient client, String filter, int start,
-                                                     int len) throws OozieClientException {
-        return getBundleStatuses(getBundles(client, filter, start, len));
     }
 
     public static List<Job.Status> getBundleStatuses(List<BundleJob> bundles) {
@@ -177,7 +167,7 @@ public final class OozieUtil {
                                                EntityType entityType)
         throws OozieClientException {
         String filter = String.format("name=FALCON_%s_%s", entityType, processName);
-        List<Job.Status> statuses = getBundleStatuses(client, filter, 0, 10);
+        List<Job.Status> statuses = getBundleStatuses(getBundles(client, filter, 0, 10));
         if (statuses.isEmpty()) {
             return null;
         } else {
@@ -189,7 +179,7 @@ public final class OozieUtil {
                                           EntityType entityType)
         throws OozieClientException {
         String filter = "name=FALCON_" + entityType + "_" + entityName;
-        return getBundleIds(client, filter, 0, 10);
+        return getBundleIds(getBundles(client, filter, 0, 10));
     }
 
     public static List<DateTime> getStartTimeForRunningCoordinators(ColoHelper prismHelper,
@@ -442,8 +432,8 @@ public final class OozieUtil {
         final OozieClient oozieClient = helper.getClusterHelper().getOozieClient();
         String bundleID = getSequenceBundleID(oozieClient, entityName, type, bundleNumber);
         List<CoordinatorJob> coords = oozieClient.getBundleJobInfo(bundleID).getCoordinators();
-        HadoopUtil.createFolders(helper.getClusterHelper().getHadoopFS(), helper.getPrefix(),
-            getMissingDependenciesForInstance(oozieClient, coords, instanceNumber));
+        final List<String> missingDependencies = getMissingDependenciesForInstance(oozieClient, coords, instanceNumber);
+        HadoopUtil.createFolders(helper.getClusterHelper().getHadoopFS(), helper.getPrefix(), missingDependencies);
     }
 
     private static List<String> getMissingDependenciesForInstance(OozieClient oozieClient,
@@ -554,25 +544,10 @@ public final class OozieUtil {
     public static String getSequenceBundleID(OozieClient oozieClient, String entityName,
             EntityType entityType, int bundleNumber) throws OozieClientException {
         //sequence start from 0
-        List<String> bundleIds = getBundles(oozieClient,
-                entityName, entityType);
-        Map<Integer, String> bundleMap = new TreeMap<>();
-        String bundleID;
-        for (String strID : bundleIds) {
-            LOGGER.info("getSequenceBundleID: " + strID);
-            int key = Integer.parseInt(strID.substring(0, strID.indexOf('-')));
-            bundleMap.put(key, strID);
-        }
-        for (Map.Entry<Integer, String> entry : bundleMap.entrySet()) {
-            LOGGER.info("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-        }
-        int i = 0;
-        for (Map.Entry<Integer, String> entry : bundleMap.entrySet()) {
-            bundleID = entry.getValue();
-            if (i == bundleNumber) {
-                return bundleID;
-            }
-            i++;
+        List<String> bundleIds = getBundles(oozieClient, entityName, entityType);
+        Collections.sort(bundleIds);
+        if (bundleNumber < bundleIds.size()) {
+            return bundleIds.get(bundleNumber);
         }
         return null;
     }

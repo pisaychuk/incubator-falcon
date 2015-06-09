@@ -49,13 +49,14 @@ class HiveObjectCreator {
                               Connection dstConnection, FileSystem dstFs, String dstTable) throws Exception {
         LOGGER.info("Starting bootstrap...");
         final String dumpPath = HDFS_TMP_DIR + srcTable + "/";
-        HadoopUtil.deleteDirIfExists(dumpPath, srcFs);
+        HadoopUtil.recreateDir(srcFs, dumpPath);
+        runSqlQuietly(srcConnection, "dfs -chmod -R 777 " + dumpPath);
         HadoopUtil.deleteDirIfExists(dumpPath, dstFs);
         runSql(srcConnection, "export table " + srcTable + " to '" + dumpPath + "'" +
             " FOR REPLICATION('ignore')");
-        runSqlQuietly(srcConnection, "dfs -chmod -R 777 " + dumpPath);
         FileUtil.copy(srcFs, new Path(dumpPath), dstFs, new Path(dumpPath),
             false, true, new Configuration());
+        runSqlQuietly(dstConnection, "dfs -chmod -R 777 " + dumpPath);
         runSql(dstConnection, "import table " + dstTable + " from '" + dumpPath + "'");
         HadoopUtil.deleteDirIfExists(dumpPath, srcFs);
         HadoopUtil.deleteDirIfExists(dumpPath, dstFs);

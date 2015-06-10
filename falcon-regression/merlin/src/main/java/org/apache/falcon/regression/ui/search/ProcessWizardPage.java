@@ -32,8 +32,8 @@ import org.apache.falcon.entity.v0.process.Output;
 import org.apache.falcon.entity.v0.process.Outputs;
 import org.apache.falcon.entity.v0.process.PolicyType;
 import org.apache.falcon.entity.v0.process.Retry;
-import org.apache.falcon.entity.v0.process.Workflow;
 import org.apache.falcon.entity.v0.process.Validity;
+import org.apache.falcon.entity.v0.process.Workflow;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.util.UIAssert;
 import org.apache.log4j.Logger;
@@ -249,17 +249,17 @@ public class ProcessWizardPage extends AbstractSearchPage {
         wfName.clear();
         wfName.sendKeys(processWf.getName());
         switch (processWf.getEngine()) {
-        case OOZIE:
-            getOozieRadio().click();
-            break;
-        case PIG:
-            getPigRadio().click();
-            break;
-        case HIVE:
-            getHiveRadio().click();
-            break;
-        default:
-            Assert.fail("Unexpected workflow engine: " + processWf.getEngine());
+            case OOZIE:
+                getOozieRadio().click();
+                break;
+            case PIG:
+                getPigRadio().click();
+                break;
+            case HIVE:
+                getHiveRadio().click();
+                break;
+            default:
+                Assert.fail("Unexpected workflow engine: " + processWf.getEngine());
         }
         final String version = processWf.getVersion();
         // The getVersion() method returns '1.0' if its null, hence the hack below
@@ -847,12 +847,9 @@ public class ProcessWizardPage extends AbstractSearchPage {
      */
     public ProcessMerlin getProcessFromSummaryBox(ProcessMerlin draft) {
         String text = summaryBox.getText().trim();
-
-        String currentBlock = text.substring(0, text.indexOf("Tags"));
-        String [] parts = currentBlock.split("\\n");
-        draft.setName(parts[2]);
-
-        currentBlock = text.substring(text.indexOf("Tags"), text.indexOf("Workflow"));
+        draft.setName(getProperty(text, null, "Tags", 2));
+        String currentBlock = text.substring(text.indexOf("Tags"), text.indexOf("Workflow"));
+        String [] parts;
         parts = currentBlock.trim().split("\\n");
         String tags = "";
         for (int i = 1; i < parts.length; i++) {
@@ -866,50 +863,23 @@ public class ProcessWizardPage extends AbstractSearchPage {
             draft.setTags(tags);
         }
         Workflow workflow = new Workflow();
-        currentBlock = text.substring(text.indexOf("Workflow"), text.indexOf("Engine"));
-        parts = currentBlock.trim().split("\\n");
-        workflow.setName(parts.length == 3 ? parts[2] : null);
-        currentBlock = text.substring(text.indexOf("Engine"), text.indexOf("Version"));
-        workflow.setEngine(EngineType.fromValue(currentBlock.split("\\n")[1]));
-        currentBlock = text.substring(text.indexOf("Version"), text.indexOf("Path"));
-        parts = currentBlock.trim().split("\\n");
-        workflow.setVersion(parts.length == 2 ? parts[1] : null);
-        currentBlock = text.substring(text.indexOf("Path"), text.indexOf("Timing"));
-        parts = currentBlock.trim().split("\\n");
-        workflow.setPath(parts.length == 2 ?  parts[1] : null);
+        workflow.setName(getProperty(text, "Workflow", "Engine", 2));
+        workflow.setEngine(EngineType.fromValue(getProperty(text, "Engine", "Version", 1)));
+        workflow.setVersion(getProperty(text, "Version", "Path", 1));
+        workflow.setPath(getProperty(text, "Path", "Timing", 1));
         draft.setWorkflow(workflow);
 
-        currentBlock = text.substring(text.indexOf("Timing"), text.indexOf("Frequency"));
-        parts = currentBlock.trim().split("\\n");
-        String timeZone = parts.length == 3 ? parts[2] : null;
-        draft.setTimezone(TimeZone.getTimeZone(timeZone));
-
-        currentBlock = text.substring(text.indexOf("Frequency"), text.indexOf("Max. parallel instances"));
-        parts = currentBlock.trim().split("\\n");
-        parts = parts[1].split(" ");
+        draft.setTimezone(TimeZone.getTimeZone(getProperty(text, "Timing", "Frequency", 2)));
+        parts = getProperty(text, "Frequency", "Max. parallel instances", 1).split(" ");
         draft.setFrequency(new Frequency(parts[1], Frequency.TimeUnit.valueOf(parts[2])));
+        draft.setParallel(Integer.parseInt(getProperty(text, "Max. parallel instances", "Order", 1)));
+        draft.setOrder(ExecutionType.fromValue(getProperty(text, "Order", "Retry", 1)));
 
-        currentBlock = text.substring(text.indexOf("Max. parallel instances"), text.indexOf("Order"));
-        parts = currentBlock.trim().split("\\n");
-        draft.setParallel(Integer.parseInt(parts[1]));
-
-        currentBlock = text.substring(text.indexOf("Order"), text.indexOf("Retry"));
-        parts = currentBlock.trim().split("\\n");
-        draft.setOrder(ExecutionType.fromValue(parts[1]));
-
-        currentBlock = text.substring(text.indexOf("Retry"), text.indexOf("Attempts"));
-        parts = currentBlock.trim().split("\\n");
-        String retryPolicy = parts.length == 3 ? parts[2] : null;
-        currentBlock = text.substring(text.indexOf("Attempts"), text.indexOf("Delay"));
-        parts = currentBlock.trim().split("\\n");
-        String attempts = parts[1];
-        currentBlock = text.substring(text.indexOf("Delay"), text.indexOf("Clusters"));
-        parts = currentBlock.trim().split("\\n");
-        parts = parts[1].split(" ");
         Retry retry = new Retry();
+        retry.setPolicy(PolicyType.fromValue(getProperty(text, "Retry", "Attempts", 2)));
+        retry.setAttempts(Integer.parseInt(getProperty(text, "Attempts", "Delay", 1)));
+        parts = getProperty(text, "Delay", "Clusters", 1).split(" ");
         retry.setDelay(new Frequency(parts[2], Frequency.TimeUnit.valueOf(parts[3])));
-        retry.setPolicy(PolicyType.fromValue(retryPolicy));
-        retry.setAttempts(Integer.parseInt(attempts));
         draft.setRetry(retry);
 
         //get clusters
@@ -917,25 +887,18 @@ public class ProcessWizardPage extends AbstractSearchPage {
         int last = 0;
         while (last != -1) {
             Cluster cluster = new Cluster();
-            String innerBlock = currentBlock.substring(currentBlock.indexOf("Name"),
-                currentBlock.indexOf("Validity")).trim();
-            parts = innerBlock.trim().split("\\n");
-            cluster.setName(parts[1]);
-            //remove name part which was parsed
+            cluster.setName(getProperty(currentBlock, "Name", "Validity", 1));
+            //remove the part which was used
             currentBlock = currentBlock.substring(currentBlock.indexOf("Validity"));
             //get validity
-            innerBlock = currentBlock.substring(currentBlock.indexOf("Validity"),
-                currentBlock.indexOf("End")).trim();
-            parts = innerBlock.trim().split("\\n");
-            String start = parts[2].split(" ")[1];
+            String start = getProperty(currentBlock, "Validity", "End", 2);
             //check if there are other clusters
             last = currentBlock.indexOf("Name");
-            innerBlock = currentBlock.substring(currentBlock.indexOf("End"),
+            String innerBlock = currentBlock.substring(currentBlock.indexOf("End"),
                 last != -1 ? last : currentBlock.length() - 1).trim();
-            parts = innerBlock.trim().split("\\n");
-            String end = parts[1].split(" ")[1];
+            String end = innerBlock.trim().split("\\n")[1];
             Validity validity = new Validity();
-            DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'SSS'Z'");
+            DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy'-'MM'-'dd' 'HH':'mm'");
             validity.setStart(formatter.parseDateTime(start.replaceAll("\"", "")).toDate());
             validity.setEnd(formatter.parseDateTime(end.replaceAll("\"", "")).toDate());
             cluster.setValidity(validity);
@@ -947,24 +910,16 @@ public class ProcessWizardPage extends AbstractSearchPage {
         while (last != -1) {
             Input input = new Input();
             //get input name
-            String innerBlock = currentBlock.substring(currentBlock.indexOf("Name"),
-                currentBlock.indexOf("Feed")).trim();
-            parts = innerBlock.trim().split("\\n");
-            input.setName(parts[1]);
-            //remove part which was parsed
+            input.setName(getProperty(currentBlock, "Name", "Feed", 1));
+            //remove the part which was used
             currentBlock = currentBlock.substring(currentBlock.indexOf("Name") + 4);
             //get input feed
-            innerBlock = currentBlock.substring(currentBlock.indexOf("Feed"), currentBlock.indexOf("Instance"));
-            parts = innerBlock.trim().split("\\n");
-            input.setFeed(parts[1]);
+            input.setFeed(getProperty(currentBlock, "Feed", "Instance", 1));
             //get input start
-            innerBlock = currentBlock.substring(currentBlock.indexOf("Instance"),
-                currentBlock.indexOf("End")).trim();
-            parts = innerBlock.trim().split("\\n");
-            input.setStart(parts[2]);
+            input.setStart(getProperty(currentBlock, "Instance", "End", 2));
             //get input end
             last = currentBlock.indexOf("Name");
-            innerBlock = currentBlock.substring(currentBlock.indexOf("End"),
+            String innerBlock = currentBlock.substring(currentBlock.indexOf("End"),
                 last != -1 ? last : currentBlock.length() - 1).trim();
             parts = innerBlock.trim().split("\\n");
             input.setEnd(parts[1]);
@@ -977,30 +932,30 @@ public class ProcessWizardPage extends AbstractSearchPage {
         last = 0;
         while (last != -1) {
             Output output = new Output();
-            String innerBlock = currentBlock.substring(currentBlock.indexOf("Name"),
-                currentBlock.indexOf("Feed")).trim();
-            parts = innerBlock.trim().split("\\n");
-            output.setName(parts[1]);
+            output.setName(getProperty(currentBlock, "Name", "Feed", 1));
+            //remove the part which was used
             currentBlock = currentBlock.substring(currentBlock.indexOf("Feed"));
-            innerBlock = currentBlock.substring(currentBlock.indexOf("Feed"), currentBlock.indexOf("Instance"));
-            parts = innerBlock.split("\\n");
-            output.setFeed(parts[1]);
+            //get feed
+            output.setFeed(getProperty(currentBlock, "Feed", "Instance", 1));
             last = currentBlock.indexOf("Name");
-            innerBlock = currentBlock.substring(currentBlock.indexOf("Instance"),
-                last != -1 ? last : currentBlock.length()).trim();
-            parts = innerBlock.split("\\n");
-            output.setInstance(parts[2]);
+            output.setInstance(getProperty(currentBlock, "Instance", "Name", 2));
             draft.getOutputs().getOutputs().add(output);
         }
+        //check compulsory process properties
+        Assert.assertNotNull(draft.getACL(), "ACL is empty (null).");
         return draft;
     }
 
     /**
      * Retrieves property from source text.
      */
-    public String parseProperty(String block, String start, String end, int propertyIndex) {
-        String subBlock = block.substring(block.indexOf(start), block.indexOf(end));
+    private String getProperty(String block, String start, String end, int propertyIndex) {
+        int s = start != null ? block.indexOf(start) : 0;
+        s = s == -1 ? 0 : s;
+        int e = end != null ? block.indexOf(end) : block.length() - 1;
+        e = e == -1 ? block.length() : e;
+        String subBlock = block.substring(s, e).trim();
         String [] parts = subBlock.trim().split("\\n");
-        return parts.length >= propertyIndex ? parts[propertyIndex] : null;
+        return parts.length - 1 >= propertyIndex ? parts[propertyIndex].trim() : null;
     }
 }

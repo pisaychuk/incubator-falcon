@@ -47,7 +47,7 @@ import java.util.List;
  * It is not working for map-reduce actions(FALCON-1038).
  * Using pig-action to test this feature.
  */
-@Test(groups = "embedded")
+@Test(groups = "embedded", enabled = false)
 public class LogMoverTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);

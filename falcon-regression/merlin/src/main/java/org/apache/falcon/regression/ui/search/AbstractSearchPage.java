@@ -34,8 +34,6 @@ import org.testng.Assert;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.util.List;
-
 
 
 
@@ -149,9 +147,13 @@ public abstract class AbstractSearchPage extends Page {
     }
 
     public String getActiveAlertText() {
-        WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
-        if (alertsBlock.isDisplayed()) {
-            return alertsBlock.findElement(By.xpath("./div[last()]")).getText();
+        WebElement alertsBlock = driver.findElement(By.className("messages"));
+        List<WebElement> alerts = alertsBlock.findElements(By.className("message"));
+        if (!alerts.isEmpty()) {
+            WebElement last = alerts.get(alerts.size() - 1);
+            if (last.isDisplayed()) {
+                return last.getText();
+            }
         }
         return null;
     }

@@ -47,7 +47,7 @@ import java.util.List;
  * It is not working for map-reduce actions(FALCON-1038).
  * Using pig-action to test this feature.
  */
-@Test(groups = "embedded", enabled = false)
+@Test(groups = "embedded")
 public class LogMoverTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);
@@ -113,7 +113,7 @@ public class LogMoverTest extends BaseTestClass {
      *Schedule a process. It should succeed and job launcher success information
      * should be present in falcon staging directory.
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster"}, enabled = false)
     public void logMoverSucceedTest() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
         AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
@@ -133,7 +133,7 @@ public class LogMoverTest extends BaseTestClass {
      *Schedule a process. It should fail and job launcher failure information
      * should be present in falcon staging directory.
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster"}, enabled = false)
     public void logMoverFailTest() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
         AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);

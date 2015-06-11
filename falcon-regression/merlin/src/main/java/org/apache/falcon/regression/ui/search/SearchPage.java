@@ -145,6 +145,7 @@ public class SearchPage extends AbstractSearchPage {
 
     public List<SearchResult> appendAndSearch(String appendedPart) {
         for(String queryParam : appendedPart.split("\\s+")) {
+            focusOnSearchBox();
             getSearchBox().sendKeys(queryParam);
             getSearchBox().sendKeys(Keys.ENTER);
         }
@@ -163,7 +164,7 @@ public class SearchPage extends AbstractSearchPage {
     }
 
     public void clearSearch() {
-        searchBlock.findElement(By.className("tags")).click();
+        focusOnSearchBox();
         getSearchBox().clear();
         SearchQuery query = getSearchQuery();
         for (int i = 0; i < query.getElementsNumber(); i++) {
@@ -172,10 +173,14 @@ public class SearchPage extends AbstractSearchPage {
     }
 
     public void removeLastParam() {
+        focusOnSearchBox();
         getSearchBox().sendKeys(Keys.BACK_SPACE);
         getSearchBox().sendKeys(Keys.BACK_SPACE);
     }
 
+    private void focusOnSearchBox() {
+        searchBlock.findElement(By.className("tags")).click();
+    }
 
     public void checkNoResult() {
         UIAssert.assertNotDisplayed(resultBlock, "Search result block");
@@ -236,7 +241,7 @@ public class SearchPage extends AbstractSearchPage {
                     tags.add(queryText);
                     break;
                 default:
-                    Assert.fail("There should be only Tag or Name");
+                    //Assert.fail("There should be only Tag or Name");
                 }
             }
             return this;

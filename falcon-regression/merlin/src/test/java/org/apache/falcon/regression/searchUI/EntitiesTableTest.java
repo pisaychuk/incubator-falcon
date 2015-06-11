@@ -50,8 +50,7 @@ public class EntitiesTableTest extends BaseUITestClass {
 
     private SearchPage searchPage = null;
     private String[] tags = {"first=correctvalue", "second=one", "third=one", "fourth=one",
-    };
-        //"fifth=one", "sixth=one", "seventh=one", "eighth=one", "ninth=one", "tenth=one", };
+        "fifth=one", "sixth=one", "seventh=one", "eighth=one", "ninth=one", "tenth=one", };
     private String baseProcessName;
 
     /**

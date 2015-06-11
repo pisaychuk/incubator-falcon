@@ -147,14 +147,16 @@ public abstract class AbstractSearchPage extends Page {
     }
 
     public String getActiveAlertText() {
-        WebElement alertsBlock = driver.findElement(By.className("messages"));
-        List<WebElement> alerts = alertsBlock.findElements(By.className("message"));
-        if (!alerts.isEmpty()) {
-            WebElement last = alerts.get(alerts.size() - 1);
-            if (last.isDisplayed()) {
-                return last.getText();
-            }
+        WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
+        if (alertsBlock.getAttribute("style").contains("opacity")) {
+            return alertsBlock.findElement(By.xpath("./div[last()]")).getText();
+        } else {
+            return null;
         }
-        return null;
+    }
+
+    protected void waitForAlert() {
+        driver.findElements(
+            By.xpath("//div[@class='messages notifs' and contains(@style,'opacity')]"));
     }
 }

@@ -641,7 +641,7 @@ public class FeedWizardPage extends AbstractSearchPage {
         setFeedClustersInfo(feed);
         nextButton.click();
         saveFeedButton.click();
-        waitForAngularToFinish();
+        waitForAlert();
     }
 
     public FeedMerlin getFeedMerlinFromFeedXml() throws Exception{

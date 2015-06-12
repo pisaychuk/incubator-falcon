@@ -241,7 +241,6 @@ public class SearchPage extends AbstractSearchPage {
                     tags.add(queryText);
                     break;
                 default:
-                    //Assert.fail("There should be only Tag or Name");
                 }
             }
             return this;

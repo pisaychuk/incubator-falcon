@@ -61,8 +61,7 @@ public class LoginPage extends AbstractSearchPage {
         final WebElement userTextBox = getUserTextBox();
 
         final WebElement userWarnLabel = getParentElement(userTextBox).findElement(
-            By.xpath(
-                "//label[contains(@class, 'custom-danger') and contains(@class, 'validationMessageGral')]"));
+            By.xpath("//label[contains(@class, 'custom-danger') and contains(@class, 'validationMessageGral')]"));
         if (userWarnLabel.isDisplayed()) {
             return userWarnLabel.getText();
         }

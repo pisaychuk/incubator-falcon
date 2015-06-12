@@ -347,6 +347,16 @@ Trunk (Unreleased)
    FALCON-681 delete duplicate feed retention test from falcon regression (SamarthG)
 
   BUG FIXES
+   FALCON-1269 Update InstancePageTest and other after UI changes (Ruslan Ostafiychuk)
+
+   FALCON-1270 SearchUI. Login screen changed to not have password field (Namit Maheshwari via Ruslan Ostafiychuk)
+
+   FALCON-1266 LineageApiTest test fixes (Raghav Kumar Gautam via Ruslan Ostafiychuk)
+
+   FALCON-1265 ListProcessInstancesTest test fixes (Raghav Kumar Gautam via Ruslan Ostafiychuk)
+
+   FALCON-1267 Fix Processsetuptest#testinoutstepdropdownfeeds (Namit Maheshwari via Raghav Kumar Gautam)
+
    FALCON-1264 Fix validity parsing in ProcessWizardPage (Paul Isaychuk via Ruslan Ostafiychuk)
 
    FALCON-1263 Fix waitTillInstanceReachState for EntityType.PROCESS (Ruslan Ostafiychuk)

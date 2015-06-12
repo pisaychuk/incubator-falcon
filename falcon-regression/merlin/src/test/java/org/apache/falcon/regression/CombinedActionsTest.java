@@ -106,7 +106,7 @@ public class CombinedActionsTest extends BaseTestClass {
      * @throws Exception
     */
 
-    @Test
+    @Test(enabled = false)
     public void combinedMrPigHiveAction()throws Exception{
 
         //create data for pig, mr and hcat jobs

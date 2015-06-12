@@ -100,7 +100,7 @@ public class ClusterMerlin extends Cluster {
                 anInterface.setEndpoint(value);
             }
         }
-    } 
+    }
 
     public void setWorkingLocationPath(String path) {
         for (Location location : getLocations().getLocations()) {
@@ -109,7 +109,7 @@ public class ClusterMerlin extends Cluster {
                 break;
             }
         }
-    }  
+    }
 
     public String getInterfaceEndpoint(final Interfacetype interfaceType) {
         String value = null;

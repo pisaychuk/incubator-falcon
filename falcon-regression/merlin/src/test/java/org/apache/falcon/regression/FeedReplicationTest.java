@@ -195,27 +195,27 @@ public class FeedReplicationTest extends BaseTestClass {
         feed.clearFeedClusters();
         //set cluster1 as source
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
-                .withRetention("days(1000000)", ActionType.DELETE)
-                .withValidity(startTime, endTime)
-                .withClusterType(ClusterType.SOURCE)
-                .build());
+                new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+                        .withRetention("days(1000000)", ActionType.DELETE)
+                        .withValidity(startTime, endTime)
+                        .withClusterType(ClusterType.SOURCE)
+                        .build());
         //set cluster2 as target
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
-                .withRetention("days(1000000)", ActionType.DELETE)
-                .withValidity(startTime, endTime)
-                .withClusterType(ClusterType.TARGET)
-                .withDataLocation(targetDataLocation)
-                .build());
+                new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+                        .withRetention("days(1000000)", ActionType.DELETE)
+                        .withValidity(startTime, endTime)
+                        .withClusterType(ClusterType.TARGET)
+                        .withDataLocation(targetDataLocation)
+                        .build());
         //set cluster3 as target
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
-                .withRetention("days(1000000)", ActionType.DELETE)
-                .withValidity(startTime, endTime)
-                .withClusterType(ClusterType.TARGET)
-                .withDataLocation(targetDataLocation)
-                .build());
+                new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+                        .withRetention("days(1000000)", ActionType.DELETE)
+                        .withValidity(startTime, endTime)
+                        .withClusterType(ClusterType.TARGET)
+                        .withDataLocation(targetDataLocation)
+                        .build());
 
         //submit and schedule feed
         LOGGER.info("Feed : " + Util.prettyPrintXml(feed.toString()));

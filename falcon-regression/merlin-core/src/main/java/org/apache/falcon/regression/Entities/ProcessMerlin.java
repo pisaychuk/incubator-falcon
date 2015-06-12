@@ -46,6 +46,8 @@ import org.testng.asserts.SoftAssert;
 import javax.xml.bind.JAXBException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,20 +100,23 @@ public class ProcessMerlin extends Process {
         if (clusters1.size() != clusters2.size()) {
             Assert.fail("Cluster sizes are different.");
         }
-        SoftAssert softAssert = new SoftAssert();
-    nextCluster:
-        for (Cluster cluster1 : clusters1) {
-            Validity validity1 = cluster1.getValidity();
-            for (Cluster cluster2 : clusters2) {
-                if (cluster2.getName().equals(cluster1.getName())) {
-                    Validity validity2 = cluster2.getValidity();
-                    if (validity2.getStart().equals(validity1.getStart())
-                        && validity2.getEnd().equals(validity1.getEnd())) {
-                        continue nextCluster;
-                    }
-                }
+        Comparator<Cluster> clusterComparator = new Comparator<Cluster>() {
+            @Override
+            public int compare(Cluster cluster1, Cluster cluster2) {
+                return cluster1.getName().compareTo(cluster2.getName());
             }
-            softAssert.fail("There are no equal clusters for " + cluster1.getName());
+        };
+        Collections.sort(clusters1, clusterComparator);
+        Collections.sort(clusters2, clusterComparator);
+        SoftAssert softAssert = new SoftAssert();
+        for(int i = 0; i < clusters1.size(); i++) {
+            Cluster cluster1 = clusters1.get(i);
+            Cluster cluster2 = clusters2.get(i);
+            softAssert.assertEquals(cluster1.getName(), cluster2.getName(), "Cluster names are different.");
+            softAssert.assertEquals(cluster1.getValidity().getStart(), cluster2.getValidity().getStart(),
+                String.format("Validity start is not the same for cluster %s", cluster1.getName()));
+            softAssert.assertEquals(cluster1.getValidity().getEnd(), cluster2.getValidity().getEnd(),
+                String.format("Cluster validity end is not the same for cluster %s", cluster1.getName()));
         }
         softAssert.assertAll();
     }

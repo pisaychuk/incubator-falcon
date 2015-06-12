@@ -741,13 +741,16 @@ public class ProcessSetupTest extends BaseUITestClass {
         expectedDropdownValues.add("-Select feed-");
         expectedDropdownValues.add(process.getInputs().getInputs().get(0).getFeed());
         expectedDropdownValues.add(process.getOutputs().getOutputs().get(0).getFeed());
+        Collections.sort(expectedDropdownValues);
 
         // Assert Input and Output Feed Dropdown values
         List<String> actualDropdownValues = processWizardPage.getInputValues(0);
+        Collections.sort(actualDropdownValues);
         Assert.assertEquals(expectedDropdownValues, actualDropdownValues,
             "Input Feed Dropdown Values Are Not Equal");
 
         actualDropdownValues = processWizardPage.getOutputValues(0);
+        Collections.sort(actualDropdownValues);
         Assert.assertEquals(expectedDropdownValues, actualDropdownValues,
             "Output Feed Dropdown Values Are Not Equal");
     }

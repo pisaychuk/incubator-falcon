@@ -32,8 +32,8 @@ import org.apache.falcon.entity.v0.process.Output;
 import org.apache.falcon.entity.v0.process.Outputs;
 import org.apache.falcon.entity.v0.process.PolicyType;
 import org.apache.falcon.entity.v0.process.Retry;
-import org.apache.falcon.entity.v0.process.Validity;
 import org.apache.falcon.entity.v0.process.Workflow;
+import org.apache.falcon.entity.v0.process.Validity;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.util.UIAssert;
 import org.apache.log4j.Logger;
@@ -249,17 +249,17 @@ public class ProcessWizardPage extends AbstractSearchPage {
         wfName.clear();
         wfName.sendKeys(processWf.getName());
         switch (processWf.getEngine()) {
-            case OOZIE:
-                getOozieRadio().click();
-                break;
-            case PIG:
-                getPigRadio().click();
-                break;
-            case HIVE:
-                getHiveRadio().click();
-                break;
-            default:
-                Assert.fail("Unexpected workflow engine: " + processWf.getEngine());
+        case OOZIE:
+            getOozieRadio().click();
+            break;
+        case PIG:
+            getPigRadio().click();
+            break;
+        case HIVE:
+            getHiveRadio().click();
+            break;
+        default:
+            Assert.fail("Unexpected workflow engine: " + processWf.getEngine());
         }
         final String version = processWf.getVersion();
         // The getVersion() method returns '1.0' if its null, hence the hack below

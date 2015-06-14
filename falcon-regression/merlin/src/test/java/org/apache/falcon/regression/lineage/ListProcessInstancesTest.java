@@ -160,7 +160,7 @@ public class ListProcessInstancesTest extends BaseTestClass {
      * List process instances using -offset and -numResults params expecting list of process
      * instances to start at the right offset and give expected number of instances.
      */
-    @Test
+    @Test(enabled = false)
     public void testProcessOffsetNumResults() throws Exception {
         //check default number. Should be 10.
         InstancesResult r = prism.getProcessHelper().listInstances(processName, null, null);
@@ -217,7 +217,7 @@ public class ListProcessInstancesTest extends BaseTestClass {
      * List process instances using -filterBy param. Expecting list of process instances
      * which have the given status.
      */
-    @Test
+    @Test(enabled = false)
     public void testProcessFilterBy() throws Exception {
         //test with simple filters
         InstancesResult r = prism.getProcessHelper().listInstances(processName,
@@ -329,7 +329,7 @@ public class ListProcessInstancesTest extends BaseTestClass {
      * Test list process instances using custom filter. Expecting list of process instances which
      * satisfy custom filters.
      */
-    @Test
+    @Test(enabled = false)
     public void testProcessCustomFilter() throws Exception {
         String params = "start=" + startTime + "&end=" + TimeUtil.addMinsToTime(startTime, 26)
             + "&filterBy=status:RUNNING";

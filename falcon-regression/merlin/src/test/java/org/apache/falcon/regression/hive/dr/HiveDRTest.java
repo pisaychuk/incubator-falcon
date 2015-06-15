@@ -86,9 +86,8 @@ public class HiveDRTest extends BaseTestClass {
     public void setUp() throws Exception {
         clusterHC = cluster.getClusterHelper().getHCatClient();
         clusterHC2 = cluster2.getClusterHelper().getHCatClient();
-        bundles[0] = BundleUtil.readHCatBundle();
-        bundles[0] = new Bundle(bundles[0], cluster);
-        bundles[1] = new Bundle(bundles[0], cluster2);
+        bundles[0] = new Bundle(BundleUtil.readHCatBundle(), cluster);
+        bundles[1] = new Bundle(BundleUtil.readHCatBundle(), cluster2);
         bundles[0].generateUniqueBundle(this);
         bundles[1].generateUniqueBundle(this);
         final ClusterMerlin srcCluster = bundles[0].getClusterElement();
@@ -307,7 +306,9 @@ public class HiveDRTest extends BaseTestClass {
         final String recipe1Name = recipeMerlin.getName();
         final List<String> command1 = recipeMerlin.getSubmissionCommand();
 
-        recipeMerlin.withTargetCluster(new Bundle(bundles[0], cluster3).getClusterElement());
+        final Bundle bundle = BundleUtil.readHCatBundle();
+        bundle.generateUniqueBundle(this);
+        recipeMerlin.withTargetCluster(new Bundle(bundle, cluster3).getClusterElement());
         recipeMerlin.setUniqueName(this.getClass().getSimpleName());
 
         final List<String> command2 = recipeMerlin.getSubmissionCommand();

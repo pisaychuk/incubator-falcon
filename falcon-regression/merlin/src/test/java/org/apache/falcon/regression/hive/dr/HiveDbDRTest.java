@@ -74,9 +74,8 @@ public class HiveDbDRTest extends BaseTestClass {
     public void setUp() throws Exception {
         clusterHC = cluster.getClusterHelper().getHCatClient();
         clusterHC2 = cluster2.getClusterHelper().getHCatClient();
-        bundles[0] = BundleUtil.readHCatBundle();
-        bundles[0] = new Bundle(bundles[0], cluster);
-        bundles[1] = new Bundle(bundles[0], cluster2);
+        bundles[0] = new Bundle(BundleUtil.readHCatBundle(), cluster);
+        bundles[1] = new Bundle(BundleUtil.readHCatBundle(), cluster2);
         bundles[0].generateUniqueBundle(this);
         bundles[1].generateUniqueBundle(this);
         final ClusterMerlin srcCluster = bundles[0].getClusterElement();

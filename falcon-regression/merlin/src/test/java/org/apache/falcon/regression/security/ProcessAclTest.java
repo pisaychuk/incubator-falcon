@@ -127,7 +127,7 @@ public class ProcessAclTest extends BaseTestClass {
         bundles[0].submitProcess(true);
         if (op == EntityOp.update) {
             ProcessMerlin processMerlin = new ProcessMerlin(processString);
-            processMerlin.setProperty("abc", "xyz");
+            processMerlin.addProperty("abc", "xyz");
             processString = processMerlin.toString();
         }
         final boolean executeRes = op.executeAs(user, processHelper, processString);
@@ -173,7 +173,7 @@ public class ProcessAclTest extends BaseTestClass {
             processHelper.suspend(processString);
         } else if (op == EntityOp.update) {
             ProcessMerlin processMerlin = new ProcessMerlin(processString);
-            processMerlin.setProperty("abc", "xyz");
+            processMerlin.addProperty("abc", "xyz");
             processString = processMerlin.toString();
         }
         final boolean executeRes = op.executeAs(user, processHelper, processString);

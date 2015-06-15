@@ -204,7 +204,7 @@ public class PrismFeedUpdateTest extends BaseTestClass {
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 1);
 
         //change feed location path
-        outputFeed.setFeedProperty("queueName", "myQueue");
+        outputFeed.addProperty("queueName", "myQueue");
         LOGGER.info("updated feed: " + Util.prettyPrintXml(outputFeed.toString()));
 
         //update feed first time

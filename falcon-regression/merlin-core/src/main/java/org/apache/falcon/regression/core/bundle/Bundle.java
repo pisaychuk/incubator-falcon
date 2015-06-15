@@ -47,7 +47,6 @@ import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -799,9 +798,9 @@ public class Bundle {
      *
      * @param properties desired properties to be added
      */
-    public void addProcessProperty(Property... properties) {
+    public void addProcessProperty(String propName, String propValue) {
         ProcessMerlin p = new ProcessMerlin(processData);
-        p.addProperties(properties);
+        p.addProperty(propName, propValue);
         processData = p.toString();
     }
 
@@ -845,7 +844,7 @@ public class Bundle {
 
     public void setProcessProperty(String property, String value) {
         ProcessMerlin process = new ProcessMerlin(this.getProcessData());
-        process.setProperty(property, value);
+        process.addProperty(property, value);
         this.setProcessData(process.toString());
 
     }

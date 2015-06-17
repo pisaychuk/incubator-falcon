@@ -186,7 +186,9 @@ public class PageHeader {
     public void uploadXml(String filePath) throws IOException {
         final WebElement uploadEntityTextBox = uploadEntityBox.findElement(By.id("files"));
         uploadEntityTextBox.sendKeys(filePath);
-        waitForAngularToFinish();
+        //wait for alert
+        driver.findElements(
+            By.xpath("//div[@class='messages notifs' and contains(@style,'display: block')]"));
     }
 
     public ClusterWizardPage doCreateCluster() {

@@ -161,7 +161,6 @@ public class HomePageTest extends BaseUITestClass {
         writer.close();
 
         homePage.getPageHeader().uploadXml(xmlFile.getAbsolutePath());
-        Thread.sleep(1000);
         alertText = homePage.getActiveAlertText();
         Assert.assertEquals(alertText, "Invalid xml. File not uploaded",
             "XML file with invalid text was allowed to be uploaded");

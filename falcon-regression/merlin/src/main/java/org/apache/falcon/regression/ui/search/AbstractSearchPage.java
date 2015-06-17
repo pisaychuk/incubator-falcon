@@ -148,7 +148,8 @@ public abstract class AbstractSearchPage extends Page {
 
     public String getActiveAlertText() {
         WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
-        if (alertsBlock.getAttribute("style").contains("opacity: 1;")) {
+        String style = alertsBlock.getAttribute("style");
+        if (style.contains("opacity: 1;") || !style.contains("opacity")) {
             return null;
         } else {
             return alertsBlock.findElement(By.xpath("./div[last()]")).getText();

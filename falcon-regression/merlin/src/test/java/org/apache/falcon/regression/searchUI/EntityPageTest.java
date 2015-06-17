@@ -142,7 +142,7 @@ public class EntityPageTest extends BaseUITestClass {
      * tags, workflow etc.
      * @throws IOException
      */
-    @Test
+    @Test(enabled = false)
     public void testFeedEntityProperties() throws Exception {
         final FeedMerlin inputFeed = FeedMerlin.fromString(bundles[0].getInputFeedFromBundle());
         addLocationsToFeedCluster(inputFeed);
@@ -180,7 +180,7 @@ public class EntityPageTest extends BaseUITestClass {
      * input, output etc.
      * @throws IOException
      */
-    @Test
+    @Test(enabled = false)
     public void testProcessEntityProperties() throws Exception {
         final ProcessMerlin process = bundles[0].getProcessObject();
         bundles[0].submitAndScheduleAllFeeds();

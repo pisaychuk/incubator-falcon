@@ -315,7 +315,7 @@ public class ListFeedInstancesTest extends BaseTestClass {
      * List feed instances with -offset and -numResults params expecting the list of feed
      * instances which start at the right offset and number of instances matches to expected.
      */
-    @Test
+    @Test(enabled = false)
     public void testFeedOffsetNumResults()
         throws URISyntaxException, IOException, AuthenticationException, InterruptedException {
         //check the default value of the numResults param. Expecting 10 instances.
@@ -372,7 +372,7 @@ public class ListFeedInstancesTest extends BaseTestClass {
     /**
      * Test the list feed instances api using filterBy parameter.
      */
-    @Test
+    @Test(enabled = false)
     public void testFeedFilterBy()
         throws OozieClientException, AuthenticationException, IOException, URISyntaxException,
         InterruptedException {
@@ -420,7 +420,7 @@ public class ListFeedInstancesTest extends BaseTestClass {
      * Test list feed instances using custom filter. Expecting list of feed instances which
      * satisfy custom filters.
      */
-    @Test
+    @Test(enabled = false)
     public void testFeedCustomFilter()
         throws URISyntaxException, IOException, AuthenticationException, InterruptedException {
         String params = "start=" + startTime + "&filterBy=status:RUNNING";

@@ -18,8 +18,6 @@
 
 package org.apache.falcon.regression.testHelper;
 
-import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.TimeUtil;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxProfile;
@@ -29,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Base class for UI test classes.
  */
-public class BaseUITestClass extends BaseTestClass {
+public class BaseUITestClass extends BaseTestClass{
 
     private static WebDriver driver;
 
@@ -48,12 +46,10 @@ public class BaseUITestClass extends BaseTestClass {
 
     }
 
+
     public static void closeBrowser() {
         if (driver != null) {
             driver.close();
-            if (OSUtil.IS_WINDOWS) {
-                TimeUtil.sleepSeconds(5);
-            }
             driver.quit();
             driver = null;
         }

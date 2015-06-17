@@ -91,7 +91,7 @@ public class ClusterSetupTest extends BaseUITestClass{
         //summary block should contain the same info as source
         sourceCluster.assertEquals(summaryBlock);
         clusterSetup.clickSave();
-        String alertText = clusterSetup.getActiveAlertText();
+        String alertText = clusterSetup.getAlertText();
         Assert.assertEquals(alertText, "falcon/default/Submit successful (cluster) " + sourceCluster.getName());
         ClusterMerlin definition = new ClusterMerlin(cluster.getClusterHelper()
             .getEntityDefinition(bundles[0].getClusterElement().toString()).getMessage());
@@ -237,7 +237,7 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.fillForm(sourceCluster);
         clusterSetup.clickNext();
         clusterSetup.clickSave();
-        String alertMessage = clusterSetup.getActiveAlertText();
+        String alertMessage = clusterSetup.getAlertText();
         Assert.assertEquals(alertMessage,
             String.format("Path %s has permissions: rwxr-xr-x, should be rwxrwxrwx", working));
     }
@@ -253,7 +253,7 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.fillForm(sourceCluster);
         clusterSetup.clickNext();
         clusterSetup.clickSave();
-        String alertMessage = clusterSetup.getActiveAlertText();
+        String alertMessage = clusterSetup.getAlertText();
         Assert.assertEquals(alertMessage,
             String.format("Location %s for cluster %s must exist.", nonExistent, sourceCluster.getName()));
     }

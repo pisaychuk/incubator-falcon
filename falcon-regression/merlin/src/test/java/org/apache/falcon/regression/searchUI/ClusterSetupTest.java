@@ -138,7 +138,7 @@ public class ClusterSetupTest extends BaseUITestClass{
      * Add location to cluster. Check that it is present. Check XML preview has it.
      * Delete the location. Check that it has been deleted from wizard window.
      */
-    @Test
+    @Test(enabled = false)
     public void testAddDeleteLocation() {
         //to make addLocation button enabled
         sourceCluster.addLocation(ClusterLocationType.WORKING, "/one-another-temp");
@@ -263,7 +263,7 @@ public class ClusterSetupTest extends BaseUITestClass{
      * description, add registry interface. Check that they were enabled and populated
      * in wizard.
      */
-    @Test
+    @Test(enabled = false)
     public void testEditXml() {
         clusterSetup.fillForm(sourceCluster);
         //check that registry is empty

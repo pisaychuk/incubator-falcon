@@ -692,7 +692,7 @@ public class FeedSetupTest extends BaseUITestClass{
      * Check that user is not allowed to go to the next step and is notified with an appropriate alert.
      * @throws Exception
      */
-    @Test
+    @Test(enabled = false)
     public void testLocationStepBothLocationsAndTableUri() throws Exception{
 
         // Set values on the General Info Page

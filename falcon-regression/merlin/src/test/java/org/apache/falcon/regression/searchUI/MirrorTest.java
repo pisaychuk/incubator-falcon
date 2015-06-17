@@ -209,7 +209,7 @@ public class MirrorTest extends BaseUITestClass {
      * Check that user is not allowed to go to the next step and has been notified with an alert.
      * Set permissions as 4digit number, negative, string, 000. Check the same.
      */
-    @Test
+    @Test(enabled = false)
     public void testInvalidAcl() {
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
         final String goodAclOwner = MerlinConstants.CURRENT_USER_NAME;
@@ -267,7 +267,7 @@ public class MirrorTest extends BaseUITestClass {
      * that user is not allowed
      to go to the next step and has been notified with an alert.
      */
-    @Test
+    @Test(enabled = false)
     public void testHiveAdvancedInvalidStaging() {
         recipeMerlin.withSourceDb(DB_NAME);
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));
@@ -311,7 +311,7 @@ public class MirrorTest extends BaseUITestClass {
      * (another owner, 700 permissions).
      * Check that user is not allowed to go to the next step and has been notified with an alert.
      */
-    @Test
+    @Test(enabled = false)
     public void testHiveAdvancedStagingAcl() throws Exception {
         recipeMerlin.withSourceDb(DB_NAME);
         recipeMerlin.setTags(Arrays.asList("key1=val1", "key2=val2", "key3=val3"));

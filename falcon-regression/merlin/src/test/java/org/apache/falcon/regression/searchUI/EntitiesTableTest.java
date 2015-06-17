@@ -157,6 +157,8 @@ public class EntitiesTableTest extends BaseUITestClass {
 
     @DataProvider
     public Object[][] getBoolean() {
-        return new Boolean[][]{{Boolean.TRUE}, {Boolean.FALSE}};
+        return new Boolean[][]{
+            //{Boolean.TRUE},
+            {Boolean.FALSE}};
     }
 }

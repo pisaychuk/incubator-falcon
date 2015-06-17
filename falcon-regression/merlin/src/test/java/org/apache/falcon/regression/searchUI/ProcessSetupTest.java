@@ -663,7 +663,7 @@ public class ProcessSetupTest extends BaseUITestClass {
      * Check the same for invalid EL expression.
      * @throws Exception
      */
-    @Test
+    @Test(enabled = false)
     public void testInOutInvalidInstance() throws Exception{
 
         bundles[0].submitClusters(cluster);
@@ -947,7 +947,7 @@ public class ProcessSetupTest extends BaseUITestClass {
      * Go through all properties which are shown on page. Check that they are equal to
      * those which were populated in previous steps.
      */
-    @Test
+    @Test(enabled = false)
     public void testSummaryStepAllProperties()
         throws URISyntaxException, IOException, AuthenticationException, InterruptedException, JAXBException {
         bundles[0].submitClusters(cluster);
@@ -981,7 +981,7 @@ public class ProcessSetupTest extends BaseUITestClass {
      * shown on XML Preview. Click Edit XML. Add new input. Check that it has been
      * added on wizard.
      */
-    @Test
+    @Test(enabled = false)
     public void testSummaryStepEditXml() throws Exception {
 
         bundles[0].submitClusters(cluster);

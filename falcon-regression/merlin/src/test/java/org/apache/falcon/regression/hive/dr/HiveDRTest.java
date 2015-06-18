@@ -379,15 +379,15 @@ public class HiveDRTest extends BaseTestClass {
         createExternalPartitionedTable(connection, clusterFS,
             baseTestHDFSDir + "click_data/", tblName);
         runSql(connection2,
-            "create table " + tblName + " (data string, time string) partitioned by (date string)");
+            "create table " + tblName + " (data string, time string) partitioned by (date_ string)");
         runSql(connection2, "alter table " + tblName + " add partition "
-            + "(date='2001-01-01') location '" + baseTestHDFSDir + "click_data/2001-01-01/'");
+            + "(date_='2001-01-01') location '" + baseTestHDFSDir + "click_data/2001-01-01/'");
         runSql(connection2, "alter table " + tblName + " add partition "
-            + "(date='2001-01-02') location '" + baseTestHDFSDir + "click_data/2001-01-02/'");
+            + "(date_='2001-01-02') location '" + baseTestHDFSDir + "click_data/2001-01-02/'");
 
-        runSql(connection2, "insert into table " + tblName + " partition (date='2001-01-01') " +
+        runSql(connection2, "insert into table " + tblName + " partition (date_='2001-01-01') " +
             "values ('click1', '01:01:01')");
-        runSql(connection2, "insert into table " + tblName + " partition (date='2001-01-02') " +
+        runSql(connection2, "insert into table " + tblName + " partition (date_='2001-01-02') " +
             "values ('click2', '02:02:02')");
 
         final NotifyingAssert anAssert = new NotifyingAssert(true);

@@ -116,12 +116,12 @@ class HiveObjectCreator {
             new StringBuffer("click2").append((char) 0x01).append("02:02:02"), true);
         //clusterFS.setPermission(new Path(clickDataPart2), FsPermission.getFileDefault());
         runSql(connection, "create external table " + tableName
-            + " (data string, time string) partitioned by (date string) "
+            + " (data string, time string) partitioned by (date_ string) "
             + "location '" + clickDataLocation + "'");
         runSql(connection, "alter table " + tableName + " add partition "
-            + "(date='2001-01-01') location '" + clickDataPart1 + "'");
+            + "(date_='2001-01-01') location '" + clickDataPart1 + "'");
         runSql(connection, "alter table " + tableName + " add partition "
-            + "(date='2001-01-02') location '" + clickDataPart2 + "'");
+            + "(date_='2001-01-02') location '" + clickDataPart2 + "'");
         runSql(connection, "select * from " + tableName);
     }
 

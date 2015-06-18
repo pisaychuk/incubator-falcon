@@ -263,7 +263,7 @@ public class MirrorWizardPage extends AbstractSearchPage {
         final WebElement saveButton = driver.findElement(By.xpath("//button[contains(.,'Save')]"));
         UIAssert.assertDisplayed(saveButton, "Save button in not displayed.");
         saveButton.click();
-        waitForAlert();
+        waitForAngularToFinish();
     }
 
     public ClusterBlock getSourceBlock() {

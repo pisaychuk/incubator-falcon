@@ -207,7 +207,7 @@ public class Bundle {
      * to unique.
      */
     public void generateUniqueBundle(Object testClassObject) {
-        generateUniqueBundle(testClassObject.getClass().getSimpleName() + '-');
+        generateUniqueBundle(testClassObject.getClass().getSimpleName());
     }
 
     /**

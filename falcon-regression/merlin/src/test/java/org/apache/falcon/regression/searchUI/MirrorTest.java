@@ -151,7 +151,7 @@ public class MirrorTest extends BaseUITestClass {
      * Using get entity definition API check that entity has been created.
      * @throws Exception
      */
-    @Test
+    @Test(enabled = false)
     public void testHdfsDefaultScenario() throws Exception {
         final ClusterMerlin srcCluster = bundles[0].getClusterElement();
         final ClusterMerlin tgtCluster = bundles[1].getClusterElement();

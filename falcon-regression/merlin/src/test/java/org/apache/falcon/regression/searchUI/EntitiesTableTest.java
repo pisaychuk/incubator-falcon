@@ -135,7 +135,7 @@ public class EntitiesTableTest extends BaseUITestClass {
      * Only one process should be found with all tags. Delete tags one by one. All processes
      * should be found with first tag. Zero entities should be shown after cleaning all params.
      */
-    @Test(dataProvider = "getBoolean")
+    @Test(dataProvider = "getBoolean", enabled = false)
     public void testSearchBoxCleanSingleParam(boolean deleteByClick) {
         searchPage.doSearch(Util.getEntityPrefix(this) + ' ' + StringUtils.join(tags, ' '));
         for (int i = 1; i <= tags.length; i++) {
@@ -159,7 +159,7 @@ public class EntitiesTableTest extends BaseUITestClass {
     @DataProvider
     public Object[][] getBoolean() {
         return new Boolean[][]{
-            //{Boolean.TRUE},
+            {Boolean.TRUE},
             {Boolean.FALSE}};
     }
 }

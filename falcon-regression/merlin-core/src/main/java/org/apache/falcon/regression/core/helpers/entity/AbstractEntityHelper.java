@@ -276,11 +276,6 @@ public abstract class AbstractEntityHelper {
         return StringUtils.join(parts, "/");
     }
 
-    public ServiceResponse listEntities()
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return listEntities(null, null, null);
-    }
-
     public ServiceResponse listEntities(String entityType, String params, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         if (StringUtils.isEmpty(entityType)) {
@@ -292,6 +287,11 @@ public abstract class AbstractEntityHelper {
             url += colo.isEmpty() ? "?" + params : "&" + params;
         }
         return Util.sendRequest(createUrl(url), "get", null, user);
+    }
+
+    public ServiceResponse listAllEntities()
+            throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
+        return listAllEntities(null, null);
     }
 
     public ServiceResponse listAllEntities(String params, String user)

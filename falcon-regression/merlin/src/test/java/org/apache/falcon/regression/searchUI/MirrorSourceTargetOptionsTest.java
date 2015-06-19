@@ -149,7 +149,7 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
             prism.getClusterHelper().submitEntity(cluster.toString());
         }
         EntityList result =
-            prism.getClusterHelper().listAllEntities(null, null).getEntityList();
+            prism.getClusterHelper().listAllEntities().getEntityList();
         Assert.assertNotNull(result.getElements(),
             "There should be more than 5 clusters in result");
         Set<String> apiClusterNames = new TreeSet<>();

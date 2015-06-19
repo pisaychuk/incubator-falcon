@@ -550,7 +550,7 @@ public class LineageApiTest extends BaseTestClass {
             "We should not get internal server error");
     }
 
-    @Test
+    @Test(enabled = false)
     public void testAllEdges() throws Exception {
         final EdgesResult edgesResult = lineageHelper.getAllEdges();
         LOGGER.info(edgesResult);

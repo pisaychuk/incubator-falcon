@@ -28,6 +28,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.testng.Assert;
 
@@ -152,7 +153,9 @@ public abstract class AbstractSearchPage extends Page {
         if (style.contains("opacity: 1;") || !style.contains("opacity")) {
             return null;
         } else {
-            return alertsBlock.findElement(By.xpath("./div[last()]")).getText();
+            WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
+            ExpectedConditions.textToBePresentInElement(alert, " ");
+            return alert.getText();
         }
     }
 

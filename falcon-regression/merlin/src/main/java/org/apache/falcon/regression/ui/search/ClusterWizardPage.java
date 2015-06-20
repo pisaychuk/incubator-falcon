@@ -423,7 +423,7 @@ public class ClusterWizardPage extends AbstractSearchPage {
      */
     public void clickSave() {
         save.click();
-        waitForAngularToFinish();
+        waitForAlert();
     }
 
     /**
@@ -475,11 +475,6 @@ public class ClusterWizardPage extends AbstractSearchPage {
                 LOGGER.info("Name Unavailable not found");
             }
         }
-    }
-
-    public String getAlertText() {
-        WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
-           return alertsBlock.findElement(By.xpath("./div[last()]")).getText();
     }
 
 }

@@ -18,6 +18,8 @@
 
 package org.apache.falcon.regression.testHelper;
 
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxProfile;
@@ -42,7 +44,8 @@ public class BaseUITestClass extends BaseTestClass{
 
         driver = new FirefoxDriver(profile);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        driver.manage().window().maximize();
+        driver.manage().window().setPosition(new Point(0, 0));
+        driver.manage().window().setSize(new Dimension(1280, 1024));
 
     }
 

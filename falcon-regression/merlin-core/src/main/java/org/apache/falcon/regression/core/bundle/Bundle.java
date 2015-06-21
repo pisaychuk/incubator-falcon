@@ -328,10 +328,7 @@ public class Bundle {
     }
 
     public int getInitialDatasetFrequency() {
-        FeedMerlin dataElement = new FeedMerlin(dataSets.get(0));
-        if (!dataElement.getName().contains("raaw-logs16")) {
-            dataElement = new FeedMerlin(dataSets.get(1));
-        }
+        FeedMerlin dataElement = new FeedMerlin(getInputFeedFromBundle());
         if (dataElement.getFrequency().getTimeUnit() == TimeUnit.hours) {
             return (Integer.parseInt(dataElement.getFrequency().getFrequency())) * 60;
         } else {

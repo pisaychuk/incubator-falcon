@@ -188,7 +188,7 @@ public class PageHeader {
         uploadEntityTextBox.sendKeys(filePath);
         //wait for alert
         driver.findElements(
-            By.xpath("//div[@class='messages notifs' and contains(@style,'display: block')]"));
+            By.xpath("//div[@class='messages notifs' and contains(@style,'opacity') and not(contains(@style,'1;'))]"));
     }
 
     public ClusterWizardPage doCreateCluster() {

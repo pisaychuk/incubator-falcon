@@ -327,6 +327,7 @@ public class FeedWizardPage extends AbstractSearchPage {
     }
 
     public void clickEditXml(){
+        waitForAngularToFinish();
         editXmlButton.click();
     }
 

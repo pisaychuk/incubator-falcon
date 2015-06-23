@@ -131,6 +131,7 @@ public class ProcessWizardPage extends AbstractSearchPage {
     }
 
     public void clickEditXml(){
+        waitForAngularToFinish();
         editXmlButton.click();
     }
 

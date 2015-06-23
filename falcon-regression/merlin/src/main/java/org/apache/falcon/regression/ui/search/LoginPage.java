@@ -50,7 +50,7 @@ public class LoginPage extends AbstractSearchPage {
     }
 
     private WebElement getUserTextBox() {
-        waitForElement("//input[@name='user']", 10, "User input element didn't appeared in time.");
+        waitForElement("//input[@name='user']", 30, "User input element didn't appeared in time.");
         return loginElem.findElement(By.xpath("//input[@name='user']"));
     }
 

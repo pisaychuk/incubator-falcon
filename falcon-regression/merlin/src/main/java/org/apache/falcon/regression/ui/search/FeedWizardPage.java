@@ -333,6 +333,7 @@ public class FeedWizardPage extends AbstractSearchPage {
 
     public void clickCatalogStorageButton(){
         catalogStorageButton.click();
+        waitForAngularToFinish();
     }
 
     public void setFeedName(String name){

@@ -316,6 +316,7 @@ public class FeedWizardPage extends AbstractSearchPage {
 
     public void clickNext(){
         nextButton.click();
+        waitForAngularToFinish();
     }
 
     public void clickPrevious(){
@@ -595,6 +596,7 @@ public class FeedWizardPage extends AbstractSearchPage {
         setFeedPropertyKey(0, feed.getProperties().getProperties().get(0).getName());
         setFeedPropertyValue(0, feed.getProperties().getProperties().get(0).getValue());
         addPropertyButton.click();
+        waitForAngularToFinish();
         setFeedPropertyKey(1, feed.getProperties().getProperties().get(1).getName());
         setFeedPropertyValue(1, feed.getProperties().getProperties().get(1).getValue());
     }

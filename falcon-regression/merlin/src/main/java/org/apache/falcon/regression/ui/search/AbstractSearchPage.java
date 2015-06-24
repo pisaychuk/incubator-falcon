@@ -154,8 +154,8 @@ public abstract class AbstractSearchPage extends Page {
             return null;
         } else {
             WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
-            ExpectedConditions.textToBePresentInElement(alert, " ");
             waitForAngularToFinish();
+            ExpectedConditions.textToBePresentInElement(alert, " ");
             return alert.getText();
         }
     }

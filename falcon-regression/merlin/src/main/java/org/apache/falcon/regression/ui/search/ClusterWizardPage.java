@@ -415,6 +415,7 @@ public class ClusterWizardPage extends AbstractSearchPage {
      */
     public void clickNext() {
         next.click();
+        waitForAngularToFinish();
         Assert.assertTrue(summaryBox.isDisplayed(), "Summary box should be displayed.");
     }
 

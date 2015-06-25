@@ -419,6 +419,7 @@ public class FeedWizardPage extends AbstractSearchPage {
     }
 
     public void addProperty(){
+        waitForAngularToFinish();
         addPropertyButton.click();
     }
 
@@ -595,7 +596,7 @@ public class FeedWizardPage extends AbstractSearchPage {
         setFeedTimeZone();
         setFeedPropertyKey(0, feed.getProperties().getProperties().get(0).getName());
         setFeedPropertyValue(0, feed.getProperties().getProperties().get(0).getValue());
-        addPropertyButton.click();
+        addProperty();
         waitForAngularToFinish();
         setFeedPropertyKey(1, feed.getProperties().getProperties().get(1).getName());
         setFeedPropertyValue(1, feed.getProperties().getProperties().get(1).getValue());
@@ -637,13 +638,13 @@ public class FeedWizardPage extends AbstractSearchPage {
     // setFeed method runs the default feed setup wizard, entering data on each page
     public void setFeed(FeedMerlin feed){
         setFeedGeneralInfo(feed);
-        nextButton.click();
+        clickNext();
         setFeedPropertiesInfo(feed);
-        nextButton.click();
+        clickNext();
         setFeedLocationInfo(feed);
-        nextButton.click();
+        clickNext();
         setFeedClustersInfo(feed);
-        nextButton.click();
+        clickNext();
         saveFeedButton.click();
         waitForAlert();
     }

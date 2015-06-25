@@ -682,7 +682,7 @@ public class HiveDRTest extends BaseTestClass {
 
     @DataProvider(name = "frequencyGenerator")
     public Object[][] frequencyGenerator() {
-        return new Object[][]{{"minutes(10)"}, {"minutes(10000)"}, {"hours(5)"}, {"hours(5000)"},
+        return new Object[][]{{"minutes(10)"}, {"minutes(10000)"},
             {"days(3)"}, {"days(3000)"}, {"months(1)"}, {"months(1000)"}};
     }
 

@@ -24,6 +24,7 @@ import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.Entities.RecipeMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
+import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.supportClasses.NotifyingAssert;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -82,9 +83,15 @@ public class HiveDbDRTest extends BaseTestClass {
         final ClusterMerlin tgtCluster = bundles[1].getClusterElement();
         Bundle.submitCluster(bundles[0]);
 
-        recipeMerlin = RecipeMerlin.readFromDir("HiveDrRecipe",
-            FalconCLI.RecipeOperation.HIVE_DISASTER_RECOVERY)
-            .withRecipeCluster(srcCluster);
+        if (MerlinConstants.IS_SECURE) {
+            recipeMerlin = RecipeMerlin.readFromDir("HiveDrSecureRecipe",
+                FalconCLI.RecipeOperation.HIVE_DISASTER_RECOVERY)
+                .withRecipeCluster(srcCluster);
+        } else {
+            recipeMerlin = RecipeMerlin.readFromDir("HiveDrRecipe",
+                FalconCLI.RecipeOperation.HIVE_DISASTER_RECOVERY)
+                .withRecipeCluster(srcCluster);
+        }
         recipeMerlin.withSourceCluster(srcCluster)
             .withTargetCluster(tgtCluster)
             .withFrequency(new Frequency("5", Frequency.TimeUnit.minutes))

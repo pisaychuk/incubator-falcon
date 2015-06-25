@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.ui.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.ui.pages.Page;
@@ -154,9 +155,10 @@ public abstract class AbstractSearchPage extends Page {
             return null;
         } else {
             WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
+            String result;
+            ExpectedConditions.elementSelectionStateToBe(alert, StringUtils.isNotEmpty(result = alert.getText()));
             waitForAngularToFinish();
-            ExpectedConditions.textToBePresentInElement(alert, " ");
-            return alert.getText();
+            return result;
         }
     }
 

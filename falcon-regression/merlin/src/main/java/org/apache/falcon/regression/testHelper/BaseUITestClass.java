@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.testHelper;
 
+import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
@@ -40,7 +41,7 @@ public class BaseUITestClass extends BaseTestClass{
     protected static void openBrowser() {
 
         FirefoxProfile profile = new FirefoxProfile();
-        profile.setPreference("network.negotiate-auth.trusted-uris", "http://, https://");
+        profile.setPreference("network.negotiate-auth.trusted-uris", MerlinConstants.PRISM_URL);
 
         driver = new FirefoxDriver(profile);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);

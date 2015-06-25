@@ -437,6 +437,7 @@ public class ClusterWizardPage extends AbstractSearchPage {
 
     public void checkRegistry() {
         clusterBox.findElement(By.xpath("//input[@type='checkbox']")).click();
+        waitForAngularToFinish();
     }
 
     public String getInterfaceEndpoint(Interfacetype interfacetype) {

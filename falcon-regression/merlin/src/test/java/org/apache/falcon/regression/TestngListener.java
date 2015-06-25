@@ -34,6 +34,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
 import org.testng.IExecutionListener;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
@@ -128,6 +131,13 @@ public class TestngListener implements ITestListener, IExecutionListener {
                     result.getName(), params));
             LOGGER.info("Saving screenshot to: " + filename);
             FileUtils.writeByteArrayToFile(new File(filename), scrFile);
+            LOGGER.info("Firefox console logs:");
+            LogEntries logEntries = BaseUITestClass.getDriver().manage().logs().get(LogType.BROWSER);
+            System.out.println("size:" + logEntries.getAll().size());
+            for (LogEntry entry : logEntries) {
+                LOGGER.info(entry.getLevel() + " " + entry.getMessage());
+            }
+
         }
     }
 

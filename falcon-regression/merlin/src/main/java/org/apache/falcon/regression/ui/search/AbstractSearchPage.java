@@ -29,10 +29,12 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,9 +156,21 @@ public abstract class AbstractSearchPage extends Page {
         if (style.contains("opacity: 1;") || !style.contains("opacity")) {
             return null;
         } else {
-            WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
-            String result;
-            ExpectedConditions.elementSelectionStateToBe(alert, StringUtils.isNotEmpty(result = alert.getText()));
+            final WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
+            WebDriverWait wait = new WebDriverWait(driver, 5);
+            String result = wait.until(new ExpectedCondition<String>() {
+                @Nullable
+                @Override
+                public String apply(WebDriver webDriver) {
+                    String alertText = alert.getText();
+                    LOGGER.info("Current alert text: '" + alertText + "'");
+                    if (StringUtils.isNotEmpty(alertText)) {
+                        return alertText;
+                    } else {
+                        return null;
+                    }
+                }
+            });
             waitForAngularToFinish();
             return result;
         }

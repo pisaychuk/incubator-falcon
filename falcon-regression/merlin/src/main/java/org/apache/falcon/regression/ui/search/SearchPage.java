@@ -154,6 +154,7 @@ public class SearchPage extends AbstractSearchPage {
             Assert.assertEquals(activeAlert.trim(), "No results matched the search criteria.");
             return Collections.emptyList();
         }
+        waitForAngularToFinish();
         UIAssert.assertDisplayed(resultBlock, "Search result block");
         return getSearchResults();
 

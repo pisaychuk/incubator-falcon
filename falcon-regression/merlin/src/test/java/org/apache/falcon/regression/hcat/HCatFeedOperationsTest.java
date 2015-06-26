@@ -209,7 +209,7 @@ public class HCatFeedOperationsTest extends BaseTestClass {
                 .build()).toString();
 
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, feed, 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed, 0);
         Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, Util.readEntityName(feed), "REPLICATION"), 1);
         //This test doesn't wait for replication to succeed.
     }

@@ -88,6 +88,7 @@ public class ClusterWizardPage extends AbstractSearchPage {
             addProperty(property.getName(), property.getValue());
         }
         setLocations(cluster.getLocations().getLocations());
+        waitForAngularToFinish();
     }
 
     /**
@@ -432,6 +433,7 @@ public class ClusterWizardPage extends AbstractSearchPage {
      */
     public void clickPrevious() {
         previous.click();
+        waitForAngularToFinish();
         UIAssert.assertDisplayed(clusterBox, "Cluster box");
     }
 

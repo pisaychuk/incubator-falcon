@@ -60,10 +60,13 @@ public final class FalconClientBuilder implements Builder<CommandLine> {
         WIN_SU {
             @Override
             public CommandLine getCommandLine(String forUser) {
-                return CommandLine.parse(OSUtil.WIN_SU_BINARY)
+                CommandLine commandLine = CommandLine.parse(OSUtil.WIN_SU_BINARY)
                     .addArgument("-u").addArgument(forUser)
-                    .addArgument("-p").addArgument(MerlinConstants.getPasswordForUser(forUser))
-                    .addArgument(FALCON_CLIENT_BINARY);
+                    .addArgument("-p").addArgument(MerlinConstants.getPasswordForUser(forUser));
+                if (FALCON_CLIENT_BINARY.endsWith(".py")) {
+                    commandLine.addArgument("python");
+                }
+                return commandLine.addArgument(FALCON_CLIENT_BINARY);
             }
             @Override
             public void addArgsToCommandLine(CommandLine cmdLine, List<String> arguments) {
@@ -77,7 +80,11 @@ public final class FalconClientBuilder implements Builder<CommandLine> {
         NONE {
             @Override
             public CommandLine getCommandLine(String forUser) {
-                return CommandLine.parse(FALCON_CLIENT_BINARY);
+                if (FALCON_CLIENT_BINARY.endsWith(".py")) {
+                    return CommandLine.parse("python").addArgument(FALCON_CLIENT_BINARY);
+                } else {
+                    return CommandLine.parse(FALCON_CLIENT_BINARY);
+                }
             }
             @Override
             public void addArgsToCommandLine(CommandLine cmdLine, List<String> arguments) {

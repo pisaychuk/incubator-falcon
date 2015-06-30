@@ -217,7 +217,7 @@ public final class AssertUtil {
     public static void assertFailed(ExecResult execResult, String expectedMessage) {
         Assert.assertFalse(execResult.hasSuceeded(),
                 "Unexpectedly succeeded execResult: " + execResult);
-        Assert.assertTrue(execResult.getError().contains(expectedMessage),
+        Assert.assertTrue((execResult.getError() + execResult.getOutput()).contains(expectedMessage),
             "Expected error: " + expectedMessage + " in execResult: " + execResult);
     }
 

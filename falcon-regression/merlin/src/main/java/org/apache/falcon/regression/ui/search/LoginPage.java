@@ -79,9 +79,11 @@ public class LoginPage extends AbstractSearchPage {
 
     /** Login successfully and take to the next page i.e. search page. */
     public SearchPage doDefaultLogin() {
-        getUserTextBox().clear();
-        appendToUserName(UI_DEFAULT_USER);
-        tryLogin();
+        if (!MerlinConstants.IS_SECURE) {
+            getUserTextBox().clear();
+            appendToUserName(UI_DEFAULT_USER);
+            tryLogin();
+        }
         LOGGER.info("Search page should have opened.");
         final SearchPage searchPage = PageFactory.initElements(driver, SearchPage.class);
         searchPage.checkPage();

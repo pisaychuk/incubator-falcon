@@ -180,7 +180,7 @@ public class SearchPage extends AbstractSearchPage {
     }
 
     private void focusOnSearchBox() {
-        searchBlock.findElement(By.className("tags")).click();
+        driver.findElement(By.className("tags")).click();
     }
 
     public void checkNoResult() {

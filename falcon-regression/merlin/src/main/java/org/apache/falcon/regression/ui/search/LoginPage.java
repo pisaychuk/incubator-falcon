@@ -86,8 +86,8 @@ public class LoginPage extends AbstractSearchPage {
         }
         LOGGER.info("Search page should have opened.");
         final SearchPage searchPage = PageFactory.initElements(driver, SearchPage.class);
+        searchPage.checkPage();
         if (!MerlinConstants.IS_SECURE) {
-            searchPage.checkPage();
             final PageHeader searchHeader = searchPage.getPageHeader();
             searchHeader.checkLoggedIn();
             Assert.assertEquals(searchHeader.getLoggedInUser(), LoginPage.UI_DEFAULT_USER,

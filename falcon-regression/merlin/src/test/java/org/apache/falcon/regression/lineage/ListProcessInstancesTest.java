@@ -92,7 +92,7 @@ public class ListProcessInstancesTest extends BaseTestClass {
     /**
      * List process instances using orderBy - status, -startTime, -endTime params, expecting list of
      */
-    @Test
+    @Test(enabled = false)
     public void testProcessOrderBy() throws Exception {
         SoftAssert softAssert = new SoftAssert();
         //orderBy startTime descending order

@@ -59,14 +59,10 @@ public class InstancePageTest extends BaseUITestClass {
     private String instance = "2010-01-02T01:00Z";
     private String processName;
 
-    @BeforeClass(alwaysRun = true)
-    public void setup() {
-        openBrowser();
-        searchPage = LoginPage.open(getDriver()).doDefaultLogin();
-    }
-
     @BeforeMethod(alwaysRun = true)
     public void submitEntities() throws Exception {
+        openBrowser();
+        searchPage = LoginPage.open(getDriver()).doDefaultLogin();
         cleanAndGetTestDir();
         HadoopUtil.uploadDir(serverFS.get(0), aggregateWorkflowDir, OSUtil.RESOURCES_OOZIE);
         bundles[0] = BundleUtil.readELBundle();
@@ -184,11 +180,7 @@ public class InstancePageTest extends BaseUITestClass {
 
     @AfterMethod(alwaysRun = true)
     public void tearDown() throws IOException {
-        removeTestClassEntities();
-    }
-
-    @AfterClass(alwaysRun = true)
-    public void tearDownClass() {
         closeBrowser();
+        removeTestClassEntities();
     }
 }

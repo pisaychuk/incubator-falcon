@@ -149,14 +149,12 @@ public class SearchPage extends AbstractSearchPage {
             getSearchBox().sendKeys(queryParam);
             getSearchBox().sendKeys(Keys.ENTER);
         }
-        String activeAlert = getActiveAlertText();
-        if (activeAlert != null) {
-            Assert.assertEquals(activeAlert.trim(), "No results matched the search criteria.");
+        waitForAngularToFinish();
+        if (resultBlock.isDisplayed()) {
+            return getSearchResults();
+        } else {
             return Collections.emptyList();
         }
-        waitForAngularToFinish();
-        UIAssert.assertDisplayed(resultBlock, "Search result block");
-        return getSearchResults();
 
     }
 

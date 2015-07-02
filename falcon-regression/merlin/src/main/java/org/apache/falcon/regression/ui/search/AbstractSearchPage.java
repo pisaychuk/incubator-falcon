@@ -32,13 +32,12 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.TimeoutException;
 import org.testng.Assert;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-
-
 
 
 /** Parent page object for all the search ui pages. */
@@ -94,7 +93,8 @@ public abstract class AbstractSearchPage extends Page {
         // trying to get an xpath that looks like: "//*[@ng-model='UIModel.retry.policy']"
         final String xpathExpression = "//*[@ng-model='" + ngModelName + "']";
         final List<WebElement> webElements = driver.findElements(By.xpath(xpathExpression));
-        Assert.assertEquals(webElements.size(), 1, "Element is not unique for ng-model: " + ngModelName);
+        Assert.assertEquals(webElements.size(), 1,
+            "Element is not unique for ng-model: " + ngModelName);
         return webElements.get(0);
     }
 
@@ -151,33 +151,37 @@ public abstract class AbstractSearchPage extends Page {
     }
 
     public String getActiveAlertText() {
-        WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
-        String style = alertsBlock.getAttribute("style");
-        if (style.contains("opacity: 1;") || !style.contains("opacity")) {
-            return null;
-        } else {
-            final WebElement alert = alertsBlock.findElement(By.xpath("./div[last()]"));
-            WebDriverWait wait = new WebDriverWait(driver, 5);
-            String result = wait.until(new ExpectedCondition<String>() {
-                @Nullable
-                @Override
-                public String apply(WebDriver webDriver) {
-                    String alertText = alert.getText();
-                    LOGGER.info("Current alert text: '" + alertText + "'");
-                    if (StringUtils.isNotEmpty(alertText)) {
-                        return alertText;
-                    } else {
-                        return null;
-                    }
-                }
-            });
+        if (waitForAlert()) {
             waitForAngularToFinish();
-            return result;
+            return driver.findElement(By.xpath("//div[@class='messages notifs']/div[last()]")).getText();
+        } else {
+            return null;
         }
     }
 
-    protected void waitForAlert() {
-        driver.findElements(
-            By.xpath("//div[@class='messages notifs' and contains(@style,'display: block')]"));
+    /**
+     * Wait for active alert.
+     * @return true is alert is present
+     */
+    protected boolean waitForAlert() {
+        final WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
+        try {
+            new WebDriverWait(driver, 5).until(new ExpectedCondition<Boolean>() {
+                @Nullable
+                @Override
+                public Boolean apply(WebDriver webDriver) {
+                    String style = alertsBlock.getAttribute("style");
+                    if (style.contains("opacity") && !style.contains("opacity: 1;")) {
+                        String alert = alertsBlock.findElement(By.xpath("./div[last()]")).getText();
+                        return StringUtils.isNotEmpty(alert);
+                    } else {
+                        return false;
+                    }
+                }
+            });
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 }

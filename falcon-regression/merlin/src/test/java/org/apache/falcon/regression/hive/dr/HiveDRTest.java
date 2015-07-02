@@ -379,7 +379,7 @@ public class HiveDRTest extends BaseTestClass {
 
     @Test
     public void drExtPartitionedToNonExtPartitioned() throws Exception {
-        final String tblName = "externalToNonExternal";
+        final String tblName = "extPartitionedToNonExtPartitioned";
         recipeMerlin.withSourceDb(DB_NAME).withSourceTable(tblName);
         final List<String> command = recipeMerlin.getSubmissionCommand();
 

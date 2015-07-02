@@ -133,15 +133,9 @@ public class HiveAssert {
         softAssert.assertEquals(table2.getBucketCols(), table1.getBucketCols(),
             "Table " + table1FullName + " has different bucket columns from " + table2FullName);
         assertColumnListEqual(table1.getCols(), table2.getCols(), softAssert);
-        softAssert.assertEquals(table2.getInputFileFormat(), table1.getInputFileFormat(),
-            "Table " + table1FullName + " has different InputFileFormat from " + table2FullName);
         softAssert.assertEquals(table2.getNumBuckets(), table1.getNumBuckets(),
             "Table " + table1FullName + " has different number of buckets from " + table2FullName);
-        softAssert.assertEquals(table2.getOutputFileFormat(), table1.getOutputFileFormat(),
-            "Table " + table1FullName + " has different OutputFileFormat from " + table2FullName);
         assertColumnListEqual(table1.getPartCols(), table2.getPartCols(), softAssert);
-        softAssert.assertEquals(table2.getSerdeLib(), table1.getSerdeLib(),
-            "Table " + table1FullName + " has different serde from " + table2FullName);
         softAssert.assertEquals(table2.getSerdeParams(), table1.getSerdeParams(),
             "Table " + table1FullName + " has different serde params from " + table2FullName);
         softAssert.assertEquals(table2.getSortCols(), table1.getSortCols(),

@@ -118,9 +118,9 @@ public class PageHeader {
         final PageHeader searchHeader = searchPage.getPageHeader();
         if (!MerlinConstants.IS_SECURE) {
             searchHeader.checkLoggedIn();
-            Assert.assertEquals(searchHeader.getLoggedInUser(), LoginPage.UI_DEFAULT_USER,
-                "Unexpected user is displayed");
         }
+        Assert.assertEquals(searchHeader.getLoggedInUser(), LoginPage.UI_DEFAULT_USER,
+            "Unexpected user is displayed");
         return searchPage;
     }
 
@@ -158,9 +158,9 @@ public class PageHeader {
                 "Unexpected text on upload entity button");
             //checking if logged-in username is displayed
             if (!MerlinConstants.IS_SECURE) {
-                AssertUtil.assertNotEmpty(getLoggedInUser(), "Expecting logged-in username.");
                 UIAssert.assertDisplayed(getLogoutButton(), "Logout button");
             }
+            AssertUtil.assertNotEmpty(getLoggedInUser(), "Expecting logged-in username.");
 
             //create button navigation
             doCreateCluster();

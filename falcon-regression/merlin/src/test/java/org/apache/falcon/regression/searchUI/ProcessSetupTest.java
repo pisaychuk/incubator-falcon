@@ -459,8 +459,6 @@ public class ProcessSetupTest extends BaseUITestClass {
         }
         Collections.sort(clusters);
         Collections.sort(dropdownValues);
-        System.out.println(clusters);
-        System.out.println(dropdownValues);
         Assert.assertEquals(clusters, dropdownValues, "Clusters Drop Down Values Are Not Equal");
     }
 

@@ -404,7 +404,6 @@ public class MirrorWizardPage extends AbstractSearchPage {
         if (matcher.find()) {
             return matcher.group(1).trim();
         } else {
-            System.out.println("first: " + first + "; second: " + second);
             return null;
         }
     }

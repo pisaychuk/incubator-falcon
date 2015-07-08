@@ -28,6 +28,7 @@ import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.supportClasses.NotifyingAssert;
 import org.apache.falcon.regression.core.util.BundleUtil;
+import org.apache.falcon.regression.core.util.Config;
 import org.apache.falcon.regression.core.util.HiveAssert;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
@@ -134,7 +135,8 @@ public class HiveDbDRTest extends BaseTestClass {
     public void drDbFailPass(Boolean isDBReplication) throws Exception {
         final String dbName = "drDbFailPass";
         final String tblName = "vanillaTable";
-        final String dbPath = "/apps/hive/warehouse/" + dbName.toLowerCase() + ".db";
+        final String dbPath = Config.getProperty("hive.warehouse.location", "/apps/hive/warehouse/")
+            + dbName.toLowerCase() + ".db";
         setUpDb(dbName, connection);
         runSql(connection, "create table " + tblName + "(data string)");
         setUpDb(dbName, connection2);

@@ -118,9 +118,9 @@ public class PageHeader {
         final PageHeader searchHeader = searchPage.getPageHeader();
         if (!MerlinConstants.IS_SECURE) {
             searchHeader.checkLoggedIn();
+            Assert.assertEquals(searchHeader.getLoggedInUser(), LoginPage.UI_DEFAULT_USER,
+                "Unexpected user is displayed");
         }
-        Assert.assertEquals(searchHeader.getLoggedInUser(), LoginPage.UI_DEFAULT_USER,
-            "Unexpected user is displayed");
         return searchPage;
     }
 

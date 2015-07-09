@@ -212,7 +212,7 @@ public class HiveDbDRTest extends BaseTestClass {
         anAssert.assertAll();
     }
 
-    @Test
+    @Test(enabled = false)
     public void drDbNonReplicatableTable() throws Exception {
         final String dbName = "drDbNonReplicatableTable";
         final String tblName = "vanillaTable";

@@ -226,7 +226,7 @@ public class ClusterSetupTest extends BaseUITestClass{
      * Populate working location with value pointing to directory with wider permissions then 755.
      * Check that user is not allowed to create a cluster and is notified with an alert.
      */
-    @Test
+    @Test(enabled = false)
     public void testLocationsBadPermissions() throws IOException {
         //reverse staging and working location dirs
         String staging = sourceCluster.getLocation(ClusterLocationType.STAGING).getPath();

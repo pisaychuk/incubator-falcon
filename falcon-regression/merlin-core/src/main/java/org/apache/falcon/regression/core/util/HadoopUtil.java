@@ -64,6 +64,18 @@ public final class HadoopUtil {
         return path;
     }
 
+    public static String joinPath(String basePath, String... restParts) {
+        final String separator = "/";
+        List<String> cleanParts = new ArrayList<>();
+        String cleanBasePath = basePath.replaceFirst(separator + "$", "");
+        cleanParts.add(cleanBasePath);
+        for (String onePart : restParts) {
+            final String cleanPart = onePart.replaceFirst("^" + separator, "").replaceFirst(separator + "$", "");
+            cleanParts.add(cleanPart);
+        }
+        return StringUtils.join(cleanParts, separator);
+    }
+
     /**
      * Retrieves all file names contained in a given directory.
      * @param fs filesystem

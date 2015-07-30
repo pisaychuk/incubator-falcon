@@ -216,9 +216,9 @@ public class ClusterSetupTest extends BaseUITestClass{
     public void testRegistryInterface() {
         clusterSetup.setName("someName");
         Assert.assertFalse(clusterSetup.isRegistryEnabled(), "Registry should be disabled.");
-        clusterSetup.checkRegistry();
+        clusterSetup.checkRegistry(true);
         Assert.assertTrue(clusterSetup.isRegistryEnabled(), "Registry should be enabled.");
-        clusterSetup.checkRegistry();
+        clusterSetup.checkRegistry(false);
         Assert.assertFalse(clusterSetup.isRegistryEnabled(), "Registry should be disabled again.");
     }
 

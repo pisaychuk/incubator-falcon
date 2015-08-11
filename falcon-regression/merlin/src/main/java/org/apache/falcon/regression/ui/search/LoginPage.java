@@ -19,6 +19,7 @@
 package org.apache.falcon.regression.ui.search;
 
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
+import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.core.util.UIAssert;
 import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
@@ -33,6 +34,7 @@ import org.testng.Assert;
 public class LoginPage extends AbstractSearchPage {
     private static final Logger LOGGER = Logger.getLogger(LoginPage.class);
     public static final String UI_DEFAULT_USER = MerlinConstants.CURRENT_USER_NAME;
+    private static final double MAX_PAGELOAD_TIME_IN_SECONDS = 2;
 
     public LoginPage(WebDriver driver) {
         super(driver);
@@ -46,7 +48,10 @@ public class LoginPage extends AbstractSearchPage {
 
     public static LoginPage open(WebDriver driver) {
         driver.get(UI_URL);
-        return PageFactory.initElements(driver, LoginPage.class);
+        LoginPage loginPage = PageFactory.initElements(driver, LoginPage.class);
+        // Angular has no callback for finish of rendering login page, so we need to wait extra time
+        TimeUtil.sleepSeconds(MAX_PAGELOAD_TIME_IN_SECONDS);
+        return loginPage;
     }
 
     private WebElement getUserTextBox() {

@@ -159,8 +159,8 @@ public class PageHeader {
             //checking if logged-in username is displayed
             if (!MerlinConstants.IS_SECURE) {
                 UIAssert.assertDisplayed(getLogoutButton(), "Logout button");
+                AssertUtil.assertNotEmpty(getLoggedInUser(), "Expecting logged-in username.");
             }
-            AssertUtil.assertNotEmpty(getLoggedInUser(), "Expecting logged-in username.");
 
             //create button navigation
             doCreateCluster();

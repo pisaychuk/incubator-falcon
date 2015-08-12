@@ -45,6 +45,7 @@ public abstract class AbstractSearchPage extends Page {
 
     public static final String UI_URL = MerlinConstants.PRISM_URL;
     private static final Logger LOGGER = Logger.getLogger(AbstractSearchPage.class);
+    public static final int PAGELOAD_TIMEOUT_THRESHOLD = 10;
 
     public AbstractSearchPage(WebDriver driver) {
         super(driver);
@@ -139,23 +140,19 @@ public abstract class AbstractSearchPage extends Page {
         final String javaScript = "return (window.angular != null) && "
             + "(angular.element(document).injector() != null) && "
             + "(angular.element(document).injector().get('$http').pendingRequests.length === 0)";
-
-        int executionCount = 50;
-        double executionTimeout = 0.2;
-
-        for (int i = 0; i < executionCount; i++) {
-            LOGGER.info(i+1 + ". waiting on angular to finish.");
-            TimeUtil.sleepSeconds(executionTimeout);
+        boolean isLoaded = false;
+        for (int i = 0; i < PAGELOAD_TIMEOUT_THRESHOLD && !isLoaded; i++) {
             final Object output = ((JavascriptExecutor) driver).executeScript(javaScript);
-            if (Boolean.valueOf(output.toString())) {
-                break;
-            }
+            isLoaded = Boolean.valueOf(output.toString());
+            LOGGER.info(i+1 + ". waiting on angular to finish.");
+            TimeUtil.sleepSeconds(1);
         }
         LOGGER.info("angular is done continuing...");
     }
 
     public String getActiveAlertText() {
         if (waitForAlert()) {
+            waitForAngularToFinish();
             return driver.findElement(By.xpath("//div[@class='messages notifs']/div[last()]")).getText();
         } else {
             return null;
@@ -164,7 +161,7 @@ public abstract class AbstractSearchPage extends Page {
 
     /**
      * Wait for active alert.
-     * @return true if alert is present
+     * @return true is alert is present
      */
     protected boolean waitForAlert() {
         final WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));

@@ -50,7 +50,9 @@ public abstract class AbstractSearchPage extends Page {
     public AbstractSearchPage(WebDriver driver) {
         super(driver);
         waitForAngularToFinish();
+        LOGGER.info("Going to initialize Page Header.");
         pageHeader = PageFactory.initElements(driver, PageHeader.class);
+        LOGGER.info("Initialization done.");
     }
 
     private PageHeader pageHeader;

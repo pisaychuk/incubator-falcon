@@ -5,6 +5,8 @@ Trunk (Unreleased)
   INCOMPATIBLE CHANGES
 
   NEW FEATURES
+   FALCON-1382 Add a test for feed retention to make sure that data directory is not deleted (Paul Isaychuk)
+  
    FALCON-1264 Fix validity parsing in ProcessWizardPage. Contributed by Paul Isaychuk
 
    FALCON-1254 ClusterSetup UI: edit xml test cases, stabilize 2 tests (Paul Isaychuk via Ruslan Ostafiychuk)

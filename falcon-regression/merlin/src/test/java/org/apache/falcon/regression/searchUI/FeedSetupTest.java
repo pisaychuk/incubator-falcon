@@ -123,6 +123,7 @@ public class FeedSetupTest extends BaseUITestClass{
      */
     @Test
     public void testWizardDefaultScenario() throws Exception {
+        Assert.assertFalse(feedWizardPage.isXmlPreviewExpanded(), "Xml preview should be collapsed by default.");
         feed.setTags(getRandomTags());
         feed.setGroups("groups");
         feed.setAvailabilityFlag("_SUCCESS");

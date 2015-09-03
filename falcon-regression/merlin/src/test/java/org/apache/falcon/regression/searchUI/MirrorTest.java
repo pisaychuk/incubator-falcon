@@ -43,6 +43,7 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -192,6 +193,24 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.save();
         AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
             createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
+    }
+
+    /**
+     *  If "send alerts to" is empty on HiveDR UI, default value for drNotificationReceivers property must be "NA"
+     */
+    @Test
+    public void testSendAlertsDefaultValue()
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        recipeMerlin.withSourceDb(DB_NAME);
+        recipeMerlin.withSourceTable(TBL1_NAME);
+        mirrorPage.applyRecipe(recipeMerlin);
+        mirrorPage.next();
+        mirrorPage.save();
+        ProcessMerlin process = bundles[0].getProcessObject();
+        process.setName(recipeMerlin.getName());
+        process = new ProcessMerlin(cluster.getProcessHelper().getEntityDefinition(process.toString()).getMessage());
+        String drNotificationReceivers = process.getProperty("drNotificationReceivers");
+        Assert.assertTrue(drNotificationReceivers != null && drNotificationReceivers.equals("NA"));
     }
 
     @DataProvider

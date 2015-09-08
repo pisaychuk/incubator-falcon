@@ -206,6 +206,15 @@ public class ProcessMerlin extends Process {
         properties.add(property);
     }
 
+    public String getProperty(String name) {
+        for (Property property : properties.getProperties()) {
+            if (property.getName().equals(name)) {
+                return property.getValue();
+            }
+        }
+        return null;
+    }
+
     @Override
     public String toString() {
         try {

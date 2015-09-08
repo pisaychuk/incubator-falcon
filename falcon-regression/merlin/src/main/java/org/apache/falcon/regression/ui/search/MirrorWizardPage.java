@@ -274,7 +274,12 @@ public class MirrorWizardPage extends AbstractSearchPage {
         return new ClusterBlock("Target");
     }
 
-    public void applyRecipe(RecipeMerlin recipe) {
+    /**
+     * Populates hive dr UI with parameters from recipe.
+     * @param recipe recipe
+     * @param overwriteDefaults should it overwrite HiveDR default values automatically picked up by UI
+     */
+    public void applyRecipe(RecipeMerlin recipe, boolean overwriteDefaults) {
         final ClusterMerlin srcCluster = recipe.getSrcCluster();
         final ClusterMerlin tgtCluster = recipe.getTgtCluster();
         setName(recipe.getName());
@@ -299,8 +304,10 @@ public class MirrorWizardPage extends AbstractSearchPage {
                 setHiveReplicationMaxMaps(recipe.getReplicationMaxMaps());
                 setMaxEvents(recipe.getMaxEvents());
                 setHiveMaxBandwidth(recipe.getMapBandwidth());
-                setSourceInfo(recipe.getSrcCluster());
-                setTargetInfo(recipe.getTgtCluster());
+                if (overwriteDefaults) {
+                    setSourceInfo(recipe.getSrcCluster());
+                    setTargetInfo(recipe.getTgtCluster());
+                }
                 break;
         }
         setFrequency(recipe.getFrequency());

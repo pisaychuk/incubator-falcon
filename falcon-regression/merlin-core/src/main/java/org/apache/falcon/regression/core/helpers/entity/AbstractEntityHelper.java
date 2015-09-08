@@ -290,7 +290,7 @@ public abstract class AbstractEntityHelper {
     }
 
     public ServiceResponse listAllEntities()
-            throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
+        throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
         return listAllEntities(null, null);
     }
 

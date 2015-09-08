@@ -48,7 +48,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class RecipeMerlin {
+/**
+ * Recipe merlin class.
+ */
+public final class RecipeMerlin {
     private static final Logger LOGGER = Logger.getLogger(RecipeMerlin.class);
     private static final String WORKFLOW_PATH_KEY = "falcon.recipe.workflow.path";
     private static final String RECIPE_NAME_KEY = "falcon.recipe.name";
@@ -128,37 +131,37 @@ public class RecipeMerlin {
         return this;
     }
 
-    public RecipeMerlin withSourceCluster(ClusterMerlin srcCluster) {
-        this.srcCluster = srcCluster;
-        properties.setProperty("sourceCluster", srcCluster.getName());
-        properties.setProperty("sourceMetastoreUri", srcCluster.getProperty("hive.metastore.uris"));
-        properties.setProperty("sourceHiveServer2Uri", srcCluster.getProperty("hive.server2.uri"));
+    public RecipeMerlin withSourceCluster(ClusterMerlin sourceCluster) {
+        this.srcCluster = sourceCluster;
+        properties.setProperty("sourceCluster", sourceCluster.getName());
+        properties.setProperty("sourceMetastoreUri", sourceCluster.getProperty("hive.metastore.uris"));
+        properties.setProperty("sourceHiveServer2Uri", sourceCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("sourceServicePrincipal",
-        //    srcCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("sourceStagingPath", srcCluster.getLocation("staging"));
-        properties.setProperty("sourceNN", srcCluster.getInterfaceEndpoint(Interfacetype.WRITE));
-        properties.setProperty("sourceRM", srcCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
+        //    sourceCluster.getProperty("hive.metastore.kerberos.principal"));
+        properties.setProperty("sourceStagingPath", sourceCluster.getLocation("staging"));
+        properties.setProperty("sourceNN", sourceCluster.getInterfaceEndpoint(Interfacetype.WRITE));
+        properties.setProperty("sourceRM", sourceCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
     }
 
-    public RecipeMerlin withTargetCluster(ClusterMerlin tgtCluster) {
-        this.tgtCluster = tgtCluster;
-        properties.setProperty("targetCluster", tgtCluster.getName());
-        properties.setProperty("targetMetastoreUri", tgtCluster.getProperty("hive.metastore.uris"));
-        properties.setProperty("targetHiveServer2Uri", tgtCluster.getProperty("hive.server2.uri"));
+    public RecipeMerlin withTargetCluster(ClusterMerlin targetCluster) {
+        this.tgtCluster = targetCluster;
+        properties.setProperty("targetCluster", targetCluster.getName());
+        properties.setProperty("targetMetastoreUri", targetCluster.getProperty("hive.metastore.uris"));
+        properties.setProperty("targetHiveServer2Uri", targetCluster.getProperty("hive.server2.uri"));
         //properties.setProperty("targetServicePrincipal",
-        //    tgtCluster.getProperty("hive.metastore.kerberos.principal"));
-        properties.setProperty("targetStagingPath", tgtCluster.getLocation("staging"));
-        properties.setProperty("targetNN", tgtCluster.getInterfaceEndpoint(Interfacetype.WRITE));
-        properties.setProperty("targetRM", tgtCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
+        //    targetCluster.getProperty("hive.metastore.kerberos.principal"));
+        properties.setProperty("targetStagingPath", targetCluster.getLocation("staging"));
+        properties.setProperty("targetNN", targetCluster.getInterfaceEndpoint(Interfacetype.WRITE));
+        properties.setProperty("targetRM", targetCluster.getInterfaceEndpoint(Interfacetype.EXECUTE));
         return this;
     }
 
-    public RecipeMerlin withRecipeCluster(ClusterMerlin recipeCluster) {
-        this.recipeCluster = recipeCluster;
-        properties.setProperty("falcon.recipe.cluster.name", recipeCluster.getName());
+    public RecipeMerlin withRecipeCluster(ClusterMerlin cluster) {
+        this.recipeCluster = cluster;
+        properties.setProperty("falcon.recipe.cluster.name", cluster.getName());
         properties.setProperty("falcon.recipe.cluster.hdfs.writeEndPoint",
-            recipeCluster.getInterfaceEndpoint(Interfacetype.WRITE));
+            cluster.getInterfaceEndpoint(Interfacetype.WRITE));
         return this;
     }
 
@@ -338,7 +341,7 @@ public class RecipeMerlin {
     }
 
     /**
-     * Set tags for recipe
+     * Set tags for recipe.
      */
     public List<String> getTags() {
         final String tagsStr = properties.getString("falcon.recipe.tags");
@@ -349,7 +352,7 @@ public class RecipeMerlin {
     }
 
     /**
-     * Set tags for recipe
+     * Set tags for recipe.
      */
     public void setTags(List<String> tags) {
         properties.setProperty("falcon.recipe.tags", StringUtils.join(tags, ','));

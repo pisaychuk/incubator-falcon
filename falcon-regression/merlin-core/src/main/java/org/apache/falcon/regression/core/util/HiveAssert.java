@@ -39,7 +39,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class HiveAssert {
+/**
+ * Assertions related to hive db's and tables.
+ */
+public final class HiveAssert {
     private HiveAssert() {
         throw new AssertionError("Instantiating utility class...");
     }
@@ -149,7 +152,7 @@ public class HiveAssert {
         final Map<String, String> tbl1Props = table1.getTblProps();
         final Map<String, String> tbl2Props = table2.getTblProps();
         final String[] ignoreTblProps = {"transient_lastDdlTime", "repl.last.id",
-            "last_modified_by", "last_modified_time", "COLUMN_STATS_ACCURATE"};
+            "last_modified_by", "last_modified_time", "COLUMN_STATS_ACCURATE", };
         for (String ignoreTblProp : ignoreTblProps) {
             tbl1Props.remove(ignoreTblProp);
             tbl2Props.remove(ignoreTblProp);
@@ -177,7 +180,7 @@ public class HiveAssert {
             hcatClient2.getPartitions(table2.getDbName(), table2.getTableName());
         assertPartitionListEqual(table1Partitions, table2Partitions, softAssert);
         if (notIgnoreTblTypeAndProps) {
-                softAssert.assertEquals(
+            softAssert.assertEquals(
                 cluster2FS.getContentSummary(new Path(table2.getLocation())).getLength(),
                 cluster1FS.getContentSummary(new Path(table1.getLocation())).getLength(),
                 "Size of content for table1 and table2 are different");

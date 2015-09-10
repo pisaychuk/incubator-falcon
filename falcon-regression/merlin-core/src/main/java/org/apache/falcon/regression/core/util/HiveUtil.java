@@ -127,7 +127,7 @@ public final class HiveUtil {
     }
 
     /**
-     * Run a sql using given connection
+     * Run a sql using given connection.
      * @param connection The connection to be used for running sql
      * @param sql the sql to be run
      * @throws SQLException

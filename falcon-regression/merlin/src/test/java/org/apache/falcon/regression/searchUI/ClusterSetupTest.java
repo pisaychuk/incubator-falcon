@@ -83,6 +83,7 @@ public class ClusterSetupTest extends BaseUITestClass{
     @Test
     public void testDefaultScenario()
         throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        Assert.assertFalse(clusterSetup.isXmlPreviewExpanded(), "Xml preview should be collapsed by default.");
         clusterSetup.fillForm(sourceCluster);
         clusterSetup.clickNext();
         clusterSetup.clickPrevious();

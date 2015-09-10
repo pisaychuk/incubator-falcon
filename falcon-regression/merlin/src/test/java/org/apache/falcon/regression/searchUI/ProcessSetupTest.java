@@ -150,6 +150,7 @@ public class ProcessSetupTest extends BaseUITestClass {
      */
     @Test
     public void testGeneralStepDefaultScenario() throws Exception {
+        Assert.assertFalse(processWizardPage.isXmlPreviewExpanded(), "Xml preview should be collapsed by default.");
         processWizardPage.setProcessGeneralInfo(process);
         processWizardPage.clickNext();
 

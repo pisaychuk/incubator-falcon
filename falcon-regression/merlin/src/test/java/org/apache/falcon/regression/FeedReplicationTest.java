@@ -18,11 +18,11 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -372,6 +372,75 @@ public class FeedReplicationTest extends BaseTestClass {
         Assert.assertEquals(HadoopUtil.getSuccessFolder(cluster2FS, toTarget, availabilityFlagName), true);
     }
 
+    /**
+     * Test for https://issues.apache.org/jira/browse/FALCON-668.
+     * Check that new DistCp options are allowed.
+     */
+    @Test
+    public void testNewDistCpOptions()
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException, JAXBException,
+        OozieClientException {
+        Bundle.submitCluster(bundles[0], bundles[1]);
+        String startTime = TimeUtil.getTimeWrtSystemTime(0);
+        String endTime = TimeUtil.addMinsToTime(startTime, 5);
+        LOGGER.info("Time range between : " + startTime + " and " + endTime);
+        //configure feed
+        String feedName = Util.readEntityName(bundles[0].getDataSets().get(0));
+        FeedMerlin feedElement = bundles[0].getFeedElement(feedName);
+        bundles[0].writeFeedElement(feedElement, feedName);
+        FeedMerlin feed = new FeedMerlin(bundles[0].getDataSets().get(0));
+        feed.setFilePath(feedDataLocation);
+        //erase all clusters from feed definition
+        feed.clearFeedClusters();
+        //set cluster1 as source
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+                .withRetention("days(1000000)", ActionType.DELETE)
+                .withValidity(startTime, endTime)
+                .withClusterType(ClusterType.SOURCE)
+                .build());
+        //set cluster2 as target
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+                .withRetention("days(1000000)", ActionType.DELETE)
+                .withValidity(startTime, endTime)
+                .withClusterType(ClusterType.TARGET)
+                .withDataLocation(targetDataLocation)
+                .build());
+
+        feed.addProperty("overwrite", "true");
+        feed.addProperty("ignoreErrors", "false");
+        feed.addProperty("skipChecksum", "false");
+        feed.addProperty("removeDeletedFiles", "false");
+        feed.addProperty("preserveBlockSize", "true");
+        feed.addProperty("preserveReplicationNumber", "true");
+        feed.addProperty("preservePermission", "true");
+
+        //submit and schedule feed
+        LOGGER.info("Feed : " + Util.prettyPrintXml(feed.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+        LOGGER.info("Created missing dependencies: "
+            + OozieUtil.createMissingDependencies(cluster2, EntityType.FEED, feed.getName(), 0));
+
+        //upload necessary data
+        DateTime date = new DateTime(startTime, DateTimeZone.UTC);
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy'/'MM'/'dd'/'HH'/'mm'");
+        String timePattern = fmt.print(date);
+        String sourceLocation = sourcePath + "/" + timePattern + "/";
+        HadoopUtil.recreateDir(cluster1FS, sourceLocation);
+        HadoopUtil.copyDataToFolder(cluster1FS, sourceLocation, OSUtil.NORMAL_INPUT + "dataFile.xml");
+        HadoopUtil.copyDataToFolder(cluster1FS, sourceLocation, OSUtil.NORMAL_INPUT + "dataFile1.txt");
+
+        //check while instance is got created
+        InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed.toString(), 0);
+
+        //check if coordinator exists
+        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "REPLICATION"), 1);
+
+        //replication on cluster 3 should start, wait till it ends
+        InstanceUtil.waitTillInstanceReachState(cluster2OC, feed.getName(), 1,
+            CoordinatorAction.Status.SUCCEEDED, EntityType.FEED);
+    }
 
     /* Flag value denotes whether to add data for replication or not.
      * flag=true : add data for replication.

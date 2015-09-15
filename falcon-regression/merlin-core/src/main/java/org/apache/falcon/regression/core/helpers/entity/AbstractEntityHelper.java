@@ -35,6 +35,7 @@ import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.core.util.Util.URLS;
 import org.apache.falcon.resource.FeedInstanceResult;
+import org.apache.falcon.resource.InstanceDependencyResult;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.falcon.resource.InstancesSummaryResult;
 import org.apache.hadoop.conf.Configuration;
@@ -290,7 +291,7 @@ public abstract class AbstractEntityHelper {
     }
 
     public ServiceResponse listAllEntities()
-        throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
+            throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
         return listAllEntities(null, null);
     }
 
@@ -564,6 +565,12 @@ public abstract class AbstractEntityHelper {
             entityName, "");
         return (InstancesResult) InstanceUtil
             .createAndSendRequestProcessInstance(url, params, allColo, null);
+    }
+
+    public InstanceDependencyResult getInstanceDependencies(String entityName, String instanceTime)
+        throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
+        String url = createUrl(this.hostname + URLS.INSTANCE_DEPENDENCIES.getValue(), getEntityType(), entityName);
+        return (InstanceDependencyResult) InstanceUtil.createAndSendRequestProcessInstance(url, instanceTime, allColo, null);
     }
 
     /**

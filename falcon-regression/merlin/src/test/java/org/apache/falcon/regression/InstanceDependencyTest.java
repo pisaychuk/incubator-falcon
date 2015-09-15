@@ -73,6 +73,30 @@ public class InstanceDependencyTest extends BaseTestClass {
     // p3(outputFeed1, outputFeed3)
     private static final Logger LOGGER = Logger.getLogger(ProcessInstanceRunningTest.class);
 
+    private static final Comparator<SchedulableEntityInstance> dependencyComparator =
+        new Comparator<SchedulableEntityInstance>() {
+            @Override
+            public int compare(SchedulableEntityInstance o1, SchedulableEntityInstance o2) {
+                int tagDiff = o1.getTags().compareTo(o2.getTags());
+                if (tagDiff != 0) {
+                    return tagDiff;
+                }
+                int clusterDiff = o1.getCluster().compareTo(o2.getCluster());
+                if (clusterDiff != 0) {
+                    return clusterDiff;
+                }
+                int typeDiff = o1.getEntityType().compareTo(o2.getEntityType());
+                if (typeDiff != 0) {
+                    return typeDiff;
+                }
+                int dateDiff = o1.getInstanceTime().compareTo(o2.getInstanceTime());
+                if (dateDiff != 0) {
+                    return dateDiff;
+                }
+                return 0;
+            }
+        };
+
     @BeforeClass(alwaysRun = true)
     public void createTestData() throws Exception {
         LOGGER.info("in @BeforeClass");
@@ -128,32 +152,10 @@ public class InstanceDependencyTest extends BaseTestClass {
     }
 
     @Test
-    public void instanceDependencyTest() throws Exception {
+    public void processInstanceDependencyTest() throws Exception {
         final String clusterName = bundles[0].getClusterNames().get(0);
         final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
         final DateTime startTimeMinus20 = startTime.minusMinutes(20);
-        final Comparator<SchedulableEntityInstance> dependencyComparator = new Comparator<SchedulableEntityInstance>() {
-            @Override
-            public int compare(SchedulableEntityInstance o1, SchedulableEntityInstance o2) {
-                int tagDiff = o1.getTags().compareTo(o2.getTags());
-                if (tagDiff != 0) {
-                    return tagDiff;
-                }
-                int clusterDiff = o1.getCluster().compareTo(o2.getCluster());
-                if (clusterDiff != 0) {
-                    return clusterDiff;
-                }
-                int typeDiff = o1.getEntityType().compareTo(o2.getEntityType());
-                if (typeDiff != 0) {
-                    return typeDiff;
-                }
-                int dateDiff = o1.getInstanceTime().compareTo(o2.getInstanceTime());
-                if (dateDiff != 0) {
-                    return dateDiff;
-                }
-                return 0;
-            }
-        };
 
         for (int index = 0; index < 3; ++index) {
             InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(index), 3,
@@ -182,4 +184,69 @@ public class InstanceDependencyTest extends BaseTestClass {
                 "Unexpected dependencies for process: " + processNames.get(index));
         }
     }
+
+    @Test
+    public void inputFeedInstanceDependencyTest() throws Exception {
+        final String clusterName = bundles[0].getClusterNames().get(0);
+        final String inputFeedToTest = inputFeedNames.get(1);
+        final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
+        final DateTime endTime = TimeUtil.oozieDateToDate(endTimeStr);
+
+        InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(1), 3,
+            CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
+
+        List<SchedulableEntityInstance> expectedDependencies = new ArrayList<>();
+        final SchedulableEntityInstance outputInstance =
+            new SchedulableEntityInstance(processNames.get(0), clusterName, startTime.toDate(), EntityType.PROCESS);
+        outputInstance.setTags("Output");
+        expectedDependencies.add(outputInstance);
+        final int processFrequency = 5;
+        for (DateTime dt = new DateTime(startTime); !dt.isAfter(endTime); dt = dt.plusMinutes(processFrequency)) {
+            final SchedulableEntityInstance inputInstance =
+                new SchedulableEntityInstance(processNames.get(1), clusterName, dt.toDate(), EntityType.PROCESS);
+            inputInstance.setTags("Input");
+            expectedDependencies.add(inputInstance);
+        }
+        InstanceDependencyResult r = prism.getFeedHelper().getInstanceDependencies(inputFeedToTest,
+            "?instanceTime=" + startTimeStr);
+
+        List<SchedulableEntityInstance> actualDependencies = Arrays.asList(r.getDependencies());
+        Collections.sort(expectedDependencies, dependencyComparator);
+        Collections.sort(actualDependencies, dependencyComparator);
+        Assert.assertEquals(actualDependencies, expectedDependencies,
+            "Unexpected dependencies for process: " + inputFeedToTest);
+    }
+
+    @Test
+    public void outputFeedInstanceDependencyTest() throws Exception {
+        final String clusterName = bundles[0].getClusterNames().get(0);
+        final String outputFeedToTest = outputFeedNames.get(1);
+        final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
+        final DateTime endTime = TimeUtil.oozieDateToDate(endTimeStr);
+
+        InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(1), 3,
+            CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
+
+        List<SchedulableEntityInstance> expectedDependencies = new ArrayList<>();
+        final SchedulableEntityInstance outputInstance =
+            new SchedulableEntityInstance(processNames.get(1), clusterName, startTime.toDate(), EntityType.PROCESS);
+        outputInstance.setTags("Output");
+        expectedDependencies.add(outputInstance);
+        final int processFrequency = 5;
+        for (DateTime dt = new DateTime(startTime); !dt.isAfter(endTime); dt = dt.plusMinutes(processFrequency)) {
+            final SchedulableEntityInstance inputInstance =
+                new SchedulableEntityInstance(processNames.get(2), clusterName, dt.toDate(), EntityType.PROCESS);
+            inputInstance.setTags("Input");
+            expectedDependencies.add(inputInstance);
+        }
+        InstanceDependencyResult r = prism.getFeedHelper().getInstanceDependencies(outputFeedToTest,
+            "?instanceTime=" + startTimeStr);
+
+        List<SchedulableEntityInstance> actualDependencies = Arrays.asList(r.getDependencies());
+        Collections.sort(expectedDependencies, dependencyComparator);
+        Collections.sort(actualDependencies, dependencyComparator);
+        Assert.assertEquals(actualDependencies, expectedDependencies,
+            "Unexpected dependencies for process: " + outputFeedToTest);
+    }
+
 }

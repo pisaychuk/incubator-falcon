@@ -249,7 +249,7 @@ public class PageHeader {
     }
 
     private WebElement getLogoutButton() {
-        return loginHeaderBox.findElements(By.tagName("button")).get(1);
+        return loginHeaderBox.findElement(By.xpath("//button[@ng-click='logOut()']"));
     }
 
     public LoginPage doLogout() {

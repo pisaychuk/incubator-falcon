@@ -256,8 +256,8 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.clickNext();
         clusterSetup.clickSave();
         String alertMessage = clusterSetup.getActiveAlertText();
-        Assert.assertEquals(alertMessage,
-            String.format("Location %s for cluster %s must exist.", nonExistent, sourceCluster.getName()));
+        Assert.assertTrue(alertMessage.contains(String.format("Location %s for cluster %s must exist.",
+                nonExistent, sourceCluster.getName())), "Alert message should match to expected.");
     }
 
     /**

@@ -50,11 +50,17 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * feed replication test.
@@ -408,21 +414,24 @@ public class FeedReplicationTest extends BaseTestClass {
                 .withDataLocation(targetDataLocation)
                 .build());
 
-        feed.addProperty("overwrite", "true");
-        feed.addProperty("ignoreErrors", "false");
-        feed.addProperty("skipChecksum", "false");
-        feed.addProperty("removeDeletedFiles", "false");
-        feed.addProperty("preserveBlockSize", "true");
-        feed.addProperty("preserveReplicationNumber", "true");
-        feed.addProperty("preservePermission", "true");
+        //add custom properties to feed
+        HashMap<String, String> propMap = new HashMap<>();
+        propMap.put("overwrite", "true");
+        propMap.put("ignoreErrors", "false");
+        propMap.put("skipChecksum", "false");
+        propMap.put("removeDeletedFiles", "true");
+        propMap.put("preserveBlockSize", "true");
+        propMap.put("preserveReplicationNumber", "true");
+        propMap.put("preservePermission", "true");
+        for (Map.Entry<String, String> entry : propMap.entrySet()) {
+            feed.addProperty(entry.getKey(), entry.getValue());
+        }
+        //add custom property which shouldn't be passed to workflow
+        HashMap<String, String> unsupportedPropMap = new HashMap<>();
+        unsupportedPropMap.put("myCustomProperty", "true");
+        feed.addProperty("myCustomProperty", "true");
 
-        //submit and schedule feed
-        LOGGER.info("Feed : " + Util.prettyPrintXml(feed.toString()));
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
-        LOGGER.info("Created missing dependencies: "
-            + OozieUtil.createMissingDependencies(cluster2, EntityType.FEED, feed.getName(), 0));
-
-        //upload necessary data
+        //upload necessary data to source
         DateTime date = new DateTime(startTime, DateTimeZone.UTC);
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy'/'MM'/'dd'/'HH'/'mm'");
         String timePattern = fmt.print(date);
@@ -431,15 +440,89 @@ public class FeedReplicationTest extends BaseTestClass {
         HadoopUtil.copyDataToFolder(cluster1FS, sourceLocation, OSUtil.NORMAL_INPUT + "dataFile.xml");
         HadoopUtil.copyDataToFolder(cluster1FS, sourceLocation, OSUtil.NORMAL_INPUT + "dataFile1.txt");
 
+        //copy 2 files to target to check if they will be deleted because of removeDeletedFiles property
+        String targetLocation = targetPath + "/" + timePattern + "/";
+        cluster2FS.copyFromLocalFile(new Path(OSUtil.NORMAL_INPUT + "dataFile3.txt"),
+            new Path(targetLocation + "dataFile3.txt"));
+
+        //submit and schedule feed
+        LOGGER.info("Feed : " + Util.prettyPrintXml(feed.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+
         //check while instance is got created
         InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed.toString(), 0);
 
-        //check if coordinator exists
+        //check if coordinator exists and replication starts
         Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "REPLICATION"), 1);
+        InstanceUtil.waitTillInstanceReachState(cluster2OC, feed.getName(), 1,
+            CoordinatorAction.Status.RUNNING, EntityType.FEED);
 
-        //replication on cluster 3 should start, wait till it ends
+        //check that properties were passed to workflow definition
+        String bundleId = OozieUtil.getLatestBundleID(cluster2OC, feedName, EntityType.FEED);
+        String coordId = OozieUtil.getReplicationCoordID(bundleId, cluster2.getFeedHelper()).get(0);
+        CoordinatorAction coordinatorAction = cluster2OC.getCoordJobInfo(coordId).getActions().get(0);
+        String wfDefinition = cluster2OC.getJobDefinition(coordinatorAction.getExternalId());
+        LOGGER.info(String.format("Definition of coordinator job action %s : \n %s \n",
+            coordinatorAction.getExternalId(), Util.prettyPrintXml(wfDefinition)));
+        Assert.assertTrue(propsArePresentInWorkflow(wfDefinition, "replication", propMap),
+            "New distCp supported properties should be passed to replication args list.");
+        Assert.assertFalse(propsArePresentInWorkflow(wfDefinition, "replication", unsupportedPropMap),
+            "Unsupported properties shouldn't be passed to replication args list.");
+
+        //check that replication succeeds
         InstanceUtil.waitTillInstanceReachState(cluster2OC, feed.getName(), 1,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED);
+
+        List<Path> finalFiles = HadoopUtil.getAllFilesRecursivelyHDFS(cluster2FS, new Path(targetPath));
+        Assert.assertEquals(finalFiles.size(), 2, "Only replicated files should be present on target "
+            + "because of 'removeDeletedFiles' distCp property.");
+    }
+
+    /**
+     * Method retrieves and parses replication coordinator action workflow definition and checks whether specific
+     * properties are present in list of workflow args or not.
+     * @param workflowDefinition workflow definition
+     * @param actionName action within workflow, e.g pre-processing, replication etc.
+     * @param propMap specific properties which are expected to be in arg list
+     * @return true if all keys and values are present, false otherwise
+     */
+    private boolean propsArePresentInWorkflow(String workflowDefinition, String actionName,
+                                              HashMap<String, String> propMap) {
+        //get action definition
+        Document definition = Util.convertStringToDocument(workflowDefinition);
+        Assert.assertNotNull(definition, "Workflow definition shouldn't be null.");
+        NodeList actions = definition.getElementsByTagName("action");
+        Element action = null;
+        for (int i = 0; i < actions.getLength(); i++) {
+            Node node = actions.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                action = (Element) node;
+                if (action.getAttribute("name").equals(actionName)) {
+                    break;
+                }
+                action = null;
+            }
+        }
+        Assert.assertNotNull(action, actionName + " action not found.");
+
+        //retrieve and checks whether properties are present in workflow args
+        Element javaElement = (Element) action.getElementsByTagName("java").item(0);
+        NodeList args = javaElement.getElementsByTagName("arg");
+        int counter = 0;
+        String key = null;
+        for (int i = 0; i < args.getLength(); i++) {
+            Node node = args.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                String argKey = node.getTextContent().replace("-", "");
+                if (key != null && propMap.get(key).equals(argKey)) {
+                    counter++;
+                    key = null;
+                } else if (key == null && propMap.containsKey(argKey)) {
+                    key = argKey;
+                }
+            }
+        }
+        return counter == propMap.size();
     }
 
     /* Flag value denotes whether to add data for replication or not.

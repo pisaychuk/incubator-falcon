@@ -52,7 +52,7 @@ import java.util.List;
 
 
 /**
- * Regression for instance running api.
+ * Test for instance dependency endpoint.
  */
 @Test(groups = "embedded")
 public class InstanceDependencyTest extends BaseTestClass {
@@ -68,10 +68,7 @@ public class InstanceDependencyTest extends BaseTestClass {
     final String endTimeStr = "2010-01-02T01:11Z";
     List<String> inputFeedNames, outputFeedNames, processNames;
     List<Integer> inputFeedFrequescies;
-    // process1(inputFeed1, outputFeed1)
-    // p2(outputFeed1, outputFeed2)
-    // p3(outputFeed1, outputFeed3)
-    private static final Logger LOGGER = Logger.getLogger(ProcessInstanceRunningTest.class);
+    private static final Logger LOGGER = Logger.getLogger(InstanceDependencyTest.class);
 
     private static final Comparator<SchedulableEntityInstance> dependencyComparator =
         new Comparator<SchedulableEntityInstance>() {
@@ -103,6 +100,11 @@ public class InstanceDependencyTest extends BaseTestClass {
         HadoopUtil.uploadDir(clusterFS, aggregateWorkflowDir, OSUtil.RESOURCES_OOZIE);
     }
 
+    /**
+     *  The scenario that we will setup looks like:<br>
+     *  inputFeed1 -> process1 -> outputFeed1 -> process2 -> outputFeed2 -> process3 -> outputFeed3
+     * @throws Exception
+     */
     @BeforeMethod(alwaysRun = true)
     public void setup() throws Exception {
         bundles[0] = BundleUtil.readELBundle();

@@ -32,6 +32,7 @@ import org.apache.falcon.regression.core.helpers.entity.AbstractEntityHelper;
 import org.apache.falcon.request.BaseRequest;
 import org.apache.falcon.resource.APIResult;
 import org.apache.falcon.resource.FeedInstanceResult;
+import org.apache.falcon.resource.InstanceDependencyResult;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.falcon.resource.InstancesSummaryResult;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
@@ -88,6 +89,8 @@ public final class InstanceUtil {
             result = new InstancesSummaryResult(APIResult.Status.FAILED, responseString);
         }else if (url.contains("/listing/")) {
             result = new FeedInstanceResult(APIResult.Status.FAILED, responseString);
+        }else if (url.contains("instance/dependencies")) {
+            result = new InstanceDependencyResult(APIResult.Status.FAILED, responseString);
         }else {
             result = new InstancesResult(APIResult.Status.FAILED, responseString);
         }
@@ -116,9 +119,7 @@ public final class InstanceUtil {
                 public Date deserialize(JsonElement json, Type t, JsonDeserializationContext c) {
                     return new DateTime(json.getAsString()).toDate();
                 }
-            }).create().fromJson(responseString,
-                    url.contains("/listing/") ? FeedInstanceResult.class : url.contains("/summary/")
-                        ? InstancesSummaryResult.class : InstancesResult.class);
+            }).create().fromJson(responseString, getClassOfResult(url));
         } catch (JsonSyntaxException e) {
             Assert.fail("Not a valid json:\n" + responseString);
         }
@@ -126,6 +127,23 @@ public final class InstanceUtil {
         LOGGER.info("message: " + result.getMessage());
         LOGGER.info("APIResult.Status: " + result.getStatus());
         return result;
+    }
+
+    private static Class<? extends APIResult> getClassOfResult(String url) {
+        final Class<? extends APIResult> classOfResult;
+        if (url.contains("/listing/")) {
+            classOfResult = FeedInstanceResult.class;
+        }
+        else if (url.contains("/summary/")) {
+            classOfResult = InstancesSummaryResult.class;
+        }
+        else if (url.contains("instance/dependencies")) {
+            classOfResult = InstanceDependencyResult.class;
+        }
+        else {
+            classOfResult = InstancesResult.class;
+        }
+        return classOfResult;
     }
 
     /**

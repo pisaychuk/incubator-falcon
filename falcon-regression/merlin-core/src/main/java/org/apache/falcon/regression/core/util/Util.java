@@ -393,6 +393,7 @@ public final class Util {
         INSTANCE_RERUN("/api/instance/rerun"),
         INSTANCE_SUMMARY("/api/instance/summary"),
         INSTANCE_PARAMS("/api/instance/params"),
+        INSTANCE_DEPENDENCIES("/api/instance/dependencies"),
         INSTANCE_LIST("/api/instance/list"),
         INSTANCE_LISTING("/api/instance/listing"),
         INSTANCE_LOGS("/api/instance/logs"),

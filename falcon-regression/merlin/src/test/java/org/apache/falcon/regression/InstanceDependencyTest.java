@@ -24,6 +24,7 @@ import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
+import org.apache.falcon.regression.core.helpers.entity.AbstractEntityHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
@@ -31,9 +32,13 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
+import org.apache.falcon.resource.APIResult;
 import org.apache.falcon.resource.InstanceDependencyResult;
+import org.apache.falcon.resource.LineageGraphResult;
+import org.apache.falcon.resource.LineageGraphResult.Edge;
 import org.apache.falcon.resource.SchedulableEntityInstance;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.CoordinatorAction;
 import org.apache.oozie.client.OozieClient;
@@ -42,13 +47,18 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import static java.lang.String.format;
 
 
 /**
@@ -65,10 +75,12 @@ public class InstanceDependencyTest extends BaseTestClass {
     private String feedInputPath = baseTestHDFSDir + "/input" + MINUTE_DATE_PATTERN;
     private String feedOutputPath = baseTestHDFSDir + "/output-data" + MINUTE_DATE_PATTERN;
     final String startTimeStr = "2010-01-02T01:00Z";
+    private final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
     final String endTimeStr = "2010-01-02T01:11Z";
-    List<String> inputFeedNames, outputFeedNames, processNames;
-    List<Integer> inputFeedFrequescies;
+    private List<String> inputFeedNames, outputFeedNames, processNames;
+    private List<Integer> inputFeedFrequencies;
     private static final Logger LOGGER = Logger.getLogger(InstanceDependencyTest.class);
+    private String clusterName;
 
     private static final Comparator<SchedulableEntityInstance> dependencyComparator =
         new Comparator<SchedulableEntityInstance>() {
@@ -93,6 +105,13 @@ public class InstanceDependencyTest extends BaseTestClass {
                 return 0;
             }
         };
+    final Comparator<Edge> edgeComparator =
+        new Comparator<Edge>() {
+            @Override
+            public int compare(Edge o1, Edge o2) {
+                return o1.toString().compareTo(o2.toString());
+            }
+        };
 
     @BeforeClass(alwaysRun = true)
     public void createTestData() throws Exception {
@@ -110,6 +129,7 @@ public class InstanceDependencyTest extends BaseTestClass {
         bundles[0] = BundleUtil.readELBundle();
         bundles[0] = new Bundle(bundles[0], cluster);
         bundles[0].generateUniqueBundle(this);
+        clusterName = bundles[0].getClusterNames().get(0);
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setProcessValidity(startTimeStr, endTimeStr);
         bundles[0].setProcessPeriodicity(5, Frequency.TimeUnit.minutes);
@@ -120,7 +140,7 @@ public class InstanceDependencyTest extends BaseTestClass {
         final String oldInputFeedName = bundles[0].getInputFeedNameFromBundle();
         final String oldOutputFeedName = bundles[0].getOutputFeedNameFromBundle();
         final String oldProcessName = bundles[0].getProcessName();
-        inputFeedFrequescies = Arrays.asList(20, 5, 5);
+        inputFeedFrequencies = Arrays.asList(20, 5, 5);
         inputFeedNames = Arrays.asList(oldInputFeedName, oldOutputFeedName, oldOutputFeedName + "-2");
         outputFeedNames = Arrays.asList(oldOutputFeedName, oldOutputFeedName + "-2", oldOutputFeedName + "-3");
         processNames = Arrays.asList(oldProcessName, oldProcessName + "-2", oldProcessName + "-3");
@@ -146,6 +166,15 @@ public class InstanceDependencyTest extends BaseTestClass {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(outputFeed.toString()));
             AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(processMerlin.toString()));
         }
+
+        for (int index = 0; index < 3; ++index) {
+            InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(index), 3,
+                CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
+        }
+        LOGGER.info(inputFeedNames.get(0) + "(" + inputFeedFrequencies.get(0) + ") -> *" + processNames.get(0)+ "* -> "
+            + inputFeedNames.get(1) + "(" + inputFeedFrequencies.get(1) + ") -> *" + processNames.get(1)+ "* -> "
+            + inputFeedNames.get(2) + "(" + inputFeedFrequencies.get(2) + ") -> *" + processNames.get(2)+ "* -> "
+            + outputFeedNames.get(2));
     }
 
     @AfterMethod(alwaysRun = true)
@@ -155,14 +184,9 @@ public class InstanceDependencyTest extends BaseTestClass {
 
     @Test
     public void processInstanceDependencyTest() throws Exception {
-        final String clusterName = bundles[0].getClusterNames().get(0);
-        final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
         final DateTime startTimeMinus20 = startTime.minusMinutes(20);
 
         for (int index = 0; index < 3; ++index) {
-            InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(index), 3,
-                CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
-
             List<SchedulableEntityInstance> expectedDependencies = new ArrayList<>();
             final SchedulableEntityInstance outputInstance =
                 new SchedulableEntityInstance(outputFeedNames.get(index), clusterName, startTime.toDate(),
@@ -170,7 +194,7 @@ public class InstanceDependencyTest extends BaseTestClass {
             outputInstance.setTags("Output");
             expectedDependencies.add(outputInstance);
             for (DateTime dt = new DateTime(startTime); !dt.isBefore(startTimeMinus20);
-                 dt = dt.minusMinutes(inputFeedFrequescies.get(index))) {
+                 dt = dt.minusMinutes(inputFeedFrequencies.get(index))) {
                 final SchedulableEntityInstance inputInstance =
                     new SchedulableEntityInstance(inputFeedNames.get(index), clusterName, dt.toDate(), EntityType.FEED);
                 inputInstance.setTags("Input");
@@ -189,13 +213,8 @@ public class InstanceDependencyTest extends BaseTestClass {
 
     @Test
     public void inputFeedInstanceDependencyTest() throws Exception {
-        final String clusterName = bundles[0].getClusterNames().get(0);
         final String inputFeedToTest = inputFeedNames.get(1);
-        final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
         final DateTime endTime = TimeUtil.oozieDateToDate(endTimeStr);
-
-        InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(1), 3,
-            CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
 
         List<SchedulableEntityInstance> expectedDependencies = new ArrayList<>();
         final SchedulableEntityInstance outputInstance =
@@ -221,13 +240,8 @@ public class InstanceDependencyTest extends BaseTestClass {
 
     @Test
     public void outputFeedInstanceDependencyTest() throws Exception {
-        final String clusterName = bundles[0].getClusterNames().get(0);
         final String outputFeedToTest = outputFeedNames.get(1);
-        final DateTime startTime = TimeUtil.oozieDateToDate(startTimeStr);
         final DateTime endTime = TimeUtil.oozieDateToDate(endTimeStr);
-
-        InstanceUtil.waitTillInstanceReachState(clusterOC, processNames.get(1), 3,
-            CoordinatorAction.Status.WAITING, EntityType.PROCESS, 5);
 
         List<SchedulableEntityInstance> expectedDependencies = new ArrayList<>();
         final SchedulableEntityInstance outputInstance =
@@ -251,4 +265,109 @@ public class InstanceDependencyTest extends BaseTestClass {
             "Unexpected dependencies for process: " + outputFeedToTest);
     }
 
+    /**
+     * Particular check for https://issues.apache.org/jira/browse/FALCON-1317.
+     */
+    @Test
+    public void testInstanceDependencySingleElement()
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        InstanceDependencyResult r = prism.getFeedHelper().getInstanceDependencies(outputFeedNames.get(2),
+            "?instanceTime=" + startTimeStr);
+        Assert.assertEquals(r.getStatus(), APIResult.Status.SUCCEEDED, "Request shouldn't fail.");
+        List<SchedulableEntityInstance> actualDependencies = Arrays.asList(r.getDependencies());
+        Assert.assertEquals(actualDependencies.size(), 1, "There should be single dependency element.");
+    }
+
+    /**
+     * Run triage for different pipeline feeds and processes.
+     * @param bundleInd pipeline bundle
+     * @param entityType process or feed
+     */
+    @Test(dataProvider = "getParameters")
+    public void testTriageInstance(int bundleInd, EntityType entityType)
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        AbstractEntityHelper helper;
+        String entityName;
+        if (entityType == EntityType.FEED) {
+            helper = prism.getFeedHelper();
+            entityName = outputFeedNames.get(bundleInd);
+        } else {
+            helper = prism.getProcessHelper();
+            entityName = processNames.get(bundleInd);
+        }
+        LineageGraphResult expected = getExpectedResult(bundleInd, entityName);
+        LineageGraphResult actual = helper.getInstanceTriage(entityName,
+            "?start=" + startTimeStr).getTriageGraphs()[0];
+
+        final List<String> expectedVertices = new ArrayList<>(Arrays.asList(expected.getVertices()));
+        final List<Edge> expectedEdges = new ArrayList<>(Arrays.asList(expected.getEdges()));
+        final List<String> actualVertices = Arrays.asList(actual.getVertices());
+        final List<Edge> actualEdges = Arrays.asList(actual.getEdges());
+        Collections.sort(actualVertices);
+        Collections.sort(expectedVertices);
+        Collections.sort(actualEdges, edgeComparator);
+        Collections.sort(expectedEdges, edgeComparator);
+        Assert.assertEquals(actualVertices, expectedVertices,
+            "Actual vertices & expected vertices in triage graph don't match");
+        Assert.assertEquals(actualEdges, expectedEdges,
+            "Actual edges & expected edges in triage graph don't match");
+    }
+
+    @DataProvider
+    public Object[][] getParameters() {
+        return new Object[][]{
+            {0, EntityType.FEED},
+            {0, EntityType.PROCESS},
+            {1, EntityType.FEED},
+            {1, EntityType.PROCESS},
+            {2, EntityType.FEED},
+            {2, EntityType.PROCESS},
+        };
+    }
+
+    /**
+     * Produces list of expected vertices and edges in triage result.
+     */
+    private LineageGraphResult getExpectedResult(int bundleIndx, String entityName) {
+        List<String> vertices = new ArrayList<>();
+        List<Edge> edges = new ArrayList<>();
+        final DateTime startTimeMinus20 = startTime.minusMinutes(20);
+        String vertexTemplate = "name: %s, type: %s, cluster: %s, instanceTime: %s, tags: %s";
+        for (int i = 0; i <= bundleIndx; ++i) {
+            //add vertex of i-th bundle process
+            boolean isTerminalInstance = processNames.contains(entityName) && i == bundleIndx;
+            String tag = isTerminalInstance ? "[WAITING]" : "Output[WAITING]";
+            final String processVertex = format(vertexTemplate,
+                processNames.get(i), "PROCESS", clusterName, startTimeStr, tag);
+            vertices.add(processVertex);
+
+            //add all input feed vertices & edges for i-th bundle
+            Edge edge;
+            String feedVertex;
+            for (DateTime dt = new DateTime(startTime); !dt.isBefore(startTimeMinus20);
+                 dt = dt.minusMinutes(inputFeedFrequencies.get(i))) {
+                feedVertex = format(vertexTemplate, inputFeedNames.get(i), "FEED",
+                    clusterName, TimeUtil.dateToOozieDate(dt.toDate()), "Input[MISSING]");
+                edge = new Edge(feedVertex, processVertex, "consumed by");
+                vertices.add(feedVertex);
+                edges.add(edge);
+            }
+            //add output feed edge for i-th bundle
+            tag = (outputFeedNames.contains(entityName) && i == bundleIndx) ? "[MISSING]" : "Input[MISSING]";
+            feedVertex = format(vertexTemplate, outputFeedNames.get(i),"FEED", clusterName, startTimeStr, tag);
+            isTerminalInstance = i == bundleIndx && outputFeedNames.contains(entityName);
+            if (i < bundleIndx || isTerminalInstance) {
+                edge = new Edge(processVertex, feedVertex, "produces");
+                edges.add(edge);
+            }
+            //add output feed vertex only if it is terminal; it will be added as the input for next bundle otherwise
+            if (isTerminalInstance) {
+                vertices.add(feedVertex);
+            }
+        }
+        LineageGraphResult lineageGraphResult = new LineageGraphResult();
+        lineageGraphResult.setVertices(vertices.toArray(new String[vertices.size()]));
+        lineageGraphResult.setEdges(edges.toArray(new Edge[edges.size()]));
+        return lineageGraphResult;
+    }
 }

@@ -35,6 +35,7 @@ import org.apache.falcon.resource.FeedInstanceResult;
 import org.apache.falcon.resource.InstanceDependencyResult;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.falcon.resource.InstancesSummaryResult;
+import org.apache.falcon.resource.TriageResult;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.http.HttpResponse;
 import org.apache.log4j.Logger;
@@ -91,6 +92,8 @@ public final class InstanceUtil {
             result = new FeedInstanceResult(APIResult.Status.FAILED, responseString);
         }else if (url.contains("instance/dependencies")) {
             result = new InstanceDependencyResult(APIResult.Status.FAILED, responseString);
+        }else if (url.contains("instance/triage")) {
+            result = new TriageResult(APIResult.Status.FAILED, responseString);
         }else {
             result = new InstancesResult(APIResult.Status.FAILED, responseString);
         }
@@ -139,6 +142,9 @@ public final class InstanceUtil {
         }
         else if (url.contains("instance/dependencies")) {
             classOfResult = InstanceDependencyResult.class;
+        }
+        else if (url.contains("instance/triage")) {
+            classOfResult = TriageResult.class;
         }
         else {
             classOfResult = InstancesResult.class;

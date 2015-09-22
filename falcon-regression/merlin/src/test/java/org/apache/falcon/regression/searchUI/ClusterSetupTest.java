@@ -94,6 +94,9 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.clickSave();
         String alertText = clusterSetup.getActiveAlertText();
         Assert.assertEquals(alertText, "falcon/default/Submit successful (cluster) " + sourceCluster.getName());
+        //check the same via notifications bar
+        clusterSetup.getPageHeader().validateNotificationCountAndCheckLast(1,
+            "falcon/default/Submit successful (cluster) " + sourceCluster.getName());
         ClusterMerlin definition = new ClusterMerlin(cluster.getClusterHelper()
             .getEntityDefinition(bundles[0].getClusterElement().toString()).getMessage());
         //definition should be the same that the source
@@ -257,7 +260,23 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.clickSave();
         String alertMessage = clusterSetup.getActiveAlertText();
         Assert.assertTrue(alertMessage.contains(String.format("Location %s for cluster %s must exist.",
-                nonExistent, sourceCluster.getName())), "Alert message should match to expected.");
+            nonExistent, sourceCluster.getName())), "Alert message should match to expected.");
+        //check the same through notification bar
+        clusterSetup.getPageHeader().validateNotificationCountAndCheckLast(1,
+            String.format("Location %s for cluster %s must exist.", nonExistent, sourceCluster.getName()));
+    }
+
+    /**
+     * Validate alert lifetime.
+     */
+    @Test
+    public void testValidateAlertLifeTime() throws IOException {
+        String nonExistent = "/non-existent-directory";
+        sourceCluster.getLocation(ClusterLocationType.STAGING).setPath(nonExistent);
+        clusterSetup.fillForm(sourceCluster);
+        clusterSetup.clickNext();
+        clusterSetup.clickSave();
+        clusterSetup.validateAlertLifetime();
     }
 
     /**

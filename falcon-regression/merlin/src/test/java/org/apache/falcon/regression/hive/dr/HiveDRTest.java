@@ -108,7 +108,7 @@ public class HiveDRTest extends BaseTestClass {
         recipeMerlin.withSourceCluster(srcCluster)
             .withTargetCluster(tgtCluster)
             .withFrequency(new Frequency("5", Frequency.TimeUnit.minutes))
-            .withValidity(TimeUtil.getTimeWrtSystemTime(-5), TimeUtil.getTimeWrtSystemTime(5));
+            .withValidity(TimeUtil.getTimeWrtSystemTime(-5), TimeUtil.getTimeWrtSystemTime(15));
         recipeMerlin.setUniqueName(this.getClass().getSimpleName());
 
         connection = cluster.getClusterHelper().getHiveJdbcConnection();

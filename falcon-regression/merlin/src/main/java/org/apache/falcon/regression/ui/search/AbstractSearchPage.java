@@ -19,6 +19,7 @@
 package org.apache.falcon.regression.ui.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.ui.pages.Page;
@@ -47,6 +48,7 @@ public abstract class AbstractSearchPage extends Page {
     public static final String UI_URL = MerlinConstants.PRISM_URL;
     private static final Logger LOGGER = Logger.getLogger(AbstractSearchPage.class);
     public static final int PAGELOAD_TIMEOUT_THRESHOLD = 10;
+    public static final int ALERT_LIFETIME = 3000;
 
     public AbstractSearchPage(WebDriver driver) {
         super(driver);
@@ -159,6 +161,44 @@ public abstract class AbstractSearchPage extends Page {
             return driver.findElement(By.xpath("//div[@class='messages notifs']/div[last()]")).getText();
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Wait for active alert. Check it's lifetime (the period when alert is displayed).
+     */
+    public void validateAlertLifetime() {
+        final WebElement alertsBlock = driver.findElement(By.xpath("//div[@class='messages notifs']"));
+        try {
+            final MutablePair<Long, Long> pair = new MutablePair<>(Long.MAX_VALUE, Long.MAX_VALUE);
+            // wait 5 seconds for alert to start blinking and record time of first blink
+            new WebDriverWait(driver, 5, 100).until(new ExpectedCondition<Boolean>() {
+                @Nullable
+                @Override
+                public Boolean apply(WebDriver webDriver) {
+                    String style = alertsBlock.getAttribute("style");
+                    if (!style.contains("opacity: 1;") || style.contains("display: block;")) {
+                        pair.setLeft(System.currentTimeMillis());
+                        return true;
+                    }
+                    return false;
+                }
+            });
+            // wait 5 seconds for alert to stop blinking and record time of stoppage
+            for (int i = 0; i < ALERT_LIFETIME + 3000; i += 100) {
+                String style = alertsBlock.getAttribute("style");
+                if (style.contains("display: none;")) {
+                    pair.setRight(Math.min(System.currentTimeMillis(), pair.getRight()));
+                } else {
+                    pair.setRight(Long.MAX_VALUE);
+                }
+                TimeUtil.sleepSeconds(0.1);
+            }
+            long diff = pair.getRight() - pair.getLeft();
+            LOGGER.info(String.format("Alert was live %d millis.", pair.getRight() - pair.getLeft()));
+            Assert.assertTrue(ALERT_LIFETIME <= diff, "Alert was present for too short period of time");
+        } catch (TimeoutException e) {
+            Assert.fail("Alert didn't appear in 5 seconds.");
         }
     }
 

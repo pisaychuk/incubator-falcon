@@ -220,7 +220,7 @@ public class HiveDbDRTest extends BaseTestClass {
         anAssert.assertAll();
     }
 
-    @Test(enabled = false)
+    @Test
     public void drDbNonReplicatableTable() throws Exception {
         final RecipeExecLocation recipeExecLocation = RecipeExecLocation.SourceCluster;
         setUp(recipeExecLocation);

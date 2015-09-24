@@ -323,9 +323,12 @@ public class HiveDRTest extends BaseTestClass {
         final String recipe1Name = recipeMerlin.getName();
         final List<String> command1 = recipeMerlin.getSubmissionCommand();
 
-        final Bundle bundle = BundleUtil.readHCatBundle();
-        bundle.generateUniqueBundle(this);
-        recipeMerlin.withTargetCluster(new Bundle(bundle, cluster3).getClusterElement());
+        final Bundle bundle3 = new Bundle(BundleUtil.readHCatBundle(), cluster3);
+        bundle3.generateUniqueBundle(this);
+        bundle3.submitClusters(prism);
+        recipeMerlin.withTargetCluster(bundle3.getClusterElement())
+                .withRecipeCluster(recipeExecLocation.getRecipeCluster(
+                        bundles[0].getClusterElement(), bundle3.getClusterElement()));
         recipeMerlin.setUniqueName(this.getClass().getSimpleName());
 
         final List<String> command2 = recipeMerlin.getSubmissionCommand();

@@ -212,8 +212,9 @@ public class HiveDRTest extends BaseTestClass {
         ).assertAll();
     }
 
-    @Test(dataProvider = "getRecipeLocation")
-    public void drTwoTablesOneRequest(final RecipeExecLocation recipeExecLocation) throws Exception {
+    @Test
+    public void drTwoTablesOneRequest() throws Exception {
+        final RecipeExecLocation recipeExecLocation = RecipeExecLocation.TargetCluster;
         setUp(recipeExecLocation);
         final String tblName = "firstTableDR";
         final String tbl2Name = "secondTableDR";
@@ -307,8 +308,9 @@ public class HiveDRTest extends BaseTestClass {
     }
 
 
-    @Test(dataProvider = "getRecipeLocation")
-    public void drTwoDstTablesTwoRequests(final RecipeExecLocation recipeExecLocation) throws Exception {
+    @Test
+    public void drTwoDstTablesTwoRequests() throws Exception {
+        final RecipeExecLocation recipeExecLocation = RecipeExecLocation.TargetCluster;
         setUp(recipeExecLocation);
         final HCatClient clusterHC3 = cluster3.getClusterHelper().getHCatClient();
         final Connection connection3 = cluster3.getClusterHelper().getHiveJdbcConnection();

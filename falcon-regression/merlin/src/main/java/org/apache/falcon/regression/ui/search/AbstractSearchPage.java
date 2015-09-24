@@ -158,7 +158,9 @@ public abstract class AbstractSearchPage extends Page {
     public String getActiveAlertText() {
         if (waitForAlert()) {
             waitForAngularToFinish();
-            return driver.findElement(By.xpath("//div[@class='messages notifs']/div[last()]")).getText();
+            String script = "return $('div.messages.notifs > div:last-child').text();";
+            String message = (String)((JavascriptExecutor)driver).executeScript(script);
+            return message.trim();
         } else {
             return null;
         }

@@ -18,7 +18,6 @@
 
 package org.apache.falcon.regression.ui.search;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.util.TimeUtil;
@@ -216,12 +215,7 @@ public abstract class AbstractSearchPage extends Page {
                 @Override
                 public Boolean apply(WebDriver webDriver) {
                     String style = alertsBlock.getAttribute("style");
-                    if (style.contains("opacity") && !style.contains("opacity: 1;")) {
-                        String alert = alertsBlock.findElement(By.xpath("./div[last()]")).getText();
-                        return StringUtils.isNotEmpty(alert);
-                    } else {
-                        return false;
-                    }
+                    return !style.contains("opacity: 1;") || style.contains("display: block;");
                 }
             });
             return true;

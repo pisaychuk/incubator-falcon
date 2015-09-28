@@ -40,6 +40,7 @@ import org.testng.asserts.SoftAssert;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * Test list instances api for process.
@@ -73,7 +74,8 @@ public class ListProcessInstancesTest extends BaseTestClass {
         //prepare process
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setInputFeedDataPath(feedDataLocation);
-        bundles[0].setOutputFeedLocationData(baseTestHDFSDir + "/output" + MINUTE_DATE_PATTERN);
+        String suffix = UUID.randomUUID().toString();
+        bundles[0].setOutputFeedLocationData(baseTestHDFSDir + "/output/" + suffix + MINUTE_DATE_PATTERN);
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessConcurrency(3);
         bundles[0].submitAndScheduleProcess();

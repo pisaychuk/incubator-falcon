@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.core.util;
 
+import org.apache.commons.exec.CommandLine;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.hadoop.security.UserGroupInformation;
 
@@ -39,6 +40,11 @@ public final class KerberosHelper {
         // if secure create a ugi object from keytab
         return UserGroupInformation.loginUserFromKeytabAndReturnUGI(getPrincipal(user),
             getKeyTab(user));
+    }
+
+    public static void initUserWithKeytab(String user){
+        ExecUtil.executeCommand(new CommandLine("sudo").addArgument("kinit").addArgument(getPrincipal(user))
+            .addArgument("-k").addArgument("-t").addArgument(getKeyTab(user)));
     }
 
     private static String getKeyTab(String user) {

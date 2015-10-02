@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.security;
 
+import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -49,7 +50,7 @@ public class ClusterAclTest extends BaseTestClass {
     private String aggregateWorkflowDir = baseTestDir + "/aggregator";
     private String feedInputPath = baseTestDir + "/input" + MINUTE_DATE_PATTERN;
     private final AbstractEntityHelper clusterHelper = prism.getClusterHelper();
-    private String clusterString;
+    private ClusterMerlin clusterMerlin;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -65,7 +66,7 @@ public class ClusterAclTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setCLusterACL(MerlinConstants.CURRENT_USER_NAME,
             MerlinConstants.CURRENT_USER_GROUP, "*");
-        clusterString = bundles[0].getClusters().get(0);
+        clusterMerlin = bundles[0].getClusters().get(0);
     }
 
     /**
@@ -80,9 +81,8 @@ public class ClusterAclTest extends BaseTestClass {
         throws Exception {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
-        final boolean executeRes = op.executeAs(user, clusterHelper, clusterString);
-        Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
-            + " performing: " + op);
+        final boolean executeRes = op.executeAs(user, clusterHelper, clusterMerlin);
+        Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user + " performing: " + op);
     }
 
     @DataProvider(name = "generateUserReadOpsPermissions")
@@ -120,7 +120,7 @@ public class ClusterAclTest extends BaseTestClass {
     public void othersDeleteCluster(final String deleteUser, final boolean deleteAllowed)
         throws Exception {
         bundles[0].submitClusters(prism);
-        final ServiceResponse response = clusterHelper.delete(clusterString, deleteUser);
+        final ServiceResponse response = clusterHelper.delete(clusterMerlin.getName(), deleteUser);
         if (deleteAllowed) {
             AssertUtil.assertSucceeded(response);
         } else {

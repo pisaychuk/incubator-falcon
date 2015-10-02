@@ -20,16 +20,16 @@ package org.apache.falcon.regression;
 
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
+import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
-import org.apache.falcon.regression.core.util.Util;
-import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.AssertUtil;
+import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.FeedInstanceResult;
 import org.apache.hadoop.fs.FileSystem;
@@ -93,7 +93,7 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         List<List<String>> missingDependencies = OozieUtil.createMissingDependencies(cluster,
                 EntityType.PROCESS, processName, 0);
         List<String> missingDependencyLastInstance = missingDependencies.get(missingDependencies.size()-1);
@@ -101,7 +101,7 @@ public class FeedInstanceListingTest extends BaseTestClass{
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
         FeedInstanceResult r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 0, 0, 0, 5);
     }
@@ -114,12 +114,12 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
         FeedInstanceResult r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 0, 5, 0, 0);
     }
@@ -132,9 +132,9 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         FeedInstanceResult r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 5, 0, 0, 0);
     }
@@ -148,7 +148,7 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         List<List<String>> missingDependencies = OozieUtil.createMissingDependencies(cluster,
                 EntityType.PROCESS, processName, 0);
         List<String> missingDependencyLastInstance = missingDependencies.get(missingDependencies.size()-1);
@@ -156,16 +156,16 @@ public class FeedInstanceListingTest extends BaseTestClass{
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
         FeedInstanceResult r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 0, 0, 0, 5);
-        String inputFeed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin inputFeed = bundles[0].getInputFeedFromBundle();
         bundles[0].setInputFeedAvailabilityFlag("_SUCCESS");
         ServiceResponse serviceResponse = prism.getFeedHelper().update(inputFeed, bundles[0].getInputFeedFromBundle());
         AssertUtil.assertSucceeded(serviceResponse);
         //Since we have not created availability flag on HDFS, the feed instance status should be partial
         r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 0, 0, 5, 0);
     }
@@ -179,7 +179,7 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         List<List<String>> missingDependencies = OozieUtil.createMissingDependencies(cluster,
                 EntityType.PROCESS, processName, 0);
         List<String> missingDependencyLastInstance = missingDependencies.get(missingDependencies.size()-1);
@@ -187,16 +187,16 @@ public class FeedInstanceListingTest extends BaseTestClass{
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
         FeedInstanceResult r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 0, 0, 0, 5);
-        String inputFeed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin inputFeed = bundles[0].getInputFeedFromBundle();
         bundles[0].setInputFeedDataPath(baseTestDir + "/inputNew" + MINUTE_DATE_PATTERN);
         ServiceResponse serviceResponse = prism.getFeedHelper().update(inputFeed, bundles[0].getInputFeedFromBundle());
         AssertUtil.assertSucceeded(serviceResponse);
         //Since we have not created directories for new path, the feed instance status should be missing
         r = prism.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 5, 0, 0, 0);
     }
@@ -209,9 +209,9 @@ public class FeedInstanceListingTest extends BaseTestClass{
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:21Z");
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         FeedInstanceResult r = cluster.getFeedHelper()
-                .getFeedInstanceListing(Util.readEntityName(bundles[0].getDataSets().get(0)),
+                .getFeedInstanceListing(bundles[0].getFeeds().get(0).getName(),
                         "?start=2010-01-02T01:00Z&end=2010-01-02T01:21Z");
         validateResponse(r, 5, 5, 0, 0, 0);
     }

@@ -19,6 +19,7 @@
 package org.apache.falcon.regression;
 
 import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
 import org.apache.falcon.regression.core.enumsAndConstants.ResponseErrors;
@@ -96,11 +97,11 @@ public class ProcessInstanceRunningTest extends BaseTestClass {
     public void getResumedProcessInstance() throws Exception {
         bundles[0].setProcessConcurrency(3);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 3,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
-        String process = bundles[0].getProcessData();
+        ProcessMerlin process = bundles[0].getProcess();
         AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(process));
         TimeUtil.sleepSeconds(TIMEOUT);
         AssertUtil.assertSucceeded(prism.getProcessHelper().resume(process));
@@ -119,11 +120,11 @@ public class ProcessInstanceRunningTest extends BaseTestClass {
     public void getSuspendedProcessInstance() throws Exception {
         bundles[0].setProcessConcurrency(3);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 3,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess()));
         TimeUtil.sleepSeconds(TIMEOUT);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccessWOInstances(r);
@@ -138,7 +139,7 @@ public class ProcessInstanceRunningTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void getRunningProcessInstance() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -165,7 +166,7 @@ public class ProcessInstanceRunningTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void getKilledProcessInstance() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        prism.getProcessHelper().delete(bundles[0].getProcessData());
+        prism.getProcessHelper().delete(bundles[0].getProcess());
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateError(r, ResponseErrors.PROCESS_NOT_FOUND);
     }
@@ -179,9 +180,9 @@ public class ProcessInstanceRunningTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void getSucceededProcessInstance() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
-        OozieUtil.waitForBundleToReachState(clusterOC, processName, Job.Status.SUCCEEDED);
+        OozieUtil.waitForBundleToReachState(clusterOC, bundles[0].getProcess(), Job.Status.SUCCEEDED);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccessWOInstances(r);
     }

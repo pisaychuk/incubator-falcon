@@ -93,7 +93,7 @@ public class InstanceSummaryTest extends BaseTestClass {
             bundles[i].generateUniqueBundle(this);
             bundles[i].setProcessWorkflow(aggregateWorkflowDir);
         }
-        processName = Util.readEntityName(processBundle.getProcessData());
+        processName = processBundle.getProcess().getName();
     }
 
     /**
@@ -105,7 +105,7 @@ public class InstanceSummaryTest extends BaseTestClass {
         OozieClientException, AuthenticationException, InterruptedException {
         processBundle.setProcessValidity(startTime, endTime);
         processBundle.submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(serverOC.get(2), processBundle.getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(serverOC.get(2), processBundle.getProcess(), 0);
 
         // start only at start time
         InstancesSummaryResult r = prism.getProcessHelper()
@@ -214,32 +214,32 @@ public class InstanceSummaryTest extends BaseTestClass {
             InterruptedException {
 
         //create desired feed
-        String feed = bundles[0].getDataSets().get(0);
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
 
         //cluster_1 is target, cluster_2 is source and cluster_3 is neutral
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        feed.clearFeedClusters();
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-10-01T12:10Z")
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-10-01T12:25Z")
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(feedInputPath)
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withDataLocation(feedInputPath)
-                .build()).toString();
+                .build());
 
         //submit clusters
         Bundle.submitCluster(bundles[0], bundles[1], bundles[2]);
@@ -254,9 +254,9 @@ public class InstanceSummaryTest extends BaseTestClass {
         prism.getFeedHelper().submitAndSchedule(feed);
 
         InstancesSummaryResult r = prism.getFeedHelper()
-            .getInstanceSummary(Util.readEntityName(feed), "?start=" + startTime);
+            .getInstanceSummary(feed.getName(), "?start=" + startTime);
 
-        r = prism.getFeedHelper().getInstanceSummary(Util.readEntityName(feed),
+        r = prism.getFeedHelper().getInstanceSummary(feed.getName(),
             "?start=" + startTime + "&end=" + TimeUtil.addMinsToTime(endTime, -20));
     }
 

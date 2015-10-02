@@ -87,7 +87,7 @@ public class EntityDryRunTest extends BaseTestClass {
     public void testDryRunFailureScheduleProcess() throws Exception {
         bundles[0].setProcessProperty("EntityDryRunTestProp", "${coord:someEL(1)");
         bundles[0].submitProcess(true);
-        ServiceResponse response = prism.getProcessHelper().schedule(bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().schedule(bundles[0].getProcess());
         validate(response,
                 "Entity schedule failed for process: " + bundles[0].getProcessName());
     }
@@ -101,8 +101,8 @@ public class EntityDryRunTest extends BaseTestClass {
             TimeUtil.getTimeWrtSystemTime(100));
         bundles[0].submitAndScheduleProcess();
         bundles[0].setProcessProperty("EntityDryRunTestProp", "${coord:someEL(1)");
-        ServiceResponse response = prism.getProcessHelper().update(bundles[0].getProcessData(),
-            bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().update(bundles[0].getProcess(),
+            bundles[0].getProcess());
         validate(response,
             "The new entity (process) " + bundles[0].getProcessName() + " can't be scheduled");
         Assert.assertEquals(
@@ -118,7 +118,7 @@ public class EntityDryRunTest extends BaseTestClass {
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle())
             .withProperty("EntityDryRunTestProp", "${coord:someEL(1)");
         bundles[0].submitClusters(prism);
-        ServiceResponse response = prism.getFeedHelper().submitAndSchedule(feed.toString());
+        ServiceResponse response = prism.getFeedHelper().submitAndSchedule(feed);
         validate(response,
                 "Entity schedule failed for feed: " + bundles[0].getInputFeedNameFromBundle());
     }
@@ -130,10 +130,11 @@ public class EntityDryRunTest extends BaseTestClass {
     public void testDryRunFailureUpdateFeed() throws Exception {
         bundles[0].submitClusters(prism);
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
-        ServiceResponse response = prism.getFeedHelper().submitAndSchedule(feed.toString());
+        ServiceResponse response = prism.getFeedHelper().submitAndSchedule(feed);
         AssertUtil.assertSucceeded(response);
-        feed.withProperty("EntityDryRunTestProp", "${coord:someEL(1)");
-        response = prism.getFeedHelper().update(feed.toString(), feed.toString());
+        FeedMerlin changedFeed = feed.getClone();
+        changedFeed.withProperty("EntityDryRunTestProp", "${coord:someEL(1)");
+        response = prism.getFeedHelper().update(feed, changedFeed);
         validate(response, "The new entity (feed) " + bundles[0].getInputFeedNameFromBundle()
             + " can't be scheduled");
         Assert.assertEquals(

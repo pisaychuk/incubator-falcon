@@ -28,20 +28,27 @@ import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.CatalogTable;
 import org.apache.falcon.entity.v0.feed.Cluster;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.entity.v0.feed.Clusters;
 import org.apache.falcon.entity.v0.feed.Feed;
+import org.apache.falcon.entity.v0.feed.LateArrival;
+import org.apache.falcon.entity.v0.feed.Lifecycle;
 import org.apache.falcon.entity.v0.feed.Location;
 import org.apache.falcon.entity.v0.feed.LocationType;
 import org.apache.falcon.entity.v0.feed.Locations;
+import org.apache.falcon.entity.v0.feed.Partition;
+import org.apache.falcon.entity.v0.feed.Partitions;
+import org.apache.falcon.entity.v0.feed.Properties;
 import org.apache.falcon.entity.v0.feed.Property;
 import org.apache.falcon.entity.v0.feed.Retention;
-import org.apache.falcon.entity.v0.feed.Validity;
+import org.apache.falcon.entity.v0.feed.RetentionStage;
+import org.apache.falcon.entity.v0.feed.Schema;
 import org.apache.falcon.entity.v0.feed.Sla;
+import org.apache.falcon.entity.v0.feed.Validity;
 import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.core.util.Util;
-import org.testng.Assert;
 import org.apache.log4j.Logger;
+import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
-
 
 import javax.xml.bind.JAXBException;
 import java.io.StringWriter;
@@ -49,8 +56,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
-/** Class for representing a feed xml. */
+import static org.apache.falcon.regression.core.util.TimeUtil.dateToOozieDate;
+
+/** Class for representing a feed xml.*/
 public class FeedMerlin extends Feed {
     private static final Logger LOGGER = Logger.getLogger(FeedMerlin.class);
 
@@ -58,6 +68,10 @@ public class FeedMerlin extends Feed {
         this((Feed) TestEntityUtil.fromString(EntityType.FEED, feedData));
     }
 
+    /**
+     * Creates shallow copy of a given feed.
+     * @param feed a feed
+     */
     public FeedMerlin(final Feed feed) {
         try {
             PropertyUtils.copyProperties(this, feed);
@@ -65,14 +79,6 @@ public class FeedMerlin extends Feed {
         } catch (ReflectiveOperationException e) {
             Assert.fail("Can't create FeedMerlin: " + ExceptionUtils.getStackTrace(e));
         }
-    }
-
-    public static List<FeedMerlin> fromString(List<String> feedStrings) {
-        List<FeedMerlin> feeds = new ArrayList<>();
-        for (String feedString : feedStrings) {
-            feeds.add(fromString(feedString));
-        }
-        return feeds;
     }
 
     public static FeedMerlin fromString(String feedString) {
@@ -110,6 +116,152 @@ public class FeedMerlin extends Feed {
         property.setValue(value);
         properties.add(property);
         return this;
+    }
+
+    /**
+     * Creates feed definition template filling in compulsory fields: name, frequency, clusters, acl, schema.
+     */
+    public FeedMerlin() {
+        String weekAgo = TimeUtil.getTimeWrtSystemTime(-60 * 24 * 7);
+        setName("feed");
+        setFrequency(new Frequency("5", Frequency.TimeUnit.minutes));
+        setClusters(new Clusters());
+        addFeedCluster(new FeedClusterBuilder("cluster")
+            .withClusterType(ClusterType.SOURCE)
+            .withValidity(weekAgo, "2099-05-01T00:00Z")
+            .withRetention("months(9000)", ActionType.DELETE).build());
+        setACL("testuser", "users", "0x755");
+        Schema schema = new Schema();
+        schema.setLocation("/schema/clicks");
+        schema.setProvider("protobuf");
+        setSchema(schema);
+    }
+
+    /**
+     * Creates deep copy of feed.
+     * @return clone feed object
+     */
+    public FeedMerlin getClone() {
+        FeedMerlin feedCopy = new FeedMerlin();
+        //copy compulsory fields
+        feedCopy.setName(this.getName());
+        feedCopy.setSchema(this.getSchema());
+        feedCopy.setACL(this.getACL().getOwner(), this.getACL().getGroup(), this.getACL().getPermission());
+        feedCopy.setClusters(new Clusters());
+        for (Cluster cluster : this.getClusters().getClusters()) {
+            Validity validity = cluster.getValidity();
+            Cluster clusterCopy = new FeedClusterBuilder(cluster.getName())
+                .withRetention(cluster.getRetention().getLimit().toString(), cluster.getRetention().getAction())
+                .withValidity(dateToOozieDate(validity.getStart()), dateToOozieDate(validity.getEnd()))
+                .withPartition(cluster.getPartition()).build();
+            if (cluster.getSla() != null) {
+                Sla slaCopy = new Sla();
+                slaCopy.setSlaLow(new Frequency(cluster.getSla().getSlaLow().getFrequency()));
+                slaCopy.setSlaHigh(new Frequency(cluster.getSla().getSlaHigh().getFrequency()));
+                clusterCopy.setSla(slaCopy);
+            }
+            if (cluster.getLifecycle() != null) {
+                clusterCopy.setLifecycle(getLifecycleCopy(cluster.getLifecycle()));
+            }
+            if (cluster.getTable() != null) {
+                CatalogTable catalogTableCopy = new CatalogTable();
+                catalogTableCopy.setUri(cluster.getTable().getUri());
+                clusterCopy.setTable(catalogTableCopy);
+            }
+            if (cluster.getType() != null) {
+                clusterCopy.setType(cluster.getType());
+            }
+            if (cluster.getDelay() != null) {
+                clusterCopy.setDelay(cluster.getDelay());
+            }
+            if (cluster.getLocations() != null) {
+                clusterCopy.setLocations(new Locations());
+                for (Location location : cluster.getLocations().getLocations()) {
+                    Location locationCopy = new Location();
+                    locationCopy.setType(location.getType());
+                    locationCopy.setPath(location.getPath());
+                    clusterCopy.getLocations().getLocations().add(locationCopy);
+                }
+            }
+            feedCopy.addFeedCluster(clusterCopy);
+        }
+        feedCopy.setFrequency(new Frequency(this.getFrequency().toString()));
+
+        //set optional properties
+        feedCopy.setTags(this.getTags());
+        if (this.getPartitions() != null) {
+            feedCopy.setPartitions(new Partitions());
+            for (Partition partition : this.getPartitions().getPartitions()) {
+                Partition partitionCopy = new Partition();
+                partitionCopy.setName(partition.getName());
+                feedCopy.getPartitions().getPartitions().add(partitionCopy);
+            }
+        }
+        feedCopy.setGroups(this.getGroups());
+        feedCopy.setAvailabilityFlag(this.getAvailabilityFlag());
+        if (this.getSla() != null) {
+            Frequency slaLow = new Frequency(this.getSla().getSlaLow().toString());
+            Frequency slaHigh = new Frequency(this.getSla().getSlaHigh().toString());
+            feedCopy.setSla(slaLow, slaHigh);
+        }
+        if (this.getTimezone() != null){
+            feedCopy.setTimezone(TimeZone.getTimeZone(this.getTimezone().getID()));
+        }
+        if (this.getLateArrival() != null) {
+            LateArrival lateArrivalCopy = new LateArrival();
+            lateArrivalCopy.setCutOff(new Frequency(this.getLateArrival().getCutOff().toString()));
+            feedCopy.setLateArrival(lateArrivalCopy);
+        }
+        if (this.getTable() != null) {
+            feedCopy.setTableUri(this.getTable().getUri());
+        }
+        if (this.getLocations() != null) {
+            feedCopy.setLocations(new Locations());
+            for (Location location : this.getLocations().getLocations()) {
+                Location newLocation = new Location();
+                newLocation.setType(location.getType());
+                newLocation.setPath(location.getPath());
+                feedCopy.getLocations().getLocations().add(newLocation);
+            }
+        }
+        if (this.getProperties() != null) {
+            feedCopy.setProperties(new Properties());
+            for (Property property : this.getProperties().getProperties()) {
+                Property newProperty = new Property();
+                newProperty.setName(property.getName());
+                newProperty.setValue(property.getValue());
+                feedCopy.getProperties().getProperties().add(newProperty);
+            }
+        }
+        feedCopy.setDescription(this.getDescription());
+        if (getLifecycle() != null) {
+            feedCopy.setLifecycle(getLifecycleCopy(getLifecycle()));
+        }
+        return feedCopy;
+    }
+
+    /**
+     * Creates deep copy of Lifecycle property.
+     */
+    private Lifecycle getLifecycleCopy(Lifecycle lifecycle) {
+        Lifecycle lifecycleCopy = new Lifecycle();
+        RetentionStage retStageOrigin = lifecycle.getRetentionStage();
+        RetentionStage retStageCopy = new RetentionStage();
+        retStageCopy.setFrequency(new Frequency(retStageOrigin.getFrequency().getFrequency()));
+        retStageCopy.setQueue(retStageOrigin.getQueue());
+        retStageCopy.setPriority(retStageOrigin.getPriority());
+        retStageCopy.setPolicy(retStageOrigin.getPolicy());
+        if (retStageOrigin.getProperties() != null) {
+            retStageCopy.setProperties(new Properties());
+            for (Property property : retStageOrigin.getProperties().getProperties()) {
+                Property propertyCopy = new Property();
+                propertyCopy.setName(property.getName());
+                propertyCopy.setValue(property.getValue());
+                retStageCopy.getProperties().getProperties().add(propertyCopy);
+            }
+        }
+        lifecycleCopy.setRetentionStage(retStageCopy);
+        return lifecycleCopy;
     }
 
     /**
@@ -238,19 +390,18 @@ public class FeedMerlin extends Feed {
 
     /**
      * Method sets a number of clusters to feed definition.
-     *
      * @param newClusters list of definitions of clusters which are to be set to feed
      * @param location location of data on every cluster
      * @param startTime start of feed validity on every cluster
      * @param endTime end of feed validity on every cluster
      */
-    public void setFeedClusters(List<String> newClusters, String location, String startTime,
+    public void setFeedClusters(List<ClusterMerlin> newClusters, String location, String startTime,
                                 String endTime) {
         clearFeedClusters();
         setFrequency(new Frequency("" + 5, Frequency.TimeUnit.minutes));
 
-        for (String newCluster : newClusters) {
-            Cluster feedCluster = new FeedClusterBuilder(new ClusterMerlin(newCluster).getName())
+        for (ClusterMerlin newCluster : newClusters) {
+            Cluster feedCluster = new FeedClusterBuilder(newCluster.getName())
                 .withDataLocation(location + "/${YEAR}/${MONTH}/${DAY}/${HOUR}/${MINUTE}")
                 .withValidity(TimeUtil.addMinsToTime(startTime, -180),
                     TimeUtil.addMinsToTime(endTime, 180))
@@ -279,6 +430,13 @@ public class FeedMerlin extends Feed {
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Prints feed in readable xml form.
+     */
+    public String toPrettyXml() {
+        return Util.prettyPrintXml(this);
     }
 
     public void setLocation(LocationType locationType, String feedInputPath) {
@@ -388,10 +546,10 @@ public class FeedMerlin extends Feed {
         return EntityType.FEED;
     }
 
-    public void assertGeneralProperties(FeedMerlin newFeed){
+    public void assertGeneralProperties(FeedMerlin newFeed) {
 
         LOGGER.info(String.format("Comparing General Properties: source: %n%s%n and feed: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(newFeed.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(newFeed)));
 
         SoftAssert softAssert = new SoftAssert();
 
@@ -418,10 +576,10 @@ public class FeedMerlin extends Feed {
 
     }
 
-    public void assertPropertiesInfo(FeedMerlin newFeed){
+    public void assertPropertiesInfo(FeedMerlin newFeed) {
 
         LOGGER.info(String.format("Comparing Properties Info: source: %n%s%n and feed: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(newFeed.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(newFeed)));
 
         SoftAssert softAssert = new SoftAssert();
 
@@ -457,10 +615,10 @@ public class FeedMerlin extends Feed {
         softAssert.assertAll();
     }
 
-    public void assertLocationInfo(FeedMerlin newFeed){
+    public void assertLocationInfo(FeedMerlin newFeed) {
 
         LOGGER.info(String.format("Comparing Location Info: source: %n%s%n and feed: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(newFeed.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(newFeed)));
 
         SoftAssert softAssert = new SoftAssert();
 
@@ -479,10 +637,10 @@ public class FeedMerlin extends Feed {
 
     }
 
-    public void assertClusterInfo(FeedMerlin newFeed){
+    public void assertClusterInfo(FeedMerlin newFeed) {
 
         LOGGER.info(String.format("Comparing Feed Cluster Info: source: %n%s%n and feed: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(newFeed.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(newFeed)));
 
         SoftAssert softAssert = new SoftAssert();
 
@@ -531,7 +689,5 @@ public class FeedMerlin extends Feed {
         assertLocationInfo(newFeed);
         assertClusterInfo(newFeed);
     }
-
-
 
 }

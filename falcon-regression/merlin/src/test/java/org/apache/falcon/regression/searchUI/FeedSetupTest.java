@@ -94,7 +94,7 @@ public class FeedSetupTest extends BaseUITestClass{
         bundle = new Bundle(bundle, cluster);
         bundle.setInputFeedDataPath(feedInputPath);
         bundle.submitClusters(prism);
-        feed = FeedMerlin.fromString(bundle.getInputFeedFromBundle());
+        feed = bundle.getInputFeedFromBundle();
         clusterFromBundle = bundle.getClusterElement();
     }
 
@@ -129,7 +129,7 @@ public class FeedSetupTest extends BaseUITestClass{
         feed.setAvailabilityFlag("_SUCCESS");
         feedWizardPage.setFeed(feed);
         //Check the response to validate if the feed creation went successfully
-        ServiceResponse response = prism.getFeedHelper().getEntityDefinition(feed.toString());
+        ServiceResponse response = prism.getFeedHelper().getEntityDefinition(feed.getName());
         AssertUtil.assertSucceeded(response);
     }
 
@@ -814,7 +814,7 @@ public class FeedSetupTest extends BaseUITestClass{
         for (int i=0; i< 4; i++){
             ClusterMerlin newCluster = new ClusterMerlin(clusterFromBundle.toString());
             newCluster.setName(clusterFromBundle.getName() + "-" + i);
-            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(newCluster.toString()));
+            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(newCluster));
             allClusters.add(newCluster.getName());
         }
         // Also add base cluster and -Select cluster- to allCluster array
@@ -990,7 +990,7 @@ public class FeedSetupTest extends BaseUITestClass{
 
         feedWizardPage.setFeed(feed);
         //Check the response using API to validate if the feed creation went successfully
-        ServiceResponse response = prism.getFeedHelper().getEntityDefinition(feed.toString());
+        ServiceResponse response = prism.getFeedHelper().getEntityDefinition(feed.getName());
         AssertUtil.assertSucceeded(response);
 
     }

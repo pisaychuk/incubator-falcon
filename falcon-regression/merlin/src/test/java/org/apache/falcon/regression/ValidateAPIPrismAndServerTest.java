@@ -42,7 +42,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
     private ColoHelper cluster = servers.get(0);
     private String baseTestHDFSDir = cleanAndGetTestDir();
     private String aggregateWorkflowDir = baseTestHDFSDir + "/aggregator";
-    private String feed;
+    private FeedMerlin feed;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
@@ -87,9 +87,9 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
      */
     @Test(groups = "distributed")
     public void validateInvalidClusterOnPrism() throws Exception {
-        ClusterMerlin clusterObj = new ClusterMerlin(bundles[0].getClusters().get(0));
+        ClusterMerlin clusterObj = bundles[0].getClusters().get(0);
         clusterObj.setColo(null);
-        ServiceResponse response = prism.getClusterHelper().validateEntity(clusterObj.toString());
+        ServiceResponse response = prism.getClusterHelper().validateEntity(clusterObj);
         AssertUtil.assertFailed(response);
     }
 
@@ -101,9 +101,9 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
      */
     @Test(groups = "embedded")
     public void validateInvalidClusterOnServer() throws Exception {
-        ClusterMerlin clusterObj = new ClusterMerlin(bundles[0].getClusters().get(0));
+        ClusterMerlin clusterObj = bundles[0].getClusters().get(0);
         clusterObj.setColo(null);
-        ServiceResponse response = cluster.getClusterHelper().validateEntity(clusterObj.toString());
+        ServiceResponse response = cluster.getClusterHelper().validateEntity(clusterObj);
         AssertUtil.assertFailed(response);
     }
 
@@ -146,7 +146,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         FeedMerlin feedObj = new FeedMerlin(feed);
         feedObj.setLocation(LocationType.DATA, "");
-        ServiceResponse response = prism.getFeedHelper().validateEntity(feedObj.toString());
+        ServiceResponse response = prism.getFeedHelper().validateEntity(feedObj);
         AssertUtil.assertFailed(response);
     }
 
@@ -161,7 +161,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         FeedMerlin feedObj = new FeedMerlin(feed);
         feedObj.setLocation(LocationType.DATA, "");
-        ServiceResponse response = cluster.getFeedHelper().validateEntity(feedObj.toString());
+        ServiceResponse response = cluster.getFeedHelper().validateEntity(feedObj);
         AssertUtil.assertFailed(response);
     }
 
@@ -175,7 +175,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
     public void validateValidProcessNoWorkflowOnPrism() throws Exception {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
-        ServiceResponse response = prism.getProcessHelper().validateEntity(bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().validateEntity(bundles[0].getProcess());
         AssertUtil.assertFailedWithStatus(response, HttpStatus.SC_BAD_REQUEST, "Workflow does not exist");
     }
 
@@ -189,7 +189,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
     public void validateValidProcessNoWorkflowOnServer() throws Exception {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
-        ServiceResponse response = cluster.getProcessHelper().validateEntity(bundles[0].getProcessData());
+        ServiceResponse response = cluster.getProcessHelper().validateEntity(bundles[0].getProcess());
         AssertUtil.assertFailedWithStatus(response, HttpStatus.SC_BAD_REQUEST, "Workflow does not exist");
     }
 
@@ -205,7 +205,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
         prism.getFeedHelper().submitEntity(bundles[0].getOutputFeedFromBundle());
-        ServiceResponse response = prism.getProcessHelper().validateEntity(bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().validateEntity(bundles[0].getProcess());
         AssertUtil.assertSucceeded(response);
     }
 
@@ -221,7 +221,7 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
         prism.getFeedHelper().submitEntity(bundles[0].getOutputFeedFromBundle());
-        ServiceResponse response = cluster.getProcessHelper().validateEntity(bundles[0].getProcessData());
+        ServiceResponse response = cluster.getProcessHelper().validateEntity(bundles[0].getProcess());
         AssertUtil.assertSucceeded(response);
     }
 
@@ -236,9 +236,9 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
         prism.getFeedHelper().submitEntity(bundles[0].getOutputFeedFromBundle());
-        ProcessMerlin processObj = bundles[0].getProcessObject();
+        ProcessMerlin processObj = bundles[0].getProcess();
         processObj.setWorkflow(null);
-        ServiceResponse response = prism.getProcessHelper().validateEntity(processObj.toString());
+        ServiceResponse response = prism.getProcessHelper().validateEntity(processObj);
         AssertUtil.assertFailed(response);
     }
 
@@ -253,9 +253,9 @@ public class ValidateAPIPrismAndServerTest extends BaseTestClass {
         prism.getClusterHelper().submitEntity(bundles[0].getClusters().get(0));
         prism.getFeedHelper().submitEntity(feed);
         prism.getFeedHelper().submitEntity(bundles[0].getOutputFeedFromBundle());
-        ProcessMerlin processObj = bundles[0].getProcessObject();
+        ProcessMerlin processObj = bundles[0].getProcess();
         processObj.setWorkflow(null);
-        ServiceResponse response = cluster.getProcessHelper().validateEntity(processObj.toString());
+        ServiceResponse response = cluster.getProcessHelper().validateEntity(processObj);
         AssertUtil.assertFailed(response);
     }
 

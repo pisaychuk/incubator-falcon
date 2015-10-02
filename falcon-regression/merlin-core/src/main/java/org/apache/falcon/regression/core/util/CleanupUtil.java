@@ -101,7 +101,7 @@ public final class CleanupUtil {
 
     private static void deleteQuietlyByName(AbstractEntityHelper helper, String entityName) {
         try {
-            helper.deleteByName(entityName, null);
+            helper.delete(entityName, null);
         } catch (Exception e) {
             LOGGER.info("Caught exception: " + ExceptionUtils.getStackTrace(e));
         }

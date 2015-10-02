@@ -83,19 +83,19 @@ public class PrismProcessSuspendTest extends BaseTestClass {
 
 
         //suspend using prismHelper
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
         //verify
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
         Util.shutDownService(cluster1.getProcessHelper());
 
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
 
         for (int i = 0; i < 2; i++) {
             //suspend on the other one
             AssertUtil.assertSucceeded(prism.getProcessHelper()
-                .suspend(bundles[1].getProcessData()));
+                .suspend(bundles[1].getProcess().getName()));
             AssertUtil
                 .checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
             AssertUtil
@@ -111,21 +111,21 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         bundles[1].submitAndScheduleProcessUsingColoHelper(cluster2);
 
         //suspend using prismHelper
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
         //verify
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
         //suspend on the other one
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
         Assert.assertTrue(Util.parseResponse(prism.getProcessHelper()
-            .getStatus(bundles[0].getProcessData())).getMessage()
+            .getStatus(bundles[0].getProcess())).getMessage()
             .contains("SUSPENDED"));
         Assert.assertTrue(Util.parseResponse(prism.getProcessHelper()
-            .getStatus(bundles[1].getProcessData())).getMessage()
+            .getStatus(bundles[1].getProcess())).getMessage()
             .contains("RUNNING"));
     }
 
@@ -136,18 +136,18 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         bundles[1].submitAndScheduleProcessUsingColoHelper(cluster2);
 
         //delete using coloHelpers
-        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[0].getProcess().getName()));
 
 
         //suspend using prismHelper
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess()));
         //verify
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.KILLED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
-        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[1].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[1].getProcess().getName()));
         //suspend on the other one
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess()));
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.KILLED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.KILLED);
     }
@@ -162,7 +162,7 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         for (int i = 0; i < 2; i++) {
             //suspend using prismHelper
             AssertUtil.assertSucceeded(prism.getProcessHelper()
-                .suspend(bundles[0].getProcessData()));
+                .suspend(bundles[0].getProcess().getName()));
             //verify
             AssertUtil
                 .checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
@@ -173,7 +173,7 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         for (int i = 0; i < 2; i++) {
             //suspend on the other one
             AssertUtil.assertSucceeded(prism.getProcessHelper()
-                .suspend(bundles[1].getProcessData()));
+                .suspend(bundles[1].getProcess().getName()));
             AssertUtil
                 .checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.SUSPENDED);
             AssertUtil
@@ -183,11 +183,11 @@ public class PrismProcessSuspendTest extends BaseTestClass {
 
     @Test(groups = "distributed")
     public void testSuspendNonExistentProcessOnBothColos() throws Exception {
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
 
-        AssertUtil.assertFailed(cluster1.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(cluster1.getProcessHelper().suspend(bundles[0].getProcess().getName()));
+        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[0].getProcess().getName()));
     }
 
     @Test(groups = "distributed")
@@ -195,11 +195,11 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         bundles[0].submitProcess(true);
         bundles[1].submitProcess(true);
 
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
 
-        AssertUtil.assertFailed(cluster1.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(cluster1.getProcessHelper().suspend(bundles[0].getProcess().getName()));
+        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[1].getProcess().getName()));
     }
 
     @Test(groups = {"prism", "0.2", "distributed"})
@@ -212,12 +212,12 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         Util.shutDownService(cluster1.getProcessHelper());
 
         //suspend using prismHelper
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
         //verify
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
         //suspend on the other one
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.SUSPENDED);
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
     }
@@ -229,19 +229,19 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         bundles[1].submitAndScheduleProcessUsingColoHelper(cluster2);
 
         //delete using coloHelpers
-        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[0].getProcess().getName()));
 
         Util.shutDownService(cluster1.getProcessHelper());
 
         //suspend using prismHelper
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess()));
         //verify
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.KILLED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.RUNNING);
 
-        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[1].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().delete(bundles[1].getProcess().getName()));
         //suspend on the other one
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.KILLED);
         AssertUtil.checkStatus(cluster2OC, EntityType.PROCESS, bundles[1], Job.Status.KILLED);
     }
@@ -252,10 +252,10 @@ public class PrismProcessSuspendTest extends BaseTestClass {
         restartRequired = true;
         Util.shutDownService(cluster1.getProcessHelper());
 
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
 
-        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[0].getProcessData()));
+        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[0].getProcess().getName()));
     }
 
     @Test(groups = "distributed")
@@ -266,8 +266,8 @@ public class PrismProcessSuspendTest extends BaseTestClass {
 
         Util.shutDownService(cluster1.getProcessHelper());
 
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcessData()));
-        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[1].getProcessData()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[0].getProcess().getName()));
+        AssertUtil.assertFailed(prism.getProcessHelper().suspend(bundles[1].getProcess().getName()));
+        AssertUtil.assertFailed(cluster2.getProcessHelper().suspend(bundles[1].getProcess().getName()));
     }
 }

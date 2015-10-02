@@ -92,7 +92,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeOnlyEnd() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -115,7 +115,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeResumeSome() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -139,7 +139,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeResumeMany() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -163,7 +163,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     public void testProcessInstanceResumeSingle() throws Exception {
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 2);
@@ -242,7 +242,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeDeleted() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        prism.getProcessHelper().delete(bundles[0].getProcessData());
+        prism.getProcessHelper().delete(bundles[0].getProcess());
         InstancesResult r = prism.getProcessHelper().getProcessInstanceResume(processName,
             "?start=2010-01-02T01:05Z");
         InstanceUtil.validateError(r, ResponseErrors.PROCESS_NOT_FOUND);
@@ -256,7 +256,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeNonSuspended() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -277,7 +277,7 @@ public class ProcessInstanceResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void testProcessInstanceResumeLastInstance() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);

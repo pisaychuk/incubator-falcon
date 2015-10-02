@@ -18,12 +18,12 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.Entities.ProcessMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -31,7 +31,6 @@ import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.hadoop.fs.FileSystem;
@@ -77,9 +76,9 @@ public class ProcessInstanceColoMixedTest extends BaseTestClass {
 
         //set cluster colos
         bundles[0].setCLusterColo(cluster1.getClusterHelper().getColoName());
-        LOGGER.info("cluster b1: " + Util.prettyPrintXml(bundles[0].getClusters().get(0)));
+        LOGGER.info("cluster b1: " + bundles[0].getClusters().get(0).toPrettyXml());
         bundles[1].setCLusterColo(cluster2.getClusterHelper().getColoName());
-        LOGGER.info("cluster b2: " + Util.prettyPrintXml(bundles[1].getClusters().get(0)));
+        LOGGER.info("cluster b2: " + bundles[1].getClusters().get(0).toPrettyXml());
 
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[1].setProcessWorkflow(aggregateWorkflowDir);
@@ -126,13 +125,13 @@ public class ProcessInstanceColoMixedTest extends BaseTestClass {
 
         //set clusters for feed01
         feed01.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .build());
         feed01.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
@@ -140,13 +139,13 @@ public class ProcessInstanceColoMixedTest extends BaseTestClass {
 
         //set clusters for feed02
         feed02.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
                 .build());
         feed02.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
@@ -154,43 +153,43 @@ public class ProcessInstanceColoMixedTest extends BaseTestClass {
 
         //set clusters for output feed
         outputFeed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .build());
         outputFeed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
                 .build());
 
         //submit and schedule feeds
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed01.toString()));
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed02.toString()));
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(outputFeed.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed01));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed02));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(outputFeed));
 
         String processStartTime = TimeUtil.getTimeWrtSystemTime(-16);
         // String processEndTime = InstanceUtil.getTimeWrtSystemTime(20);
 
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         process.clearProcessCluster();
         process.addProcessCluster(
             new ProcessMerlin.ProcessClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withValidity(processStartTime, TimeUtil.addMinsToTime(processStartTime, 35))
                 .build());
         process.addProcessCluster(
             new ProcessMerlin.ProcessClusterBuilder(
-                Util.readEntityName(bundles[1].getClusters().get(0)))
+                bundles[1].getClusters().get(0).getName())
                 .withValidity(TimeUtil.addMinsToTime(processStartTime, 16),
                     TimeUtil.addMinsToTime(processStartTime, 45))
                 .build());
         process.addInputFeed(feed02.getName(), feed02.getName());
 
         //submit and schedule process
-        prism.getProcessHelper().submitAndSchedule(process.toString());
+        prism.getProcessHelper().submitAndSchedule(process);
 
         LOGGER.info("Wait till process goes into running ");
         InstanceUtil.waitTillInstanceReachState(serverOC.get(0), process.getName(), 1,

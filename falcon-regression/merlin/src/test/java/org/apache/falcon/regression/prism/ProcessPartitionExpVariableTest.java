@@ -26,7 +26,6 @@ import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -93,10 +92,10 @@ public class ProcessPartitionExpVariableTest extends BaseTestClass {
         bundles[0].addProcessProperty("var1", "hardCoded");
         bundles[0].setProcessInputPartition("${var1}", "${fileTime}");
 
-        for (int i = 0; i < bundles[0].getDataSets().size(); i++) {
-            LOGGER.info(Util.prettyPrintXml(bundles[0].getDataSets().get(i)));
+        for (int i = 0; i < bundles[0].getFeeds().size(); i++) {
+            LOGGER.info(bundles[0].getFeeds().get(i));
         }
-        LOGGER.info(Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info(bundles[0].getProcess().toPrettyXml());
         bundles[0].submitAndScheduleBundle(prism, false);
 
         List<String> dataDates = generateDateAndOneDayAfter(

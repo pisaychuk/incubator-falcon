@@ -18,7 +18,9 @@
 
 package org.apache.falcon.regression.core.util;
 
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.helpers.entity.AbstractEntityHelper;
 import org.apache.hadoop.conf.Configuration;
@@ -382,12 +384,11 @@ public final class OozieUtil {
     }
 
     public static void verifyNewBundleCreation(OozieClient oozieClient, String originalBundleId,
-                                               List<String> initialNominalTimes, String entity,
+                                               List<String> initialNominalTimes, Entity entity,
                                                boolean shouldBeCreated, boolean matchInstances)
         throws OozieClientException {
-        String entityName = Util.readEntityName(entity);
         EntityType entityType = Util.getEntityType(entity);
-        String newBundleId = getLatestBundleID(oozieClient, entityName, entityType);
+        String newBundleId = getLatestBundleID(oozieClient, entity.getName(), entityType);
         if (shouldBeCreated) {
             Assert.assertTrue(!newBundleId.equalsIgnoreCase(originalBundleId),
                 "eeks! new bundle is not getting created!!!!");
@@ -418,10 +419,10 @@ public final class OozieUtil {
         }
     }
 
-    public static String getCoordStartTime(OozieClient oozieClient, String entity, int bundleNo)
+    public static String getCoordStartTime(OozieClient oozieClient, Entity entity, int bundleNo)
         throws OozieClientException {
         String bundleID = getSequenceBundleID(oozieClient,
-            Util.readEntityName(entity), Util.getEntityType(entity), bundleNo);
+            entity.getName(), Util.getEntityType(entity), bundleNo);
         CoordinatorJob coord = getDefaultOozieCoord(oozieClient, bundleID,
             Util.getEntityType(entity));
         return TimeUtil.dateToOozieDate(coord.getStartTime());
@@ -488,7 +489,9 @@ public final class OozieUtil {
             for (int instanceNumber = 0; instanceNumber < temp.getActions().size();
                  instanceNumber++) {
                 CoordinatorAction instance = temp.getActions().get(instanceNumber);
-                missingDependencies.add(Arrays.asList(instance.getMissingDependencies().split("#")));
+                String dependencies = instance.getMissingDependencies();
+                missingDependencies.add(Arrays.asList(
+                    dependencies != null ? dependencies.split("#") : new String[]{}));
             }
         }
         return missingDependencies;
@@ -636,14 +639,14 @@ public final class OozieUtil {
      * Generates time according to expected status.
      *
      * @param oozieClient    oozieClient of cluster job is running on
-     * @param processName    name of process which job is being analyzed
+     * @param process    name of process which job is being analyzed
      * @param expectedStatus job status we are waiting for
      * @throws org.apache.oozie.client.OozieClientException
      */
     public static void waitForBundleToReachState(OozieClient oozieClient,
-            String processName, Job.Status expectedStatus) throws OozieClientException {
+            ProcessMerlin process, Job.Status expectedStatus) throws OozieClientException {
         int totalMinutesToWait = getMinutesToWait(expectedStatus);
-        waitForBundleToReachState(oozieClient, processName, expectedStatus, totalMinutesToWait);
+        waitForBundleToReachState(oozieClient, process, expectedStatus, totalMinutesToWait);
     }
 
     /**
@@ -652,17 +655,17 @@ public final class OozieUtil {
      * waitForBundleToReachState(OozieClient, String, Status)
      *
      * @param oozieClient        oozie client of cluster job is running on
-     * @param processName        name of process which job is being analyzed
+     * @param process        name of process which job is being analyzed
      * @param expectedStatus     job status we are waiting for
      * @param totalMinutesToWait specific time to wait expected state
      * @throws org.apache.oozie.client.OozieClientException
      */
-    public static void waitForBundleToReachState(OozieClient oozieClient, String processName,
+    public static void waitForBundleToReachState(OozieClient oozieClient, ProcessMerlin process,
             Job.Status expectedStatus, int totalMinutesToWait) throws OozieClientException {
         int sleep = totalMinutesToWait * 60 / 20;
         for (int sleepCount = 0; sleepCount < sleep; sleepCount++) {
             String bundleID =
-                    getLatestBundleID(oozieClient, processName, EntityType.PROCESS);
+                    getLatestBundleID(oozieClient, process.getName(), EntityType.PROCESS);
             BundleJob j = oozieClient.getBundleJobInfo(bundleID);
             LOGGER.info(sleepCount + ". Current status: " + j.getStatus()
                 + "; expected: " + expectedStatus);

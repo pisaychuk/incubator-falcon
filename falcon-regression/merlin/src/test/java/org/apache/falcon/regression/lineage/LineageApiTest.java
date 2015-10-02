@@ -86,11 +86,11 @@ public class LineageApiTest extends BaseTestClass {
         Bundle bundle = BundleUtil.readELBundle();
         bundle.generateUniqueBundle(this);
         bundles[0] = new Bundle(bundle, cluster);
-        final List<String> clusterStrings = bundles[0].getClusters();
-        Assert.assertEquals(clusterStrings.size(), 1, "Expecting only 1 clusterMerlin.");
-        clusterMerlin = new ClusterMerlin(clusterStrings.get(0));
+        final List<ClusterMerlin> clusterMerlins = bundles[0].getClusters();
+        Assert.assertEquals(clusterMerlins.size(), 1, "Expecting only 1 clusterMerlin.");
+        clusterMerlin = clusterMerlins.get(0);
         clusterMerlin.setTags(TEST_TAG);
-        AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(clusterMerlin.toString()));
+        AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(clusterMerlin));
         LOGGER.info("numInputFeeds = " + numInputFeeds);
         LOGGER.info("numOutputFeeds = " + numOutputFeeds);
         final FeedMerlin inputMerlin = new FeedMerlin(bundles[0].getInputFeedFromBundle());
@@ -101,7 +101,7 @@ public class LineageApiTest extends BaseTestClass {
                 inputMerlin.getName().replace(namePrefix, "")),
             Generator.getHadoopPathGenerator(feedInputPath, MINUTE_DATE_PATTERN));
         for (FeedMerlin feed : inputFeeds) {
-            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed));
         }
 
         FeedMerlin outputMerlin = new FeedMerlin(bundles[0].getOutputFeedFromBundle());
@@ -111,7 +111,7 @@ public class LineageApiTest extends BaseTestClass {
                 outputMerlin.getName().replace(namePrefix, "")),
             Generator.getHadoopPathGenerator(feedOutputPath, MINUTE_DATE_PATTERN));
         for (FeedMerlin feed : outputFeeds) {
-            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed));
         }
     }
 

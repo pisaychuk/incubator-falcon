@@ -18,13 +18,13 @@
 
 package org.apache.falcon.regression.ui;
 
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.process.Input;
 import org.apache.falcon.entity.v0.process.Inputs;
-import org.apache.falcon.entity.v0.process.Process;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -97,17 +97,17 @@ public class ProcessUITest extends BaseUITestClass {
         bundles[0].setProcessConcurrency(5);
         bundles[0].setInputFeedPeriodicity(1, Frequency.TimeUnit.minutes);
         bundles[0].setInputFeedDataPath(feedInputPath + MINUTE_DATE_PATTERN);
-        Process process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         Inputs inputs = new Inputs();
         Input input = new Input();
-        input.setFeed(Util.readEntityName(bundles[0].getInputFeedFromBundle()));
+        input.setFeed(bundles[0].getInputFeedFromBundle().getName());
         input.setStart("now(0,0)");
         input.setEnd("now(0,4)");
         input.setName("inputData");
         inputs.getInputs().add(input);
         process.setInputs(inputs);
 
-        bundles[0].setProcessData(process.toString());
+        bundles[0].setProcess(process);
 
         //provide necessary data for first 3 instances to run
         LOGGER.info("Creating necessary data...");
@@ -129,7 +129,7 @@ public class ProcessUITest extends BaseUITestClass {
                 prefix + "_00" + k + "/", dataDates);
         }
 
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         FeedMerlin[] inputFeeds;
         FeedMerlin[] outputFeeds;
         final FeedMerlin inputMerlin = new FeedMerlin(bundles[0].getInputFeedFromBundle());
@@ -178,8 +178,8 @@ public class ProcessUITest extends BaseUITestClass {
         //check Process statuses via UI
         EntitiesPage page = new EntitiesPage(getDriver(), cluster, EntityType.PROCESS);
         page.navigateTo();
-        String process = bundles[0].getProcessData();
-        String processName = Util.readEntityName(process);
+        ProcessMerlin process = bundles[0].getProcess();
+        String processName = process.getName();
         softAssert.assertEquals(page.getEntityStatus(processName),
                 Page.EntityStatus.SUBMITTED, "Process status should be SUBMITTED");
         prism.getProcessHelper().schedule(process);

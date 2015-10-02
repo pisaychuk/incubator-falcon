@@ -50,7 +50,7 @@ public class FeedAclTest extends BaseTestClass {
     private String aggregateWorkflowDir = baseTestDir + "/aggregator";
     private String feedInputPath = baseTestDir + "/input" + MINUTE_DATE_PATTERN;
     private final AbstractEntityHelper feedHelper = prism.getFeedHelper();
-    private String feedString;
+    private FeedMerlin feedMerlin;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -66,7 +66,7 @@ public class FeedAclTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setInputFeedACL(MerlinConstants.CURRENT_USER_NAME,
             MerlinConstants.CURRENT_USER_GROUP, "*");
-        feedString = bundles[0].getInputFeedFromBundle();
+        feedMerlin = bundles[0].getInputFeedFromBundle();
     }
 
     /**
@@ -81,7 +81,7 @@ public class FeedAclTest extends BaseTestClass {
         throws Exception {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
-        final boolean executeRes = op.executeAs(user, feedHelper, feedString);
+        final boolean executeRes = op.executeAs(user, feedHelper, feedMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -119,9 +119,9 @@ public class FeedAclTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         if (op == EntityOp.update) {
-            feedString = new FeedMerlin(feedString).withProperty("abc", "xyz").toString();
+            feedMerlin.withProperty("abc", "xyz");
         }
-        final boolean executeRes = op.executeAs(user, feedHelper, feedString);
+        final boolean executeRes = op.executeAs(user, feedHelper, feedMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -160,11 +160,11 @@ public class FeedAclTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitAndScheduleAllFeeds();
         if (op == EntityOp.resume) {
-            feedHelper.suspend(feedString);
+            feedHelper.suspend(feedMerlin);
         } else if (op == EntityOp.update) {
-            feedString = new FeedMerlin(feedString).withProperty("abc", "xyz").toString();
+            feedMerlin.withProperty("abc", "xyz");
         }
-        final boolean executeRes = op.executeAs(user, feedHelper, feedString);
+        final boolean executeRes = op.executeAs(user, feedHelper, feedMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -197,11 +197,10 @@ public class FeedAclTest extends BaseTestClass {
     @Test(dataProvider = "generateAclOwnerAndGroup")
     public void feedAclUpdate(final String newOwner, final String newGroup) throws Exception {
         bundles[0].submitClusters(prism);
-        final String oldFeed = bundles[0].getInputFeedFromBundle();
+        final FeedMerlin oldFeed = bundles[0].getInputFeedFromBundle();
         AssertUtil.assertSucceeded(feedHelper.submitAndSchedule(oldFeed));
-        final FeedMerlin feedMerlin = new FeedMerlin(oldFeed);
-        feedMerlin.setACL(newOwner, newGroup, "*");
-        final String newFeed = feedMerlin.toString();
+        final FeedMerlin newFeed = new FeedMerlin(oldFeed);
+        newFeed.setACL(newOwner, newGroup, "*");
         AssertUtil.assertFailed(feedHelper.update(oldFeed, newFeed),
             "AuthorizationException: Permission denied");
     }

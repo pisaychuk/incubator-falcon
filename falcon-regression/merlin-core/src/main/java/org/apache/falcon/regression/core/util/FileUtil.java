@@ -19,6 +19,7 @@
 package org.apache.falcon.regression.core.util;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -37,12 +38,12 @@ public final class FileUtil {
      * @return name of the file
      * @throws IOException
      */
-    public static String writeEntityToFile(String entity) throws IOException {
-        final String entityName = Util.readEntityName(entity);
+    public static String writeEntityToFile(Entity entity) throws IOException {
+        final String entityName = entity.getName();
         final File entityFile = new File(entityName + ".xml");
         LOGGER.info("attempting to write: " + entityName + " at location "
             + entityFile.getAbsolutePath());
-        FileUtils.write(entityFile, entity);
+        FileUtils.write(entityFile, entity.toString());
         return entityFile.getAbsolutePath();
     }
 }

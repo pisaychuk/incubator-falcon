@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.core.supportClasses;
 
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
 /** Class for running a rest request in a parallel thread. */
 public class Brother extends Thread {
     private String operation;
-    private String data;
+    private Entity data;
     private URLS url;
     private ServiceResponse output;
     private static final Logger LOGGER = Logger.getLogger(Brother.class);
@@ -47,7 +48,7 @@ public class Brother extends Thread {
         this.operation = operation;
         switch (entityType) {
         case PROCESS:
-            this.data = b.getProcessData();
+            this.data = b.getProcess();
             this.entityManagerHelper = p.getProcessHelper();
             break;
         case CLUSTER:
@@ -56,7 +57,7 @@ public class Brother extends Thread {
             break;
         case FEED:
             this.entityManagerHelper = p.getFeedHelper();
-            this.data = b.getDataSets().get(0);
+            this.data = b.getFeeds().get(0);
             break;
         default:
             LOGGER.error("Unexpected entityType=" + entityType);
@@ -82,7 +83,7 @@ public class Brother extends Thread {
                 output = entityManagerHelper.getEntityDefinition(data);
                 break;
             case DELETE_URL:
-                output = entityManagerHelper.delete(data);
+                output = entityManagerHelper.delete(data.getName());
                 break;
             case SUSPEND_URL:
                 output = entityManagerHelper.suspend(data);

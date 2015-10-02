@@ -32,7 +32,6 @@ import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseUITestClass;
 import org.apache.falcon.regression.ui.pages.ProcessPage;
 import org.apache.hadoop.fs.FileSystem;
@@ -107,14 +106,14 @@ public class LineageGraphTest extends BaseUITestClass {
         List<String> dataDates = TimeUtil.getMinuteDatesOnEitherSide(
             TimeUtil.addMinsToTime(startTime, -2), endTime, 0);
         HadoopUtil.flattenAndPutDataInFolder(clusterFS, OSUtil.NORMAL_INPUT, prefix, dataDates);
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         bundles[0].submitBundle(prism);
 
         processName = bundles[0].getProcessName();
         inputFeedName = bundles[0].getInputFeedNameFromBundle();
         outputFeedName = bundles[0].getOutputFeedNameFromBundle();
         /**schedule process, wait for instances to succeed*/
-        prism.getProcessHelper().schedule(bundles[0].getProcessData());
+        prism.getProcessHelper().schedule(bundles[0].getProcess());
         InstanceUtil.waitTillInstanceReachState(clusterOC, bundles[0].getProcessName(), 3,
             CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
         /**get process instances*/
@@ -184,7 +183,7 @@ public class LineageGraphTest extends BaseUITestClass {
     @Test
     public void testVerticesInfo()
         throws JAXBException, URISyntaxException, AuthenticationException, IOException {
-        String clusterName = Util.readEntityName(bundles[0].getClusters().get(0));
+        String clusterName = bundles[0].getClusters().get(0).getName();
         ProcessPage processPage = new ProcessPage(getDriver(), cluster, processName);
         processPage.navigateTo();
         for (Vertex piVertex : piVertices) {

@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.security;
 
+import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -69,8 +70,7 @@ public class FalconClientTest extends BaseTestClass {
     public void badClusterSubmit() throws Exception {
         bundles[0].setCLusterACL(MerlinConstants.DIFFERENT_USER_NAME,
             MerlinConstants.CURRENT_USER_GROUP, "*");
-        final String clusterXml = bundles[0].getClusters().get(0);
-        final ExecResult execResult = prism.getClusterHelper().clientSubmit(clusterXml);
+        final ExecResult execResult = prism.getClusterHelper().clientSubmit(bundles[0].getClusters().get(0));
         AssertUtil.assertFailed(execResult, String.format(
             "Invalid acl owner %s, does not exist or does not belong to group: %s",
             MerlinConstants.DIFFERENT_USER_NAME, MerlinConstants.CURRENT_USER_GROUP));
@@ -88,9 +88,9 @@ public class FalconClientTest extends BaseTestClass {
         if (MerlinConstants.IS_SECURE) {
             KerberosHelper.initUserWithKeytab(MerlinConstants.DIFFERENT_USER_NAME);
         }
-        final String clusterXml = bundles[0].getClusters().get(0);
+        final ClusterMerlin clusterMerlin = bundles[0].getClusters().get(0);
         final ExecResult execResult =
-            prism.getClusterHelper().clientDelete(clusterXml, MerlinConstants.DIFFERENT_USER_NAME);
+            prism.getClusterHelper().clientDelete(clusterMerlin.getName(), MerlinConstants.DIFFERENT_USER_NAME);
         AssertUtil.assertFailed(execResult, "ERROR: Forbidden;");
     }
 

@@ -18,7 +18,6 @@
 
 package org.apache.falcon.regression.hcat;
 
-import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.feed.ActionType;
@@ -28,13 +27,11 @@ import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.FreqType;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HCatUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.api.HCatCreateTableDesc;
@@ -43,15 +40,20 @@ import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.oozie.client.Job;
 import org.apache.oozie.client.OozieClient;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.falcon.regression.core.util.AssertUtil.assertFailed;
+import static org.apache.falcon.regression.core.util.AssertUtil.assertPartial;
+import static org.apache.falcon.regression.core.util.AssertUtil.assertSucceeded;
+import static org.apache.falcon.regression.core.util.AssertUtil.checkStatus;
 
 /**
  * Tests with operations with hcat feed.
@@ -70,7 +72,7 @@ public class HCatFeedOperationsTest extends BaseTestClass {
     private String dbName = "default";
     private String tableName = "hcatFeedOperationsTest";
     private String randomTblName = "randomTable_HcatFeedOperationsTest";
-    private String feed;
+    private FeedMerlin feed;
     private String aggregateWorkflowDir = cleanAndGetTestDir() + "/aggregator";
 
     @BeforeClass(alwaysRun = true)
@@ -123,10 +125,9 @@ public class HCatFeedOperationsTest extends BaseTestClass {
     public void submitFeedWhenTableDoesNotExist() throws Exception {
         Bundle.submitCluster(bundles[1]);
         feed = bundles[1].getInputFeedFromBundle();
-        FeedMerlin feedObj = new FeedMerlin(feed);
-        feedObj.setTableValue(dbName, randomTblName, FreqType.YEARLY.getHcatPathValue());
-        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj.toString());
-        AssertUtil.assertFailed(response);
+        feed.setTableValue(dbName, randomTblName, FreqType.YEARLY.getHcatPathValue());
+        ServiceResponse response = prism.getFeedHelper().submitEntity(feed);
+        assertFailed(response);
     }
 
     /**
@@ -139,16 +140,15 @@ public class HCatFeedOperationsTest extends BaseTestClass {
     public void submitFeedPostDeletionWhenTableExists() throws Exception {
         Bundle.submitCluster(bundles[0]);
         feed = bundles[0].getInputFeedFromBundle();
-        FeedMerlin feedObj = new FeedMerlin(feed);
-        feedObj.setTableValue(dbName, tableName, FreqType.YEARLY.getHcatPathValue());
-        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj.toString());
-        AssertUtil.assertSucceeded(response);
+        feed.setTableValue(dbName, tableName, FreqType.YEARLY.getHcatPathValue());
+        ServiceResponse response = prism.getFeedHelper().submitEntity(feed);
+        assertSucceeded(response);
 
-        response = prism.getFeedHelper().delete(feedObj.toString());
-        AssertUtil.assertSucceeded(response);
+        response = prism.getFeedHelper().delete(feed.getName());
+        assertSucceeded(response);
 
-        response = prism.getFeedHelper().submitEntity(feedObj.toString());
-        AssertUtil.assertSucceeded(response);
+        response = prism.getFeedHelper().submitEntity(feed);
+        assertSucceeded(response);
     }
 
     /**
@@ -167,17 +167,17 @@ public class HCatFeedOperationsTest extends BaseTestClass {
         bundles[0].setInputFeedValidity(startDate, endDate);
         bundles[0].setInputFeedTableUri(tableUri);
 
-        feed = bundles[0].getDataSets().get(0);
+        feed = bundles[0].getFeeds().get(0);
         // set cluster 2 as the target.
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("months(9000)", ActionType.DELETE)
                 .withValidity(startDate, endDate)
                 .withClusterType(ClusterType.TARGET)
                 .withTableUri(tableUri)
-                .build()).toString();
+                .build());
 
-        AssertUtil.assertPartial(prism.getFeedHelper().submitAndSchedule(feed));
+        assertPartial(prism.getFeedHelper().submitAndSchedule(feed));
     }
 
     /**
@@ -198,19 +198,19 @@ public class HCatFeedOperationsTest extends BaseTestClass {
         bundles[0].setInputFeedValidity(startDate, endDate);
         bundles[0].setInputFeedTableUri(tableUri);
 
-        feed = bundles[0].getDataSets().get(0);
+        feed = bundles[0].getFeeds().get(0);
         // set cluster 2 as the target.
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("months(9000)", ActionType.DELETE)
                 .withValidity(startDate, endDate)
                 .withClusterType(ClusterType.TARGET)
                 .withTableUri(tableUri)
-                .build()).toString();
+                .build());
 
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
+        assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed, 0);
-        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, Util.readEntityName(feed), "REPLICATION"), 1);
+        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "REPLICATION"), 1);
         //This test doesn't wait for replication to succeed.
     }
 
@@ -226,16 +226,16 @@ public class HCatFeedOperationsTest extends BaseTestClass {
 
         submitAndScheduleReplicationFeedWhenTableExistsOnSourceAndTarget();
 
-        AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feed));
+        assertSucceeded(prism.getFeedHelper().suspend(feed));
 
         //check that feed suspended on both clusters
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
-        AssertUtil.checkStatus(cluster2OC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
+        checkStatus(cluster2OC, feed, Job.Status.SUSPENDED);
 
-        AssertUtil.assertSucceeded(prism.getFeedHelper().resume(feed));
+        assertSucceeded(prism.getFeedHelper().resume(feed));
 
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
-        AssertUtil.checkStatus(cluster2OC, EntityType.FEED, feed, Job.Status.RUNNING);
+        checkStatus(clusterOC, feed, Job.Status.RUNNING);
+        checkStatus(cluster2OC, feed, Job.Status.RUNNING);
     }
 
     /**
@@ -248,9 +248,9 @@ public class HCatFeedOperationsTest extends BaseTestClass {
     public void deleteReplicationFeed() throws Exception {
         submitAndScheduleReplicationFeedWhenTableExistsOnSourceAndTarget();
 
-        AssertUtil.assertSucceeded(prism.getFeedHelper().delete(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.KILLED);
-        AssertUtil.checkStatus(cluster2OC, EntityType.FEED, feed, Job.Status.KILLED);
+        assertSucceeded(prism.getFeedHelper().delete(feed));
+        checkStatus(clusterOC, feed, Job.Status.KILLED);
+        checkStatus(cluster2OC, feed, Job.Status.KILLED);
     }
 
 

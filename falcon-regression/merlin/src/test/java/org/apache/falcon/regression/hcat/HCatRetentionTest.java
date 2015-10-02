@@ -124,12 +124,11 @@ public class HCatRetentionTest extends BaseTestClass {
             List<HCatPartition> initialPtnList = cli.getPartitions(dBName, tableName);
             AssertUtil.checkForListSizes(initialData, initialPtnList);
 
-            AssertUtil.assertSucceeded(prism.getFeedHelper()
-                .submitAndSchedule(feedElement.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feedElement));
             final String bundleId = OozieUtil.getBundles(clusterOC, feedElement.getName(),
                 EntityType.FEED).get(0);
             OozieUtil.waitForRetentionWorkflowToSucceed(bundleId, clusterOC);
-            AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feedElement.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feedElement));
 
             List<String> expectedOutput = getExpectedOutput(retentionPeriod, retentionUnit,
                 freqType, new DateTime(DateTimeZone.UTC), initialData);

@@ -20,12 +20,12 @@ package org.apache.falcon.regression;
 
 
 import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.Job;
@@ -44,7 +44,7 @@ public class FeedStatusTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);
     private OozieClient clusterOC = serverOC.get(0);
-    private String feed;
+    private FeedMerlin feed;
     private static final Logger LOGGER = Logger.getLogger(FeedStatusTest.class);
 
 
@@ -75,7 +75,7 @@ public class FeedStatusTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void getStatusForScheduledFeed() throws Exception {
         ServiceResponse response = prism.getFeedHelper().submitAndSchedule(feed);
-        LOGGER.info("Feed: " + Util.prettyPrintXml(feed));
+        LOGGER.info("Feed: " + feed.toPrettyXml());
         AssertUtil.assertSucceeded(response);
 
         response = prism.getFeedHelper().getStatus(feed);
@@ -84,7 +84,7 @@ public class FeedStatusTest extends BaseTestClass {
 
         String colo = prism.getFeedHelper().getColo();
         Assert.assertTrue(response.getMessage().contains(colo + "/RUNNING"));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
     }
 
     /**
@@ -107,7 +107,7 @@ public class FeedStatusTest extends BaseTestClass {
         AssertUtil.assertSucceeded(response);
         String colo = prism.getFeedHelper().getColo();
         Assert.assertTrue(response.getMessage().contains(colo + "/SUSPENDED"));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
     }
 
     /**
@@ -127,7 +127,7 @@ public class FeedStatusTest extends BaseTestClass {
         AssertUtil.assertSucceeded(response);
         String colo = prism.getFeedHelper().getColo();
         Assert.assertTrue(response.getMessage().contains(colo + "/SUBMITTED"));
-        AssertUtil.checkNotStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkNotStatus(clusterOC, EntityType.FEED, feed.getName(), Job.Status.RUNNING);
     }
 
     /**
@@ -147,8 +147,8 @@ public class FeedStatusTest extends BaseTestClass {
         AssertUtil.assertFailed(response);
 
         Assert.assertTrue(
-            response.getMessage().contains(Util.readEntityName(feed) + " (FEED) not found"));
-        AssertUtil.checkNotStatus(clusterOC, EntityType.FEED, feed, Job.Status.KILLED);
+            response.getMessage().contains(feed.getName() + " (FEED) not found"));
+        AssertUtil.checkNotStatus(clusterOC, EntityType.FEED, feed.getName(), Job.Status.KILLED);
     }
 
     /**
@@ -161,7 +161,7 @@ public class FeedStatusTest extends BaseTestClass {
         ServiceResponse response = prism.getFeedHelper().getStatus(feed);
         AssertUtil.assertFailed(response);
         Assert.assertTrue(
-            response.getMessage().contains(Util.readEntityName(feed) + " (FEED) not found"));
+            response.getMessage().contains(feed.getName() + " (FEED) not found"));
 
     }
 }

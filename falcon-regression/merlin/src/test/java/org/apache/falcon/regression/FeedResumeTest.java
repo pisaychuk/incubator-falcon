@@ -19,7 +19,7 @@
 package org.apache.falcon.regression;
 
 
-import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.helpers.entity.AbstractEntityHelper;
@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
 public class FeedResumeTest extends BaseTestClass {
 
     private final AbstractEntityHelper feedHelper = prism.getFeedHelper();
-    private String feed;
+    private FeedMerlin feed;
     private ColoHelper cluster = servers.get(0);
     private OozieClient clusterOC = serverOC.get(0);
 
@@ -69,12 +69,12 @@ public class FeedResumeTest extends BaseTestClass {
     public void resumeSuspendedFeed() throws Exception {
         AssertUtil.assertSucceeded(feedHelper.submitAndSchedule(feed));
         AssertUtil.assertSucceeded(feedHelper.suspend(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
         AssertUtil.assertSucceeded(feedHelper.resume(feed));
         ServiceResponse response = feedHelper.getStatus(feed);
         String colo = feedHelper.getColo();
         Assert.assertTrue(response.getMessage().contains(colo + "/RUNNING"));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
     }
 
 
@@ -108,11 +108,11 @@ public class FeedResumeTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void resumeScheduledFeed() throws Exception {
         AssertUtil.assertSucceeded(feedHelper.submitAndSchedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
         AssertUtil.assertSucceeded(feedHelper.resume(feed));
         ServiceResponse response = feedHelper.getStatus(feed);
         String colo = feedHelper.getColo();
         Assert.assertTrue(response.getMessage().contains(colo + "/RUNNING"));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
     }
 }

@@ -18,6 +18,9 @@
 
 package org.apache.falcon.regression.searchUI;
 
+import org.apache.falcon.regression.Entities.ClusterMerlin;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
@@ -109,25 +112,25 @@ public class HomePageTest extends BaseUITestClass {
         bundle.setProcessWorkflow(aggregateWorkflowDir);
 
 
-        final String clusterXml = bundle.getClusterElement().toString();
-        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(clusterXml));
+        final ClusterMerlin clusterElement = bundle.getClusterElement();
+        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(clusterElement));
         String alert = homePage.getActiveAlertText();
         Assert.assertTrue(alert.contains("Submit successful"), "Not expected alert: '" + alert + "'");
-        AssertUtil.assertSucceeded(prism.getClusterHelper().getEntityDefinition(clusterXml));
+        AssertUtil.assertSucceeded(prism.getClusterHelper().getEntityDefinition(clusterElement));
 
-        final String feedXml = bundle.getInputFeedFromBundle();
-        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(feedXml));
+        final FeedMerlin inputFeed = bundle.getInputFeedFromBundle();
+        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(bundle.getInputFeedFromBundle()));
         alert = homePage.getActiveAlertText();
         Assert.assertTrue(alert.contains("Submit successful"), "Not expected alert: '" + alert + "'");
-        AssertUtil.assertSucceeded(prism.getFeedHelper().getEntityDefinition(feedXml));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().getEntityDefinition(inputFeed));
 
-        final String outputFeedXml = bundle.getOutputFeedFromBundle();
-        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(outputFeedXml));
+        final FeedMerlin outputFeed = bundle.getOutputFeedFromBundle();
+        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(outputFeed));
         alert = homePage.getActiveAlertText();
         Assert.assertTrue(alert.contains("Submit successful"), "Not expected alert: '" + alert + "'");
-        AssertUtil.assertSucceeded(prism.getFeedHelper().getEntityDefinition(outputFeedXml));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().getEntityDefinition(outputFeed));
 
-        final String processXml = bundle.getProcessObject().toString();
+        final ProcessMerlin processXml = bundle.getProcess();
         homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(processXml));
         alert = homePage.getActiveAlertText();
         Assert.assertTrue(alert.contains("Submit successful"), "Not expected alert: '" + alert + "'");
@@ -191,9 +194,9 @@ public class HomePageTest extends BaseUITestClass {
         bundle = new Bundle(bundle, cluster);
 
         // Submit Cluster
-        final String clusterXml = bundle.getClusterElement().toString();
-        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(clusterXml));
-        AssertUtil.assertSucceeded(prism.getClusterHelper().getEntityDefinition(clusterXml));
+        final ClusterMerlin clusterElement = bundle.getClusterElement();
+        homePage.getPageHeader().uploadXml(FileUtil.writeEntityToFile(clusterElement));
+        AssertUtil.assertSucceeded(prism.getClusterHelper().getEntityDefinition(clusterElement));
 
         // Get cluster name and try to set it again
         String clusterName = bundle.getClusterElement().getName();

@@ -188,20 +188,20 @@ public class FeedInstanceDependencyTest extends BaseTestClass {
         bundles[0].setInputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
 
-        ProcessMerlin processFirst = new ProcessMerlin(bundles[0].getProcessObject().toString());
+        ProcessMerlin processFirst = new ProcessMerlin(bundles[0].getProcess().toString());
         processFirst.setName("Process-producer-1");
         LOGGER.info("process : " + processFirst.toString());
 
-        prism.getProcessHelper().submitEntity(processFirst.toString());
+        prism.getProcessHelper().submitEntity(processFirst);
 
-        ProcessMerlin processSecond = new ProcessMerlin(bundles[0].getProcessObject().toString());
+        ProcessMerlin processSecond = new ProcessMerlin(bundles[0].getProcess().toString());
         processSecond.setName("Process-producer-2");
         LOGGER.info("process : " + processSecond.toString());
 
-        prism.getProcessHelper().submitEntity(processSecond.toString());
+        prism.getProcessHelper().submitEntity(processSecond);
 
         InstanceDependencyResult r;
 

@@ -154,8 +154,8 @@ public class PipelineInstanceDependencyTest extends BaseTestClass {
 
         //create second, third process that consumes output of bundle[0]
         for (int bIndex = 1; bIndex < 3; ++bIndex) {
-            final FeedMerlin outputFeed = new FeedMerlin(bundles[0].getOutputFeedFromBundle());
-            final ProcessMerlin processMerlin = bundles[0].getProcessObject();
+            final FeedMerlin outputFeed = bundles[0].getOutputFeedFromBundle().getClone();
+            final ProcessMerlin processMerlin = bundles[0].getProcess().getClone();
 
             processMerlin.setName(processNames.get(bIndex));
 
@@ -165,8 +165,8 @@ public class PipelineInstanceDependencyTest extends BaseTestClass {
             //rename output feeds before renaming input feeds
             processMerlin.renameFeeds(Collections.singletonMap(oldOutputFeedName, outputFeedNames.get(bIndex)));
             processMerlin.renameFeeds(Collections.singletonMap(oldInputFeedName, inputFeedNames.get(bIndex)));
-            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(outputFeed.toString()));
-            AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(processMerlin.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(outputFeed));
+            AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(processMerlin));
         }
 
         for (int index = 0; index < 3; ++index) {

@@ -120,7 +120,7 @@ public class ProcessSetupTest extends BaseUITestClass {
         SearchPage searchPage = loginPage.doDefaultLogin();
         processWizardPage = searchPage.getPageHeader().doCreateProcess();
         processWizardPage.checkPage();
-        process = bundles[0].getProcessObject();
+        process = bundles[0].getProcess();
         process.setTags("first=yes,second=yes,third=no");
     }
 
@@ -436,7 +436,7 @@ public class ProcessSetupTest extends BaseUITestClass {
         String clusterName = clusterMerlin.getName();
         for(int i = 1; i < 6; i++) {
             clusterMerlin.setName(clusterName + i);
-            AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin.toString()));
+            AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin));
             clusters.add(clusterMerlin.getName());
         }
         //go to clusters page
@@ -487,7 +487,7 @@ public class ProcessSetupTest extends BaseUITestClass {
         //submit one extra cluster
         ClusterMerlin clusterMerlin = bundles[0].getClusterElement();
         clusterMerlin.setName(clusterMerlin.getName() + 1);
-        AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin.toString()));
+        AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin));
 
         Cluster processCluster = new Cluster();
         processCluster.setName(clusterMerlin.getName());
@@ -532,7 +532,7 @@ public class ProcessSetupTest extends BaseUITestClass {
         ClusterMerlin clusterMerlin = bundles[0].getClusterElement();
         String firstClusterName = clusterMerlin.getName();
         clusterMerlin.setName(firstClusterName + 2);
-        AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin.toString()));
+        AssertUtil.assertSucceeded(cluster.getClusterHelper().submitEntity(clusterMerlin));
 
         //set values on the General Info Page
         processWizardPage.setProcessGeneralInfo(process);
@@ -928,7 +928,7 @@ public class ProcessSetupTest extends BaseUITestClass {
         processWizardPage.clickSave();
 
         // Assert the response using API to validate if the feed creation went successfully
-        ServiceResponse response = prism.getProcessHelper().getEntityDefinition(process.toString());
+        ServiceResponse response = prism.getProcessHelper().getEntityDefinition(process.getName());
         AssertUtil.assertSucceeded(response);
     }
 

@@ -35,7 +35,6 @@ import org.apache.falcon.regression.core.util.MatrixUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ContentSummary;
@@ -128,7 +127,7 @@ public class ExternalFSTest extends BaseTestClass{
         bundles[0].setClusterInterface(Interfacetype.WRITE, endpoint);
 
         AssertUtil.assertFailed(prism.getClusterHelper()
-            .submitEntity(bundles[0].getClusterElement().toString()));
+            .submitEntity(bundles[0].getClusterElement()));
 
     }
 
@@ -144,21 +143,21 @@ public class ExternalFSTest extends BaseTestClass{
             new String[]{"${YEAR}", "${MONTH}", "${DAY}", "${HOUR}", "${MINUTE}"}, separator);
 
         //configure feed
-        FeedMerlin feed = new FeedMerlin(bundles[0].getDataSets().get(0));
+        FeedMerlin feed = new FeedMerlin(bundles[0].getFeeds().get(0));
         String targetDataLocation = endpoint + testWasbTargetDir + datePattern;
         feed.setFilePath(sourcePath + '/' + datePattern);
         //erase all clusters from feed definition
         feed.clearFeedClusters();
         //set local cluster as source
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.SOURCE)
                 .build());
         //set externalFS cluster as target
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(externalBundle.getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(externalBundle.getClusters().get(0).getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.TARGET)
@@ -166,8 +165,8 @@ public class ExternalFSTest extends BaseTestClass{
                 .build());
 
         //submit and schedule feed
-        LOGGER.info("Feed : " + Util.prettyPrintXml(feed.toString()));
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+        LOGGER.info("Feed : " + feed.toPrettyXml());
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         datePattern = StringUtils.join(new String[]{"yyyy", "MM", "dd", "HH", "mm"}, separator);
         //upload necessary data
         DateTime date = new DateTime(startTime, DateTimeZone.UTC);
@@ -183,11 +182,11 @@ public class ExternalFSTest extends BaseTestClass{
 
         //check if coordinator exists
         TimeUtil.sleepSeconds(10);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, feed.toString(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, feed, 0);
         Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(clusterOC, feed.getName(), "REPLICATION"), 1);
 
         //replication should start, wait while it ends
-        InstanceUtil.waitTillInstanceReachState(clusterOC, Util.readEntityName(feed.toString()), 1,
+        InstanceUtil.waitTillInstanceReachState(clusterOC, feed.getName(), 1,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED);
 
         //check if data has been replicated correctly

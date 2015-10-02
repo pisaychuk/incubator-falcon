@@ -22,6 +22,7 @@ import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
 import org.apache.falcon.entity.v0.process.Properties;
 import org.apache.falcon.entity.v0.process.Property;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.ResponseErrors;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -50,7 +51,6 @@ import java.util.List;
 /**
  * Test Suite for instance rerun.
  */
-@Test(groups = "embedded")
 public class ProcessInstanceRerunTest extends BaseTestClass {
 
     private boolean restartRequired;
@@ -96,13 +96,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunSomeKilled02() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:26Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(5);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 5,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -121,13 +121,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunKilledWOParams() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:26Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(5);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 5,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -145,13 +145,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunKilledWOStartParam() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:26Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(5);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 5,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -169,13 +169,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunKilledWOEndParam() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:26Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(5);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 5,
                 CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -192,15 +192,15 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunMultipleKilled() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:11Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(5);
-        String process = bundles[0].getProcessData();
-        LOGGER.info("process: " + Util.prettyPrintXml(process));
+        ProcessMerlin process = bundles[0].getProcess();
+        LOGGER.info("process: " + process.toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 3,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -219,13 +219,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunSomeKilled01() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:26Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(6);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -244,13 +244,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunSingleKilled() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:04Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(1);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -268,13 +268,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunSingleSucceeded() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:04Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(6);
         bundles[0].submitFeedsScheduleProcess(prism);
-        String process = bundles[0].getProcessData();
+        ProcessMerlin process = bundles[0].getProcess();
         InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
@@ -294,13 +294,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunSingleSuspended() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:06Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(2);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 2,
             CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
@@ -317,13 +317,13 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunMultipleSucceeded() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:08Z");
         bundles[0].setOutputFeedLocationData(feedOutputPath);
         bundles[0].setProcessConcurrency(2);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 2,
             CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
@@ -339,7 +339,7 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(groups = {"singleCluster"})
+    @Test(groups = {"singleCluster", "embedded"})
     public void testProcessInstanceRerunTimedOut() throws Exception {
         bundles[0].setInputFeedDataPath(feedInputTimedOutPath);
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:11Z");
@@ -357,7 +357,7 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
                 "instance should have been in WAITING state");
     }
 
-    @Test(groups = {"singleCluster"}, timeOut = 1200000)
+    @Test(groups = {"singleCluster", "distributed"}, timeOut = 1200000)
     public void testProcessInstanceRerunFailedPostProcessing() throws Exception {
         restartRequired=true;
         bundles[0].setProcessValidity("2015-01-02T01:00Z", "2015-01-02T01:04Z");
@@ -367,7 +367,7 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
 
         String bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
 
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
 
         //bring down Server1 colo
         Util.shutDownService(cluster.getClusterHelper());
@@ -394,12 +394,12 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
         }
     }
 
-    @Test(groups = {"singleCluster"}, timeOut = 1200000)
+    @Test(groups = {"singleCluster", "embedded"}, timeOut = 1200000)
     public void testProcessInstanceRerunFailedWorkflowAction() throws Exception {
 
         // Defining path to be used in pig script
         String propPath = cleanAndGetTestDir() + "/rerun";
-        org.apache.falcon.entity.v0.process.Process processElement = bundles[0].getProcessObject();
+        ProcessMerlin processElement = bundles[0].getProcess();
         Properties properties = new Properties();
         Property propertyInput = new Property();
         propertyInput.setName("inputPath");
@@ -411,7 +411,7 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
         properties.getProperties().add(propertyInput);
         properties.getProperties().add(propertyOutput);
         processElement.setProperties(properties);
-        bundles[0].setProcessData(processElement.toString());
+        bundles[0].setProcess(processElement);
 
         HadoopUtil.uploadDir(clusterFS, aggregateWorkflowDir, OSUtil.MULTIPLE_ACTION_WORKFLOW);
         HadoopUtil.copyDataToFolder(clusterFS, aggregateWorkflowDir, OSUtil.concat(OSUtil.PIG_DIR, "id.pig"));
@@ -423,7 +423,7 @@ public class ProcessInstanceRerunTest extends BaseTestClass {
 
         String bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
 
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
 
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
 

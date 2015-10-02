@@ -31,7 +31,6 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
@@ -80,11 +79,11 @@ public class ProcessUpdateTest extends BaseTestClass {
         String start = TimeUtil.getTimeWrtSystemTime(-60);
         String end = TimeUtil.getTimeWrtSystemTime(10);
         bundles[0].submitAndScheduleAllFeeds();
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         process.setValidity(start, end);
         process.setLateProcess(null);
-        cluster.getProcessHelper().submitAndSchedule(process.toString());
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, process.toString(), 0);
+        cluster.getProcessHelper().submitAndSchedule(process);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
         String bundleId = OozieUtil.getLatestBundleID(clusterOC, process.getName(), EntityType.PROCESS);
 
         //update process to have late data handling
@@ -96,8 +95,8 @@ public class ProcessUpdateTest extends BaseTestClass {
         lateInput.setWorkflowPath(aggregateWorkflowDir);
         lateProcess.getLateInputs().add(lateInput);
         process.setLateProcess(lateProcess);
-        LOGGER.info("Updated process xml: " + Util.prettyPrintXml(process.toString()));
-        AssertUtil.assertSucceeded(cluster.getProcessHelper().update(process.toString(), process.toString()));
+        LOGGER.info("Updated process xml: " + process.toPrettyXml());
+        AssertUtil.assertSucceeded(cluster.getProcessHelper().update(process, process));
 
         //check that new coordinator was created
         String newBundleId = OozieUtil.getLatestBundleID(clusterOC, process.getName(), EntityType.PROCESS);

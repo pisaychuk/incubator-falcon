@@ -23,7 +23,6 @@ import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.Job;
@@ -76,11 +75,11 @@ public class PrismFeedScheduleTest extends BaseTestClass {
     @Test(groups = {"prism", "0.2"})
     public void testFeedScheduleOn1ColoWhileAnotherColoHasSuspendedFeed()
         throws Exception {
-        LOGGER.info("cluster: " + Util.prettyPrintXml(bundles[0].getClusters().get(0)));
-        LOGGER.info("feed: " + Util.prettyPrintXml(bundles[0].getDataSets().get(0)));
+        LOGGER.info("cluster: " + bundles[0].getClusters().get(0).toPrettyXml());
+        LOGGER.info("feed: " + bundles[0].getFeeds().get(0).toPrettyXml());
 
         bundles[0].submitAndScheduleFeed();
-        AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(bundles[0].getDataSets().get(0)));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(bundles[0].getFeeds().get(0)));
         AssertUtil.checkStatus(cluster1OC, EntityType.FEED, bundles[0], Job.Status.SUSPENDED);
         bundles[1].submitAndScheduleFeed();
         AssertUtil.checkStatus(cluster2OC, EntityType.FEED, bundles[1], Job.Status.RUNNING);

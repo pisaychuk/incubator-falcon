@@ -19,12 +19,12 @@
 package org.apache.falcon.regression.hcat;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
-import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
+import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.process.EngineType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -33,17 +33,15 @@ import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
-import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.hive.hcatalog.api.HCatAddPartitionDesc;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.api.HCatCreateTableDesc;
 import org.apache.hive.hcatalog.common.HCatException;
+import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.CoordinatorAction;
 import org.apache.oozie.client.OozieClient;
@@ -246,10 +244,10 @@ public class HCatProcessTest extends BaseTestClass {
         bundles[0].setInputFeedTableUri(inputTableUri);
         bundles[0].setInputFeedPeriodicity(1, Frequency.TimeUnit.hours);
         bundles[0].setInputFeedValidity(startDate, endDate);
-        final String inputFeed1 = bundles[0].getInputFeedFromBundle();
-        final String inputFeed2Name = Util.readEntityName(inputFeed1) + "-second";
+        final FeedMerlin inputFeed1 = bundles[0].getInputFeedFromBundle().getClone();
+        final String inputFeed2Name = inputFeed1.getName() + "-second";
 
-        FeedMerlin feedObj = new FeedMerlin(inputFeed1);
+        FeedMerlin feedObj = inputFeed1.getClone();
         feedObj.setName(inputFeed2Name);
         feedObj.getTable().setUri(inputTableUri2);
 
@@ -341,9 +339,9 @@ public class HCatProcessTest extends BaseTestClass {
         bundles[0].setOutputFeedTableUri(outputTableUri);
         bundles[0].setOutputFeedPeriodicity(1, Frequency.TimeUnit.hours);
         bundles[0].setOutputFeedValidity(startDate, endDate);
-        final String outputFeed1 = bundles[0].getInputFeedFromBundle();
-        final String outputFeed2Name = Util.readEntityName(outputFeed1) + "-second";
-        FeedMerlin feedObj = new FeedMerlin(outputFeed1);
+        final FeedMerlin outputFeed1 = bundles[0].getInputFeedFromBundle().getClone();
+        final String outputFeed2Name = outputFeed1.getName() + "-second";
+        FeedMerlin feedObj = outputFeed1.getClone();
         feedObj.setName(outputFeed2Name);
         feedObj.getTable().setUri(outputTableUri2);
         bundles[0].addOutputFeedToBundle("outputData2", feedObj);
@@ -427,9 +425,9 @@ public class HCatProcessTest extends BaseTestClass {
         bundles[0].setInputFeedTableUri(inputTableUri);
         bundles[0].setInputFeedPeriodicity(1, Frequency.TimeUnit.hours);
         bundles[0].setInputFeedValidity(startDate, endDate);
-        final String inputFeed1 = bundles[0].getInputFeedFromBundle();
-        final String inputFeed2Name = Util.readEntityName(inputFeed1) + "-second";
-        FeedMerlin feedObj = new FeedMerlin(inputFeed1);
+        final FeedMerlin inputFeed1 = bundles[0].getInputFeedFromBundle().getClone();
+        final String inputFeed2Name = inputFeed1.getName() + "-second";
+        FeedMerlin feedObj = inputFeed1.getClone();
         feedObj.setName(inputFeed2Name);
         feedObj.getTable().setUri(inputTableUri2);
         bundles[0].addInputFeedToBundle("inputData2", feedObj);
@@ -441,9 +439,9 @@ public class HCatProcessTest extends BaseTestClass {
         bundles[0].setOutputFeedTableUri(outputTableUri);
         bundles[0].setOutputFeedPeriodicity(1, Frequency.TimeUnit.hours);
         bundles[0].setOutputFeedValidity(startDate, endDate);
-        final String outputFeed1 = bundles[0].getOutputFeedFromBundle();
-        final String outputFeed2Name = Util.readEntityName(outputFeed1) + "-second";
-        FeedMerlin feedObj2 = new FeedMerlin(outputFeed1);
+        final FeedMerlin outputFeed1 = bundles[0].getOutputFeedFromBundle().getClone();
+        final String outputFeed2Name = outputFeed1.getName() + "-second";
+        FeedMerlin feedObj2 = outputFeed1.getClone();
         feedObj2.setName(outputFeed2Name);
         feedObj2.getTable().setUri(outputTableUri2);
         bundles[0].addOutputFeedToBundle("outputData2", feedObj2);

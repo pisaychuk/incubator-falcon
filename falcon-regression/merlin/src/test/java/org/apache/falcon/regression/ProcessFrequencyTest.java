@@ -100,7 +100,6 @@ public class ProcessFrequencyTest extends BaseTestClass {
         HadoopUtil.copyDataToFolder(clusterFS, startPath, OSUtil.NORMAL_INPUT);
 
         final String processName = bundles[0].getProcessName();
-        //InstanceUtil.waitTillInstancesAreCreated(cluster, bundles[0].getProcessData(), 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1,
             CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS, 5);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
@@ -136,17 +135,17 @@ public class ProcessFrequencyTest extends BaseTestClass {
 
         bundles[0].setProcessInputStartEnd("now(0,0)", "now(0,0)");
         bundles[0].setProcessValidity(startDate, endDate);
-        final ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        final ProcessMerlin processMerlin = bundles[0].getProcess();
         //a frequency can be bad in two ways - it can have bad amount or it can have bad unit
         //submit process with bad amount
         processMerlin.setFrequency(new Frequency("BadAmount", freqType.getFalconTimeUnit()));
-        AssertUtil.assertFailed(prism.getProcessHelper().submitEntity(processMerlin.toString()));
+        AssertUtil.assertFailed(prism.getProcessHelper().submitEntity(processMerlin));
 
         //submit process with bad unit
         processMerlin.setFrequency(new Frequency("2993", freqType.getFalconTimeUnit()));
         final String process = processMerlin.toString();
         final String newProcess = process.replaceAll("minutes\\(2993\\)", "BadUnit(2993)");
-        AssertUtil.assertFailed(prism.getProcessHelper().submitEntity(newProcess));
+        AssertUtil.assertFailed(prism.getProcessHelper().submitEntity(newProcess, null));
     }
 
 }

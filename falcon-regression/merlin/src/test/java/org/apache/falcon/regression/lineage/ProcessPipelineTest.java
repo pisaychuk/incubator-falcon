@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.lineage;
 
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
@@ -126,9 +127,9 @@ public class ProcessPipelineTest extends BaseTestClass{
         String pipeline = "samplePipeline";
         bundles[0].setProcessPipeline(pipeline);
         bundles[0].submitProcess(true);
-        String process = bundles[0].getProcessData();
+        ProcessMerlin process = bundles[0].getProcess();
         String processDef = prism.getProcessHelper().getEntityDefinition(process).getMessage();
-        Assert.assertTrue(XmlUtil.isIdentical(process, processDef), "Definitions are not equal.");
+        Assert.assertTrue(XmlUtil.isIdentical(process.toString(), processDef), "Definitions are not equal.");
     }
 
     /**

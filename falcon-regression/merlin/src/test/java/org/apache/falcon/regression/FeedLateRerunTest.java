@@ -24,14 +24,13 @@ import org.apache.falcon.entity.v0.feed.ClusterType;
 import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
-import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.AssertUtil;
-import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
+import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.Util;
+import org.apache.falcon.regression.core.util.OozieUtil;
+import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -96,20 +95,20 @@ public class FeedLateRerunTest extends BaseTestClass {
         LOGGER.info("Time range between : " + startTime + " and " + endTime);
 
         //configure feed
-        FeedMerlin feed = new FeedMerlin(bundles[0].getDataSets().get(0));
+        FeedMerlin feed = new FeedMerlin(bundles[0].getFeeds().get(0));
         feed.setFilePath(feedDataLocation);
         //erase all clusters from feed definition
         feed.clearFeedClusters();
         //set cluster1 as source
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.SOURCE)
                 .build());
         //set cluster2 as target
         feed.addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.TARGET)
@@ -118,10 +117,10 @@ public class FeedLateRerunTest extends BaseTestClass {
         String entityName = feed.getName();
 
         //submit and schedule feed
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
         //check if coordinator exists
-        InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed.toString(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster2OC, feed, 0);
         Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, entityName, "REPLICATION"), 1);
 
         //Finding bundleId of replicated instance on target

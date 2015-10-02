@@ -56,6 +56,64 @@ public class ClusterMerlin extends Cluster {
         }
     }
 
+    /**
+     * Creates shallow copy of a cluster.
+     */
+    public ClusterMerlin(final ClusterMerlin cluster) {
+        try {
+            PropertyUtils.copyProperties(this, cluster);
+        } catch (ReflectiveOperationException e) {
+            Assert.fail("Can't create FeedMerlin: " + ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    /**
+     * Creates cluster definition template filling compulsory fields.
+     */
+    public ClusterMerlin() {
+        setName("cluster");
+        setColo("default");
+        setInterfaces(new Interfaces());
+        setInterface(Interfacetype.READONLY, "http://localhost:50070");
+        setInterface(Interfacetype.WRITE, "hdfs://localhost:8020");
+        setInterface(Interfacetype.EXECUTE, "hdfs://localhost:8032");
+        setLocations(new Locations());
+        addLocation(ClusterLocationType.STAGING, "/tmp/falcon-regression-staging");
+        addLocation(ClusterLocationType.WORKING, "/tmp/falcon-regression-working");
+    }
+
+    /**
+     * Creates deep copy of a given cluster.
+     * @return clone a cluster
+     */
+    public ClusterMerlin getClone() {
+        ClusterMerlin clusterCopy = new ClusterMerlin();
+        //compulsory properties
+        clusterCopy.setName(this.getName());
+        clusterCopy.setColo(this.getColo());
+        clusterCopy.setInterfaces(new Interfaces());
+        for (Interface anInterface : this.getInterfaces().getInterfaces()) {
+            clusterCopy.addInterface(anInterface.getType(), anInterface.getEndpoint(), anInterface.getVersion());
+        }
+        clusterCopy.setLocations(new Locations());
+        for (Location location : this.getLocations().getLocations()) {
+            clusterCopy.addLocation(location.getName(), location.getPath());
+        }
+        //optional properties
+        clusterCopy.setDescription(this.getDescription());
+        clusterCopy.setTags(this.getTags());
+        if (this.getProperties() != null) {
+            clusterCopy.setProperties(new Properties());
+            for (Property property : this.getProperties().getProperties()) {
+                clusterCopy.withProperty(property.getName(), property.getValue());
+            }
+        }
+        if (this.getACL() != null) {
+            clusterCopy.setACL(this.getACL().getOwner(), this.getACL().getGroup(), this.getACL().getPermission());
+        }
+        return clusterCopy;
+    }
+
     @Override
     public String toString() {
         try {
@@ -65,6 +123,13 @@ public class ClusterMerlin extends Cluster {
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Prints cluster in readable xml form.
+     */
+    public String toPrettyXml() {
+        return Util.prettyPrintXml(this);
     }
 
     /**
@@ -93,7 +158,7 @@ public class ClusterMerlin extends Cluster {
     }
 
     public void setInterface(Interfacetype interfacetype, String value) {
-        final Interfaces interfaces = this.getInterfaces();
+        final Interfaces interfaces = this.getInterfaces() != null ? this.getInterfaces() : new Interfaces();
         final List<Interface> interfaceList = interfaces.getInterfaces();
         for (final Interface anInterface : interfaceList) {
             if (anInterface.getType() == interfacetype) {
@@ -176,9 +241,8 @@ public class ClusterMerlin extends Cluster {
      * @return this
      */
     public ClusterMerlin withProperty(String name, String value) {
-        final List<Property> properties = getProperties().getProperties();
         //if property with same name exists, just replace the value
-        for (Property property : properties) {
+        for (Property property : getProperties().getProperties()) {
             if (property.getName().equals(name)) {
                 LOGGER.info(String.format("Overwriting property name = %s oldVal = %s newVal = %s",
                     property.getName(), property.getValue(), value));
@@ -190,7 +254,7 @@ public class ClusterMerlin extends Cluster {
         final Property property = new Property();
         property.setName(name);
         property.setValue(value);
-        properties.add(property);
+        getProperties().getProperties().add(property);
         return this;
     }
 
@@ -204,7 +268,7 @@ public class ClusterMerlin extends Cluster {
 
     public void assertEquals(ClusterMerlin cluster) {
         LOGGER.info(String.format("Comparing : source: %n%s%n and cluster: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(cluster.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(cluster)));
         SoftAssert softAssert = new SoftAssert();
         softAssert.assertEquals(name, cluster.getName(), "Cluster name is different.");
         softAssert.assertEquals(colo, cluster.getColo(), "Cluster colo is different.");

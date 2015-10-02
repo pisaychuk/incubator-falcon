@@ -21,32 +21,32 @@ package org.apache.falcon.regression;
 import org.apache.commons.io.FileUtils;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
-import org.apache.falcon.regression.core.util.OozieUtil;
-import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
+import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.Util;
+import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.Job.Status;
 import org.apache.oozie.client.OozieClient;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
@@ -68,8 +68,7 @@ public class ProcessLibPathLoadTest extends BaseTestClass {
     private String oozieLib = MerlinConstants.OOZIE_EXAMPLE_LIB;
     private String oozieLibName = oozieLib.substring(oozieLib.lastIndexOf('/') + 1);
     private String filename = OSUtil.concat(OSUtil.OOZIE_LIB_FOLDER, "lib", oozieLibName);
-    private String processName;
-    private String process;
+    private ProcessMerlin process;
 
     @BeforeClass(alwaysRun = true)
     public void createTestData() throws Exception {
@@ -91,8 +90,7 @@ public class ProcessLibPathLoadTest extends BaseTestClass {
         bundles[0].setOutputFeedLocationData(testDir + "/output-data" + MINUTE_DATE_PATTERN);
         bundles[0].setProcessConcurrency(1);
         bundles[0].setProcessLibPath(aggregateWorkflowDir + "/lib");
-        process = bundles[0].getProcessData();
-        processName = Util.readEntityName(process);
+        process = bundles[0].getProcess();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -118,8 +116,8 @@ public class ProcessLibPathLoadTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].submitFeedsScheduleProcess(prism);
         InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
-        OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
-        OozieUtil.waitForBundleToReachState(clusterOC, processName, Status.SUCCEEDED);
+        OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, process.getName(), 0);
+        OozieUtil.waitForBundleToReachState(clusterOC, process, Status.SUCCEEDED);
     }
 
     /**
@@ -134,8 +132,8 @@ public class ProcessLibPathLoadTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].submitFeedsScheduleProcess(prism);
         InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
-        OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
-        OozieUtil.waitForBundleToReachState(clusterOC, processName, Status.KILLED);
+        OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, process.getName(), 0);
+        OozieUtil.waitForBundleToReachState(clusterOC, process, Status.KILLED);
     }
 
     /**

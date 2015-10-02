@@ -101,9 +101,9 @@ public class EntityPageTest extends BaseUITestClass {
      */
     @Test
     public void entityPage() throws Exception {
-        final FeedMerlin inputFeed = FeedMerlin.fromString(bundles[0].getInputFeedFromBundle());
-        final FeedMerlin outputFeed = FeedMerlin.fromString(bundles[0].getOutputFeedFromBundle());
-        final ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        final FeedMerlin inputFeed = bundles[0].getInputFeedFromBundle();
+        final FeedMerlin outputFeed = bundles[0].getOutputFeedFromBundle();
+        final ProcessMerlin processMerlin = bundles[0].getProcess();
         bundles[0].submitAndScheduleProcess();
 
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
@@ -145,10 +145,10 @@ public class EntityPageTest extends BaseUITestClass {
      */
     @Test
     public void testFeedEntityProperties() throws Exception {
-        final FeedMerlin inputFeed = FeedMerlin.fromString(bundles[0].getInputFeedFromBundle());
+        final FeedMerlin inputFeed = bundles[0].getInputFeedFromBundle();
         addLocationsToFeedCluster(inputFeed);
         bundles[0].submitClusters(prism);
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(inputFeed.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(inputFeed));
 
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
         SearchPage.SearchResult.assertEqual(results, Collections.singletonList((Entity) inputFeed),
@@ -183,14 +183,14 @@ public class EntityPageTest extends BaseUITestClass {
      */
     @Test
     public void testProcessEntityProperties() throws Exception {
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
         final List<Entity> scheduledEntities = new ArrayList<>();
         scheduledEntities.add(process);
-        scheduledEntities.addAll(FeedMerlin.fromString(bundles[0].getDataSets()));
+        scheduledEntities.addAll(bundles[0].getFeeds());
         SearchPage.SearchResult.assertEqual(results, scheduledEntities,
             "Unexpected search results.");
         final EntityPage entityPage = searchPage.openEntityPage(process.getName());
@@ -208,9 +208,9 @@ public class EntityPageTest extends BaseUITestClass {
     @Test
     public void testInstancesBlockInfo() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:41Z");
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
         OozieUtil.createMissingDependencies(
@@ -223,7 +223,7 @@ public class EntityPageTest extends BaseUITestClass {
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
         final List<Entity> scheduledEntities = new ArrayList<>();
         scheduledEntities.add(process);
-        scheduledEntities.addAll(FeedMerlin.fromString(bundles[0].getDataSets()));
+        scheduledEntities.addAll(bundles[0].getFeeds());
         SearchPage.SearchResult.assertEqual(results, scheduledEntities,
             "Unexpected search results.");
         final EntityPage entityPage = searchPage.openEntityPage(process.getName());
@@ -245,16 +245,16 @@ public class EntityPageTest extends BaseUITestClass {
     @Test
     public void testInstancesBlockManyInstances() throws Exception {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T03:26Z");
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
 
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
         final List<Entity> scheduledEntities = new ArrayList<>();
         scheduledEntities.add(process);
-        scheduledEntities.addAll(FeedMerlin.fromString(bundles[0].getDataSets()));
+        scheduledEntities.addAll(bundles[0].getFeeds());
         SearchPage.SearchResult.assertEqual(results, scheduledEntities,
             "Unexpected search results.");
         final EntityPage entityPage = searchPage.openEntityPage(process.getName());
@@ -289,9 +289,9 @@ public class EntityPageTest extends BaseUITestClass {
         final String endTime = "2010-01-02T01:11Z";
         String prefix = bundles[0].getFeedDataPathPrefix();
         bundles[0].setProcessValidity(startTime, endTime);
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
@@ -311,7 +311,7 @@ public class EntityPageTest extends BaseUITestClass {
         final List<SearchPage.SearchResult> results = searchPage.doSearch("*");
         final List<Entity> scheduledEntities = new ArrayList<>();
         scheduledEntities.add(process);
-        scheduledEntities.addAll(FeedMerlin.fromString(bundles[0].getDataSets()));
+        scheduledEntities.addAll(bundles[0].getFeeds());
         SearchPage.SearchResult.assertEqual(results, scheduledEntities,
             "Unexpected search results.");
         final EntityPage entityPage = searchPage.openEntityPage(process.getName());
@@ -381,9 +381,9 @@ public class EntityPageTest extends BaseUITestClass {
         final String endTime = "2010-01-02T01:01Z";
         String prefix = bundles[0].getFeedDataPathPrefix();
         bundles[0].setProcessValidity(startTime, endTime);
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
@@ -429,9 +429,9 @@ public class EntityPageTest extends BaseUITestClass {
         String prefix = bundles[0].getFeedDataPathPrefix();
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessConcurrency(2);
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
@@ -489,9 +489,9 @@ public class EntityPageTest extends BaseUITestClass {
         String prefix = bundles[0].getFeedDataPathPrefix();
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessConcurrency(2);
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);
@@ -552,9 +552,9 @@ public class EntityPageTest extends BaseUITestClass {
         String prefix = bundles[0].getFeedDataPathPrefix();
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessConcurrency(2);
-        final ProcessMerlin process = bundles[0].getProcessObject();
+        final ProcessMerlin process = bundles[0].getProcess();
         bundles[0].submitAndScheduleAllFeeds();
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
         InstanceUtil.waitTillInstanceReachState(clusterOC, process.getName(), 1,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS, 1);

@@ -72,15 +72,15 @@ public class EntitiesTableReflectionTest extends BaseUITestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
 
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         twoProcessesNameStart = process.getName() + '-';
         process.setName(twoProcessesNameStart + 1);
-        bundles[0].setProcessData(process.toString());
-        prism.getProcessHelper().submitEntity(process.toString());
+        bundles[0].setProcess(process);
+        prism.getProcessHelper().submitEntity(process);
         processesMap.put(process.getName(), process.toString());
 
         process.setName(twoProcessesNameStart + 2);
-        prism.getProcessHelper().submitEntity(process.toString());
+        prism.getProcessHelper().submitEntity(process);
         processesMap.put(process.getName(), process.toString());
     }
 
@@ -94,27 +94,27 @@ public class EntitiesTableReflectionTest extends BaseUITestClass {
             EntityStatus.SUBMITTED, "Status of process should be SUBMITTED");
 
         AssertUtil.assertSucceeded(
-            prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+            prism.getProcessHelper().schedule(bundles[0].getProcess()));
         Assert.assertEquals(searchPage.doSearch(processName).get(0).getStatus(),
             EntityStatus.RUNNING, "Status of process should be RUNNING");
 
         AssertUtil.assertSucceeded(
-            prism.getProcessHelper().suspend(bundles[0].getProcessData()));
+            prism.getProcessHelper().suspend(bundles[0].getProcess()));
         Assert.assertEquals(searchPage.doSearch(processName).get(0).getStatus(),
             EntityStatus.SUSPENDED, "Status of process should be SUSPENDED");
 
         AssertUtil.assertSucceeded(
-            prism.getProcessHelper().resume(bundles[0].getProcessData()));
+            prism.getProcessHelper().resume(bundles[0].getProcess()));
         Assert.assertEquals(searchPage.doSearch(processName).get(0).getStatus(),
             EntityStatus.RUNNING, "Status of process should be RUNNING");
 
         AssertUtil.assertSucceeded(
-            prism.getProcessHelper().delete(bundles[0].getProcessData()));
+            prism.getProcessHelper().delete(bundles[0].getProcess()));
         Assert.assertEquals(searchPage.doSearch(processName).size(), 0,
             "Zero results should be present after deletion");
 
         AssertUtil.assertSucceeded(
-            prism.getProcessHelper().submitAndSchedule(bundles[0].getProcessData()));
+            prism.getProcessHelper().submitAndSchedule(bundles[0].getProcess()));
         Assert.assertEquals(searchPage.doSearch(processName).get(0).getStatus(),
             EntityStatus.RUNNING, "Status of rescheduled process should be RUNNING");
     }
@@ -150,12 +150,12 @@ public class EntitiesTableReflectionTest extends BaseUITestClass {
         searchPage.selectRow(1);
         searchPage.clickButton(Button.Schedule);
         List<SearchPage.SearchResult> results = searchPage.getSearchResults();
-        String firstProcess = processesMap.get(results.get(0).getEntityName());
-        String secondProcess = processesMap.get(results.get(1).getEntityName());
+        String firstProcessName = results.get(0).getEntityName();
+        String secondProcessName = results.get(1).getEntityName();
 
         Assert.assertEquals(results.get(0).getStatus(), EntityStatus.RUNNING,
             "Unexpected status after 'Schedule' was clicked");
-        Assert.assertTrue(prism.getProcessHelper().getStatus(firstProcess).getMessage()
+        Assert.assertTrue(prism.getProcessHelper().getStatus(results.get(0).getEntityName()).getMessage()
             .contains("RUNNING"), "First process should be RUNNING via API");
         //select two processes
         searchPage.clickSelectAll();
@@ -167,7 +167,7 @@ public class EntitiesTableReflectionTest extends BaseUITestClass {
 
         Assert.assertEquals(searchPage.getSearchResults().get(1).getStatus(), EntityStatus.RUNNING,
             "Unexpected status after 'Schedule' was clicked");
-        Assert.assertTrue(prism.getProcessHelper().getStatus(secondProcess).getMessage()
+        Assert.assertTrue(prism.getProcessHelper().getStatus(secondProcessName).getMessage()
             .contains("RUNNING"), "Second process should be RUNNING via API");
 
         searchPage.selectRow(1);
@@ -176,12 +176,12 @@ public class EntitiesTableReflectionTest extends BaseUITestClass {
 
         Assert.assertEquals(searchPage.getSearchResults().get(0).getStatus(), EntityStatus.SUSPENDED,
             "Unexpected status after 'Suspend' was clicked");
-        Assert.assertTrue(prism.getProcessHelper().getStatus(firstProcess).getMessage()
+        Assert.assertTrue(prism.getProcessHelper().getStatus(firstProcessName).getMessage()
             .contains("SUSPENDED"), "First process should be SUSPENDED via API");
 
         Assert.assertEquals(searchPage.getSearchResults().get(1).getStatus(), EntityStatus.SUSPENDED,
             "Unexpected status after 'Suspend' was clicked");
-        Assert.assertTrue(prism.getProcessHelper().getStatus(secondProcess).getMessage()
+        Assert.assertTrue(prism.getProcessHelper().getStatus(secondProcessName).getMessage()
             .contains("SUSPENDED"), "Second process should be SUSPENDED via API");
 
         searchPage.clickSelectAll();

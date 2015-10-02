@@ -23,13 +23,12 @@ import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.AssertUtil;
-import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
-import org.apache.falcon.regression.core.util.Util;
+import org.apache.falcon.regression.core.util.OozieUtil;
+import org.apache.falcon.regression.core.util.TimeUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.Job;
@@ -53,7 +52,6 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
     private static final Logger LOGGER = Logger.getLogger(TouchAPIPrismAndServerTest.class);
     private String startTime;
     private String endTime;
-    private String clusterName;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -72,7 +70,6 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessPeriodicity(5, Frequency.TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(5, Frequency.TimeUnit.minutes);
-        clusterName = Util.readEntityName(bundles[0].getDataSets().get(0));
     }
 
     @AfterMethod(alwaysRun = true)
@@ -91,14 +88,14 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
     public void touchProcessSchedule() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
         AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         String coordId = OozieUtil.getLatestCoordinatorID(clusterOC,
             bundles[0].getProcessName(), EntityType.PROCESS);
         String oldbundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(),
             EntityType.PROCESS);
 
         // via prism
-        ServiceResponse response = prism.getProcessHelper().touchEntity(bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().touchEntity(bundles[0].getProcess());
         String bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertNotEquals(oldbundleId, bundleId, "Bundle ids are same. No new bundle generated.");
         validate(response, "Old coordinator id: " + coordId + ". New bundle id: " + bundleId);
@@ -106,7 +103,7 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
         // via server
         oldbundleId = bundleId;
         coordId = OozieUtil.getLatestCoordinatorID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
-        response = cluster.getProcessHelper().touchEntity(bundles[0].getProcessData());
+        response = cluster.getProcessHelper().touchEntity(bundles[0].getProcess());
         bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertNotEquals(oldbundleId, bundleId, "Bundle ids are same. No new bundle generated.");
         validate(response, "Old coordinator id: " + coordId + ". New bundle id: " + bundleId);
@@ -121,24 +118,26 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
      */
     @Test(groups = {"singleCluster"})
     public void touchFeedSchedule() throws Exception {
+        String feedName = bundles[0].getFeeds().get(0).getName();
+
         bundles[0].submitAndScheduleFeed();
         AssertUtil.checkStatus(clusterOC, EntityType.FEED, bundles[0], Job.Status.RUNNING);
-        String coordId = OozieUtil.getLatestCoordinatorID(clusterOC, clusterName, EntityType.FEED);
-        String oldbundleId = OozieUtil.getLatestBundleID(clusterOC, clusterName, EntityType.FEED);
+        String coordId = OozieUtil.getLatestCoordinatorID(clusterOC, feedName, EntityType.FEED);
+        String oldbundleId = OozieUtil.getLatestBundleID(clusterOC, feedName, EntityType.FEED);
 
         // via prism
         TimeUtil.sleepSeconds(60);
-        ServiceResponse response = prism.getFeedHelper().touchEntity(bundles[0].getDataSets().get(0));
-        String bundleId = OozieUtil.getLatestBundleID(clusterOC, clusterName, EntityType.FEED);
+        ServiceResponse response = prism.getFeedHelper().touchEntity(bundles[0].getFeeds().get(0));
+        String bundleId = OozieUtil.getLatestBundleID(clusterOC, feedName, EntityType.FEED);
         Assert.assertNotEquals(oldbundleId, bundleId, "Bundle ids are same. No new bundle generated.");
         validate(response, "Old coordinator id: " + coordId + ". New bundle id: " + bundleId);
 
         // via server
         oldbundleId = bundleId;
-        coordId = OozieUtil.getLatestCoordinatorID(clusterOC, clusterName, EntityType.FEED);
+        coordId = OozieUtil.getLatestCoordinatorID(clusterOC, feedName, EntityType.FEED);
         TimeUtil.sleepSeconds(60);
-        response = cluster.getFeedHelper().touchEntity(bundles[0].getDataSets().get(0));
-        bundleId = OozieUtil.getLatestBundleID(clusterOC, clusterName, EntityType.FEED);
+        response = cluster.getFeedHelper().touchEntity(bundles[0].getFeeds().get(0));
+        bundleId = OozieUtil.getLatestBundleID(clusterOC, feedName, EntityType.FEED);
         Assert.assertNotEquals(oldbundleId, bundleId, "Bundle ids are same. No new bundle generated.");
         validate(response, "Old coordinator id: " + coordId + ". New bundle id: " + bundleId);
 
@@ -158,19 +157,19 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].submitFeedsScheduleProcess(prism);
         AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         String coordId = OozieUtil.getLatestCoordinatorID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         String oldbundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
 
         // via prism
-        ServiceResponse response = prism.getProcessHelper().touchEntity(bundles[0].getProcessData());
+        ServiceResponse response = prism.getProcessHelper().touchEntity(bundles[0].getProcess());
         String bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertEquals(oldbundleId, bundleId, "New bundle generated");
         validate(response, "Old coordinator id: " + coordId);
 
         //via server
         oldbundleId = bundleId;
-        response = cluster.getProcessHelper().touchEntity(bundles[0].getProcessData());
+        response = cluster.getProcessHelper().touchEntity(bundles[0].getProcess());
         bundleId = OozieUtil.getLatestBundleID(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertEquals(oldbundleId, bundleId, "New bundle generated");
         validate(response, "Old coordinator id: " + coordId);
@@ -182,3 +181,4 @@ public class TouchAPIPrismAndServerTest extends BaseTestClass {
                 "Correct response was not present in process / feed schedule");
     }
 }
+

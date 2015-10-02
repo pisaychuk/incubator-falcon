@@ -114,13 +114,13 @@ public class RetentionTest extends BaseTestClass {
         final FeedMerlin feedObject = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         feedObject.setRetentionValue(retentionUnit.getValue() + "(" + retentionPeriod + ")");
 
-        final ServiceResponse response = prism.getFeedHelper().submitEntity(feedObject.toString());
+        final ServiceResponse response = prism.getFeedHelper().submitEntity(feedObject);
         if (retentionPeriod > 0) {
             AssertUtil.assertSucceeded(response);
 
             replenishData(freqType, gaps, withData);
 
-            commonDataRetentionWorkflow(feedObject.toString(), freqType, retentionUnit,
+            commonDataRetentionWorkflow(feedObject, freqType, retentionUnit,
                 retentionPeriod);
         } else {
             AssertUtil.assertFailed(response);
@@ -167,7 +167,7 @@ public class RetentionTest extends BaseTestClass {
      * @throws AuthenticationException
      * @throws JMSException
      */
-    private void commonDataRetentionWorkflow(String feed, FreqType freqType,
+    private void commonDataRetentionWorkflow(FeedMerlin feed, FreqType freqType,
         RetentionUnit retentionUnit, int retentionPeriod) throws OozieClientException,
             IOException, URISyntaxException, AuthenticationException, JMSException,
             InterruptedException {
@@ -176,7 +176,7 @@ public class RetentionTest extends BaseTestClass {
 
         cluster.getFeedHelper().schedule(feed);
         LOGGER.info(cluster.getClusterHelper().getActiveMQ());
-        final String feedName = Util.readEntityName(feed);
+        final String feedName = feed.getName();
         LOGGER.info(feedName);
         JmsMessageConsumer messageConsumer = new JmsMessageConsumer("FALCON." + feedName,
                 cluster.getClusterHelper().getActiveMQ());

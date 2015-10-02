@@ -20,6 +20,7 @@ package org.apache.falcon.regression.prism;
 
 import com.jcraft.jsch.JSchException;
 import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
@@ -109,13 +110,13 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         processBundle.setProcessValidity(TimeUtil.getTimeWrtSystemTime(0),
             TimeUtil.getTimeWrtSystemTime(20));
         processBundle.submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 0);
-        String oldProcess =
-            processBundle.getProcessData();
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 0);
+        ProcessMerlin oldProcess =
+            processBundle.getProcess();
         processBundle.setProcessValidity(TimeUtil.getTimeWrtSystemTime(5),
             TimeUtil.getTimeWrtSystemTime(100));
-        ServiceResponse r = prism.getProcessHelper().update(oldProcess,
-            processBundle.getProcessData(), "abc");
+        ServiceResponse r = prism.getProcessHelper().update(oldProcess.toString(),
+            processBundle.getProcess().toString(), "abc");
         Assert.assertTrue(r.getMessage()
             .contains("java.lang.IllegalArgumentException: abc is not a valid UTC string"));
     }
@@ -126,7 +127,7 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         OozieClientException, InterruptedException {
 
         FeedMerlin feed = new FeedMerlin(submitAndScheduleFeed(processBundle));
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, feed.toString(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, feed, 0);
 
         //update frequency
         Frequency f = new Frequency("" + 21, Frequency.TimeUnit.minutes);
@@ -147,9 +148,9 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         processBundle.submitFeedsScheduleProcess(prism);
 
         //get old process details
-        String oldProcess = processBundle.getProcessData();
+        ProcessMerlin oldProcess = processBundle.getProcess();
         String oldBundleId = OozieUtil.getLatestBundleID(cluster1OC,
-            Util.readEntityName(processBundle.getProcessData()), EntityType.PROCESS);
+            processBundle.getProcess().getName(), EntityType.PROCESS);
 
         InstanceUtil.waitTillInstancesAreCreated(cluster1OC, oldProcess, 0);
         List<String> initialNominalTimes = OozieUtil.getActionsNominalTime(cluster1OC,
@@ -157,15 +158,15 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
 
         // update process by adding property
         processBundle.setProcessProperty("someProp", "someValue");
-        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcessData());
+        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcess());
         AssertUtil.assertSucceeded(r);
 
         //check new coord created with current time
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleId, initialNominalTimes,
-            processBundle.getProcessData(), true, false);
+            processBundle.getProcess(), true, false);
         InstanceUtil.waitTillInstancesAreCreated(cluster1OC, oldProcess, 1);
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleId, initialNominalTimes,
-            processBundle.getProcessData(), true, true);
+            processBundle.getProcess(), true, true);
     }
 
     @Test(groups = {"MultiCluster", "0.3.1", "embedded"}, timeOut = 1200000, enabled = false)
@@ -175,8 +176,8 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
 
         String startTimeClusterSource = TimeUtil.getTimeWrtSystemTime(-10);
         String startTimeClusterTarget = TimeUtil.getTimeWrtSystemTime(10);
-        String feed = getMultiClusterFeed(startTimeClusterSource, startTimeClusterTarget);
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+        FeedMerlin feed = getMultiClusterFeed(startTimeClusterSource, startTimeClusterTarget);
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         //submit and schedule feed
         ServiceResponse r = prism.getFeedHelper().submitAndSchedule(feed);
@@ -187,7 +188,7 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         //update frequency
         FeedMerlin updatedFeed = new FeedMerlin(feed);
         updatedFeed.setFrequency(new Frequency("7", Frequency.TimeUnit.minutes));
-        r = prism.getFeedHelper().update(feed, updatedFeed.toString());
+        r = prism.getFeedHelper().update(feed, updatedFeed);
         AssertUtil.assertSucceeded(r);
         InstanceUtil.waitTillInstancesAreCreated(cluster1OC, feed, 1);
 
@@ -223,21 +224,20 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
             processBundle.submitBundle(prism);
 
             //schedule of 2 cluster
-            cluster1.getProcessHelper().schedule(processBundle.getProcessData());
-            cluster2.getProcessHelper().schedule(processBundle.getProcessData());
-            InstanceUtil.waitTillInstancesAreCreated(cluster2OC, processBundle.getProcessData(), 0);
+            cluster1.getProcessHelper().schedule(processBundle.getProcess());
+            cluster2.getProcessHelper().schedule(processBundle.getProcess());
+            InstanceUtil.waitTillInstancesAreCreated(cluster2OC, processBundle.getProcess(), 0);
 
             //shut down cluster2
             Util.shutDownService(cluster2.getProcessHelper());
 
             // save old data before update
-            String oldProcess = processBundle.getProcessData();
+            ProcessMerlin oldProcess = processBundle.getProcess();
             String oldBundleIDCluster1 = OozieUtil
                 .getLatestBundleID(cluster1OC,
-                    Util.readEntityName(oldProcess), EntityType.PROCESS);
+                    oldProcess.getName(), EntityType.PROCESS);
             String oldBundleIDCluster2 = OozieUtil
-                .getLatestBundleID(cluster2OC,
-                    Util.readEntityName(oldProcess), EntityType.PROCESS);
+                .getLatestBundleID(cluster2OC, oldProcess.getName(), EntityType.PROCESS);
             List<String> oldNominalTimesCluster1 = OozieUtil.getActionsNominalTime(cluster1OC,
                 oldBundleIDCluster1, EntityType.PROCESS);
             List<String> oldNominalTimesCluster2 = OozieUtil.getActionsNominalTime(cluster2OC,
@@ -248,9 +248,9 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
 
             //send update request
             String updateTime = TimeUtil.getTimeWrtSystemTime(5);
-            ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcessData());
+            ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcess());
             AssertUtil.assertPartial(r);
-            InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 1);
+            InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 1);
 
             //verify new bundle on cluster1 and definition on cluster3
             OozieUtil
@@ -260,21 +260,21 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
                 oldNominalTimesCluster2,
                 oldProcess, false, false);
             String definitionCluster3 = Util.getEntityDefinition(cluster3,
-                processBundle.getProcessData(), true);
+                processBundle.getProcess(), true);
             Assert.assertTrue(XmlUtil.isIdentical(definitionCluster3,
-                processBundle.getProcessData()), "Process definitions should be equal");
+                processBundle.getProcess().toString()), "Process definitions should be equal");
 
             //start the stopped cluster2
             Util.startService(cluster2.getProcessHelper());
             TimeUtil.sleepSeconds(40);
             String newBundleIdCluster1 = OozieUtil.getLatestBundleID(cluster1OC,
-                Util.readEntityName(oldProcess), EntityType.PROCESS);
+                oldProcess.getName(), EntityType.PROCESS);
 
             //send second update request
-            r = prism.getProcessHelper().update(oldProcess, processBundle.getProcessData());
+            r = prism.getProcessHelper().update(oldProcess, processBundle.getProcess());
             AssertUtil.assertSucceeded(r);
             String defCluster2 = Util.getEntityDefinition(cluster2,
-                processBundle.getProcessData(), true);
+                processBundle.getProcess(), true);
             LOGGER.info("defCluster2 : " + Util.prettyPrintXml(defCluster2));
 
             // verify new bundle in cluster2 and no new bundle in cluster1  and
@@ -300,8 +300,8 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         OozieClientException, SAXException, AuthenticationException, InterruptedException {
         try {
             String startTimeClusterSource = TimeUtil.getTimeWrtSystemTime(-18);
-            String feed = getMultiClusterFeed(startTimeClusterSource, startTimeClusterSource);
-            LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+            FeedMerlin feed = getMultiClusterFeed(startTimeClusterSource, startTimeClusterSource);
+            LOGGER.info("feed: " + feed.toPrettyXml());
 
             //submit feed on all 3 clusters
             ServiceResponse r = prism.getFeedHelper().submitEntity(feed);
@@ -322,33 +322,31 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
 
             //save old data
             String oldBundleCluster1 = OozieUtil.getLatestBundleID(cluster1OC,
-                Util.readEntityName(feed), EntityType.FEED);
+                feed.getName(), EntityType.FEED);
             List<String> oldNominalTimesCluster1 = OozieUtil.getActionsNominalTime(cluster1OC,
                 oldBundleCluster1, EntityType.FEED);
 
             //send update command with +5 mins in future
-            r = prism.getFeedHelper().update(feed, updatedFeed.toString());
+            r = prism.getFeedHelper().update(feed, updatedFeed);
             AssertUtil.assertPartial(r);
 
             //verify new bundle creation on cluster1 and new definition on cluster3
             OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleCluster1,
                 oldNominalTimesCluster1, feed, true, false);
             String definition = Util.getEntityDefinition(cluster3, feed, true);
-            Diff diff = XMLUnit.compareXML(definition, processBundle.getProcessData());
+            Diff diff = XMLUnit.compareXML(definition, processBundle.getProcess().toString());
             LOGGER.info(diff);
 
             //start stopped cluster2
             Util.startService(cluster2.getProcessHelper());
-            String newBundleCluster1 = OozieUtil.getLatestBundleID(cluster1OC,
-                Util.readEntityName(feed), EntityType.FEED);
+            String newBundleCluster1 = OozieUtil.getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
 
             //send update again
-            r = prism.getFeedHelper().update(feed, updatedFeed.toString());
+            r = prism.getFeedHelper().update(feed, updatedFeed);
             AssertUtil.assertSucceeded(r);
 
             //verify new bundle creation on cluster2 and no new bundle on cluster1
-            Assert.assertEquals(OozieUtil
-                .checkIfFeedCoordExist(cluster2OC, Util.readEntityName(feed), "RETENTION"), 2);
+            Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "RETENTION"), 2);
             OozieUtil.verifyNewBundleCreation(cluster1OC, newBundleCluster1,
                 oldNominalTimesCluster1, feed, false, false);
 
@@ -376,28 +374,28 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         processBundle.submitFeedsScheduleProcess(prism);
         TimeUtil.sleepSeconds(10);
         InstanceUtil.waitTillInstanceReachState(serverOC.get(0),
-            Util.readEntityName(processBundle.getProcessData()), 0,
+            processBundle.getProcess().toPrettyXml(), 0,
             CoordinatorAction.Status.WAITING, EntityType.PROCESS);
 
         //save old data
-        String oldProcess = processBundle.getProcessData();
+        ProcessMerlin oldProcess = processBundle.getProcess();
         String oldBundleID = OozieUtil.getLatestBundleID(cluster1OC,
-            Util.readEntityName(oldProcess), EntityType.PROCESS);
+            oldProcess.getName(), EntityType.PROCESS);
         List<String> oldNominalTimes = OozieUtil.getActionsNominalTime(cluster1OC, oldBundleID, EntityType.PROCESS);
 
         //update
         processBundle.setProcessProperty("someProp", "someVal");
         String updateTime = TimeUtil.addMinsToTime(endTime, 60);
-        LOGGER.info("Original Feed : " + Util.prettyPrintXml(oldProcess));
-        LOGGER.info("Updated Feed :" + Util.prettyPrintXml(processBundle.getProcessData()));
+        LOGGER.info("Original Feed : " + oldProcess.toPrettyXml());
+        LOGGER.info("Updated Feed :" + processBundle.getProcess().toPrettyXml());
         LOGGER.info("Update Time : " + updateTime);
-        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcessData());
+        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcess());
         AssertUtil.assertSucceeded(r);
 
         //verify new bundle creation with instances matching
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleID, oldNominalTimes,
             oldProcess, true, false);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 1);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 1);
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleID, oldNominalTimes,
             oldProcess, true, true);
     }
@@ -411,15 +409,15 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         String startTime = TimeUtil.getTimeWrtSystemTime(-15);
         String endTime = TimeUtil.getTimeWrtSystemTime(60);
 
-        String feed = processBundle.getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-            Util.readEntityName(processBundle.getClusters().get(0)))
+        FeedMerlin feed = processBundle.getFeeds().get(0);
+        feed.clearFeedClusters();
+        feed.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
+            processBundle.getClusters().get(0).getName())
             .withRetention("days(100000)", ActionType.DELETE)
             .withValidity(startTime, endTime)
             .withClusterType(ClusterType.SOURCE)
             .withDataLocation(baseTestDir + "/replication" + MINUTE_DATE_PATTERN)
-            .build()).toString();
+            .build());
 
         ServiceResponse r = prism.getClusterHelper().submitEntity(
             processBundle.getClusters().get(0));
@@ -429,14 +427,13 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         InstanceUtil.waitTillInstancesAreCreated(cluster1OC, feed, 0);
 
         //save old data
-        String oldBundleID = OozieUtil.getLatestBundleID(cluster1OC,
-            Util.readEntityName(feed), EntityType.FEED);
+        String oldBundleID = OozieUtil.getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
         String updateTime = TimeUtil.addMinsToTime(endTime, 60);
         FeedMerlin updatedFeed = new FeedMerlin(feed).withProperty("someProp", "someVal");
-        LOGGER.info("Original Feed : " + Util.prettyPrintXml(feed));
-        LOGGER.info("Updated Feed :" + Util.prettyPrintXml(updatedFeed.toString()));
+        LOGGER.info("Original Feed : " + feed.toPrettyXml());
+        LOGGER.info("Updated Feed :" + updatedFeed.toPrettyXml());
         LOGGER.info("Update Time : " + updateTime);
-        r = prism.getFeedHelper().update(feed, updatedFeed.toString());
+        r = prism.getFeedHelper().update(feed, updatedFeed);
         AssertUtil.assertSucceeded(r);
         InstanceUtil.waitTillInstancesAreCreated(cluster1OC, feed, 1);
 
@@ -457,13 +454,13 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         processBundle.submitFeedsScheduleProcess(prism);
 
         //save old data
-        String oldProcess = processBundle.getProcessData();
+        ProcessMerlin oldProcess = processBundle.getProcess();
         String oldBundleID = OozieUtil.getLatestBundleID(cluster1OC,
-            Util.readEntityName(oldProcess), EntityType.PROCESS);
+            oldProcess.getName(), EntityType.PROCESS);
         List<String> oldNominalTimes = OozieUtil.getActionsNominalTime(cluster1OC, oldBundleID,
             EntityType.PROCESS);
         processBundle.setProcessValidity(TimeUtil.addMinsToTime(startTime, -4), endTime);
-        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcessData());
+        ServiceResponse r = prism.getProcessHelper().update(oldProcess, processBundle.getProcess());
         AssertUtil.assertSucceeded(r);
         TimeUtil.sleepSeconds(10);
 
@@ -496,46 +493,46 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         processBundle.submitFeedsScheduleProcess(prism);
 
         //wait for coord to be in running state
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 0);
-        InstanceUtil.waitTillInstancesAreCreated(cluster3OC, processBundle.getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster3OC, processBundle.getProcess(), 0);
 
         //save old info
         String oldBundleIdCluster1 = OozieUtil.getLatestBundleID(cluster1OC,
-            Util.readEntityName(processBundle.getProcessData()), EntityType.PROCESS);
+            processBundle.getProcess().getName(), EntityType.PROCESS);
         List<String> nominalTimesCluster1 = OozieUtil.getActionsNominalTime(cluster1OC,
             oldBundleIdCluster1, EntityType.PROCESS);
         String oldBundleIdCluster2 = OozieUtil.getLatestBundleID(cluster2OC,
-            Util.readEntityName(processBundle.getProcessData()), EntityType.PROCESS);
+            processBundle.getProcess().getName(), EntityType.PROCESS);
         String oldBundleIdCluster3 = OozieUtil.getLatestBundleID(cluster3OC,
-            Util.readEntityName(processBundle.getProcessData()), EntityType.PROCESS);
+            processBundle.getProcess().getName(), EntityType.PROCESS);
         List<String> nominalTimesCluster3 = OozieUtil.getActionsNominalTime(cluster3OC,
             oldBundleIdCluster3, EntityType.PROCESS);
 
         //update process
         String updateTime = TimeUtil.addMinsToTime(endTimeCluster1, 3);
         processBundle.setProcessProperty("someProp", "someVal");
-        ServiceResponse r = prism.getProcessHelper().update(processBundle.getProcessData(),
-            processBundle.getProcessData());
+        ServiceResponse r = prism.getProcessHelper().update(processBundle.getProcess(),
+            processBundle.getProcess());
         AssertUtil.assertSucceeded(r);
 
         //check for new bundle to be created
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleIdCluster1,
-            nominalTimesCluster1, processBundle.getProcessData(), true, false);
+            nominalTimesCluster1, processBundle.getProcess(), true, false);
         OozieUtil.verifyNewBundleCreation(cluster3OC, oldBundleIdCluster3,
-            nominalTimesCluster3, processBundle.getProcessData(), true, false);
+            nominalTimesCluster3, processBundle.getProcess(), true, false);
         OozieUtil.verifyNewBundleCreation(cluster2OC, oldBundleIdCluster2,
-            nominalTimesCluster3, processBundle.getProcessData(), true, false);
+            nominalTimesCluster3, processBundle.getProcess(), true, false);
 
         //wait till new coord are running on cluster1
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 1);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 1);
         OozieUtil.verifyNewBundleCreation(cluster1OC, oldBundleIdCluster1,
-            nominalTimesCluster1, processBundle.getProcessData(), true, true);
+            nominalTimesCluster1, processBundle.getProcess(), true, true);
 
         //verify
         String coordStartTimeCluster3 = OozieUtil.getCoordStartTime(cluster3OC,
-            processBundle.getProcessData(), 1);
+            processBundle.getProcess(), 1);
         String coordStartTimeCluster2 = OozieUtil.getCoordStartTime(cluster2OC,
-            processBundle.getProcessData(), 1);
+            processBundle.getProcess(), 1);
 
         DateTime updateTimeOozie = TimeUtil.oozieDateToDate(updateTime);
         Assert.assertTrue(TimeUtil.oozieDateToDate(coordStartTimeCluster3).isAfter(updateTimeOozie)
@@ -545,28 +542,26 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
             TimeUtil.oozieDateToDate(coordStartTimeCluster2).isEqual(updateTimeOozie),
             "new coord start time is not correct");
         TimeUtil.sleepTill(updateTime);
-        InstanceUtil.waitTillInstancesAreCreated(cluster3OC, processBundle.getProcessData(), 1);
+        InstanceUtil.waitTillInstancesAreCreated(cluster3OC, processBundle.getProcess(), 1);
 
         //verify that no instance are missing
         OozieUtil.verifyNewBundleCreation(cluster3OC, oldBundleIdCluster3,
-            nominalTimesCluster3, processBundle.getProcessData(), true, true);
+            nominalTimesCluster3, processBundle.getProcess(), true, true);
     }
 
-    private String submitAndScheduleFeed(Bundle b)
+    private FeedMerlin submitAndScheduleFeed(Bundle b)
         throws JAXBException, IOException, URISyntaxException, AuthenticationException,
         InterruptedException {
-        String feed = b.getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
-        feed = FeedMerlin.fromString(feed)
-            .addFeedCluster(
-                new FeedMerlin.FeedClusterBuilder(Util.readEntityName(b.getClusters().get(0)))
-                    .withRetention("days(1000000)", ActionType.DELETE)
-                    .withValidity("2012-10-01T12:10Z", "2099-10-01T12:10Z")
-                    .withClusterType(ClusterType.SOURCE)
-                    .withPartition("")
-                    .withDataLocation("/someTestPath" + MINUTE_DATE_PATTERN)
-                    .build())
-            .toString();
+        FeedMerlin feed = b.getFeeds().get(0);
+        feed.clearFeedClusters();
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(b.getClusters().get(0).getName())
+                .withRetention("days(1000000)", ActionType.DELETE)
+                .withValidity("2012-10-01T12:10Z", "2099-10-01T12:10Z")
+                .withClusterType(ClusterType.SOURCE)
+                .withPartition("")
+                .withDataLocation("/someTestPath" + MINUTE_DATE_PATTERN)
+                .build());
         ServiceResponse r = prism.getClusterHelper().submitEntity(
             b.getClusters().get(0));
         AssertUtil.assertSucceeded(r);
@@ -575,37 +570,34 @@ public class UpdateAtSpecificTimeTest extends BaseTestClass {
         return feed;
     }
 
-    private String getMultiClusterFeed(String startTimeClusterSource, String startTimeClusterTarget)
+    private FeedMerlin getMultiClusterFeed(String startTimeClusterSource, String startTimeClusterTarget)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         String testDataDir = baseTestDir + "/replication";
 
         //create desired feed
-        String feed = bundles[0].getDataSets().get(0);
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
 
         //cluster1 is target, cluster2 is source and cluster3 is neutral
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.clearFeedClusters();
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTimeClusterSource, "2099-10-01T12:10Z")
-                .build())
-            .toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+                .build());
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTimeClusterTarget, "2099-10-01T12:25Z")
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(testDataDir + MINUTE_DATE_PATTERN)
-                .build())
-            .toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+                .build());
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("days(100000)", ActionType.DELETE)
                 .withValidity(startTimeClusterSource, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withDataLocation(testDataDir + MINUTE_DATE_PATTERN)
-                .build())
-            .toString();
+                .build());
 
         //submit clusters
         Bundle.submitCluster(bundles[0], bundles[1], bundles[2]);

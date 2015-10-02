@@ -91,7 +91,7 @@ public class ProcessInstanceDependencyTest extends BaseTestClass {
         bundles[0].setInputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1, CoordinatorAction.Status.SUCCEEDED,
                 EntityType.PROCESS, 5);
@@ -117,13 +117,10 @@ public class ProcessInstanceDependencyTest extends BaseTestClass {
         bundles[0].setOutputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].setProcessConcurrency(6);
 
-        ProcessMerlin process = bundles[0].getProcessObject();
-        process.getInputs().getInputs().get(0).setOptional(true);
-
-        bundles[0].setProcessData(process.toString());
+        bundles[0].getProcess().getInputs().getInputs().get(0).setOptional(true);
         bundles[0].submitFeedsScheduleProcess();
 
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 6, CoordinatorAction.Status.RUNNING,
                 EntityType.PROCESS, 5);
@@ -150,16 +147,16 @@ public class ProcessInstanceDependencyTest extends BaseTestClass {
         bundles[0].setInputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(5, TimeUnit.minutes);
         bundles[0].submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, processName, 1, CoordinatorAction.Status.RUNNING,
                 EntityType.PROCESS, 5);
 
-        ProcessMerlin process = new ProcessMerlin(bundles[0].getProcessObject().toString());
+        ProcessMerlin process = new ProcessMerlin(bundles[0].getProcess().toString());
         process.setName("Process-producer-1");
         LOGGER.info("process : " + process.toString());
 
-        prism.getProcessHelper().submitEntity(process.toString());
+        prism.getProcessHelper().submitEntity(process);
         InstanceDependencyResult r = prism.getProcessHelper()
                 .getInstanceDependencies(processName, "?instanceTime=" + instanceTime, null);
 

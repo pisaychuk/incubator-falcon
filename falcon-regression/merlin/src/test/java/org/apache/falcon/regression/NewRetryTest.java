@@ -97,8 +97,8 @@ public class NewRetryTest extends BaseTestClass {
 
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         feed.setFeedPathValue(latePath).insertLateFeedValue(new Frequency("minutes(8)"));
-        bundles[0].getDataSets().remove(bundles[0].getInputFeedFromBundle());
-        bundles[0].getDataSets().add(feed.toString());
+        bundles[0].getFeeds().remove(bundles[0].getInputFeedFromBundle());
+        bundles[0].getFeeds().add(feed);
         bundles[0].setOutputFeedLocationData(baseTestDir + "/output" + MINUTE_DATE_PATTERN);
         bundles[0].submitClusters(prism);
     }
@@ -111,7 +111,7 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = true)
     public void testRetryInProcessZeroAttemptUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
@@ -119,7 +119,7 @@ public class NewRetryTest extends BaseTestClass {
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -131,7 +131,7 @@ public class NewRetryTest extends BaseTestClass {
 
             //schedule process
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
 
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
@@ -140,7 +140,7 @@ public class NewRetryTest extends BaseTestClass {
             waitTillCertainPercentageOfProcessHasStarted(clusterOC, bundleId, 25);
 
 
-            int defaultRetries = bundles[0].getProcessObject().getRetry().getAttempts();
+            int defaultRetries = bundles[0].getProcess().getRetry().getAttempts();
 
             retry.setAttempts((0));
 
@@ -148,7 +148,7 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             prism.getProcessHelper()
-                .update((bundles[0].getProcessData()), bundles[0].getProcessData());
+                .update((bundles[0].getProcess()), bundles[0].getProcess());
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS);
 
@@ -164,14 +164,14 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = true)
     public void testRetryInProcessLowerAttemptUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
         bundles[0].setRetry(retry);
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -181,7 +181,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             //now wait till the process is over
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
 
@@ -201,7 +201,7 @@ public class NewRetryTest extends BaseTestClass {
 
             if ((retry.getAttempts() - 2) > 0) {
                 Assert.assertTrue(prism.getProcessHelper()
-                    .update((bundles[0].getProcessData()), bundles[0].getProcessData())
+                    .update((bundles[0].getProcess()), bundles[0].getProcess())
                     .getMessage().contains("updated successfully"),
                     "process was not updated successfully");
                 String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
@@ -211,7 +211,7 @@ public class NewRetryTest extends BaseTestClass {
 
                 //now to validate all failed instances to check if they were retried or not.
                 validateRetry(clusterOC, bundleId, retry.getAttempts() - 2);
-                if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                     checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
                 }
             }
@@ -222,14 +222,14 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessLowerManageableAttemptUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
         bundles[0].setRetry(retry);
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -239,7 +239,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
 
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
@@ -256,7 +256,7 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertTrue(prism.getProcessHelper()
-                    .update((bundles[0].getProcessData()), bundles[0].getProcessData())
+                    .update((bundles[0].getProcess()), bundles[0].getProcess())
                     .getMessage().contains("updated successfully"),
                 "process was not updated successfully");
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
@@ -266,7 +266,7 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId, retry.getAttempts() - 1);
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -275,14 +275,14 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessLowerBoundaryAttemptUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
         bundles[0].setRetry(retry);
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -291,7 +291,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
 
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
@@ -312,7 +312,7 @@ public class NewRetryTest extends BaseTestClass {
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertTrue(
                 prism.getProcessHelper()
-                    .update((bundles[0].getProcessData()), bundles[0].getProcessData())
+                    .update((bundles[0].getProcess()), bundles[0].getProcess())
                     .getMessage().contains("updated successfully"),
                 "process was not updated successfully");
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
@@ -322,7 +322,7 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId, 2);
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -331,14 +331,14 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
         bundles[0].setRetry(retry);
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -347,7 +347,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
@@ -360,7 +360,7 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertTrue(prism.getProcessHelper()
-                .update(bundles[0].getProcessName(),
+                .update(bundles[0].getProcess(),
                     null).getMessage()
                 .contains("updated successfully"), "process was not updated successfully");
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
@@ -370,7 +370,7 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId, 4);
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -380,14 +380,14 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessHigherDelayUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
         bundles[0].setRetry(retry);
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
         } else {
@@ -395,7 +395,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
@@ -408,8 +408,8 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertTrue(
-                prism.getProcessHelper().update(bundles[0].getProcessName(),
-                    bundles[0].getProcessData()).getMessage()
+                prism.getProcessHelper().update(bundles[0].getProcess(),
+                    bundles[0].getProcess()).getMessage()
                     .contains("updated successfully"), "process was not updated successfully");
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS);
@@ -418,8 +418,8 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -429,7 +429,7 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessLowerDelayUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
@@ -437,7 +437,7 @@ public class NewRetryTest extends BaseTestClass {
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -446,7 +446,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
@@ -460,8 +460,8 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertTrue(prism.getProcessHelper()
-                    .update(bundles[0].getProcessName(),
-                        bundles[0].getProcessData()).getMessage()
+                    .update(bundles[0].getProcess(),
+                        bundles[0].getProcess()).getMessage()
                     .contains("updated successfully"),
                 "process was not updated successfully");
             String newBundleId = OozieUtil
@@ -472,8 +472,8 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -483,7 +483,7 @@ public class NewRetryTest extends BaseTestClass {
     @Test(dataProvider = "DP", groups = {"0.2.2", "retry"}, enabled = false)
     public void testRetryInProcessZeroDelayUpdate(Retry retry) throws Exception {
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
@@ -491,7 +491,7 @@ public class NewRetryTest extends BaseTestClass {
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -500,7 +500,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
@@ -513,8 +513,8 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("going to update process at:" + DateTime.now(DateTimeZone.UTC));
             Assert.assertFalse(
-                prism.getProcessHelper().update(bundles[0].getProcessName()
-                    , bundles[0].getProcessData()).getMessage().contains("updated successfully"),
+                prism.getProcessHelper().update(bundles[0].getProcess()
+                    , bundles[0].getProcess()).getMessage().contains("updated successfully"),
                 "process was updated successfully!!!");
             String newBundleId = OozieUtil.getLatestBundleID(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS);
@@ -523,8 +523,8 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -536,14 +536,14 @@ public class NewRetryTest extends BaseTestClass {
 
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
         bundles[0].setProcessLatePolicy(null);
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -552,15 +552,15 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -574,7 +574,7 @@ public class NewRetryTest extends BaseTestClass {
 
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
@@ -582,7 +582,7 @@ public class NewRetryTest extends BaseTestClass {
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -591,7 +591,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
 
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
@@ -614,8 +614,8 @@ public class NewRetryTest extends BaseTestClass {
             }
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -628,7 +628,7 @@ public class NewRetryTest extends BaseTestClass {
 
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
@@ -636,7 +636,7 @@ public class NewRetryTest extends BaseTestClass {
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -645,7 +645,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(),
@@ -653,7 +653,7 @@ public class NewRetryTest extends BaseTestClass {
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
+                bundles[0].getProcess().getRetry().getAttempts());
 
             LOGGER.info("now firing user reruns:");
 
@@ -667,9 +667,9 @@ public class NewRetryTest extends BaseTestClass {
             AssertUtil.assertSucceeded(piResult);
 
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts() + 1);
+                bundles[0].getProcess().getRetry().getAttempts() + 1);
 
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -681,17 +681,17 @@ public class NewRetryTest extends BaseTestClass {
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         feed.setFeedPathValue(latePath);
         feed.insertLateFeedValue(new Frequency("minutes(10)"));
-        bundles[0].getDataSets().remove(bundles[0].getInputFeedFromBundle());
-        bundles[0].getDataSets().add(feed.toString());
+        bundles[0].getFeeds().remove(bundles[0].getInputFeedFromBundle());
+        bundles[0].getFeeds().add(feed);
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -700,7 +700,7 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
             List<DateTime> dates = null;
@@ -726,7 +726,7 @@ public class NewRetryTest extends BaseTestClass {
             LOGGER.info("now suspending the process altogether....");
 
             AssertUtil.assertSucceeded(
-                cluster.getProcessHelper().suspend(bundles[0].getProcessData()));
+                cluster.getProcessHelper().suspend(bundles[0].getProcess()));
 
             HashMap<String, Integer> initialMap = getFailureRetriesForEachWorkflow(
                 clusterOC, getDefaultOozieCoordinator(clusterOC, bundleId));
@@ -757,12 +757,12 @@ public class NewRetryTest extends BaseTestClass {
 
             LOGGER.info("now resuming the process...");
             AssertUtil.assertSucceeded(
-                cluster.getProcessHelper().resume(bundles[0].getProcessData()));
+                cluster.getProcessHelper().resume(bundles[0].getProcess()));
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+                bundles[0].getProcess().getRetry().getAttempts());
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -777,18 +777,18 @@ public class NewRetryTest extends BaseTestClass {
 
         feed.insertLateFeedValue(getFrequency(retry));
 
-        bundles[0].getDataSets().remove(bundles[0].getInputFeedFromBundle());
-        bundles[0].getDataSets().add(feed.toString());
+        bundles[0].getFeeds().remove(bundles[0].getInputFeedFromBundle());
+        bundles[0].getFeeds().add(feed);
 
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
 
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
@@ -800,7 +800,7 @@ public class NewRetryTest extends BaseTestClass {
                 Util.getHadoopDataFromDir(clusterFS, bundles[0].getInputFeedFromBundle(),
                     lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
             List<DateTime> dates = null;
@@ -824,13 +824,13 @@ public class NewRetryTest extends BaseTestClass {
 
             //now wait till the process is over
             for (int attempt = 0; attempt < 10 && !validateFailureRetries(
-                clusterOC, bundleId, bundles[0].getProcessObject().getRetry().getAttempts());
+                clusterOC, bundleId, bundles[0].getProcess().getRetry().getAttempts());
                  ++attempt) {
                 TimeUtil.sleepSeconds(10);
             }
             Assert.assertTrue(
                 validateFailureRetries(clusterOC, bundleId,
-                    bundles[0].getProcessObject().getRetry().getAttempts()),
+                    bundles[0].getProcess().getRetry().getAttempts()),
                 "Failure Retry validation failed");
 
             String insertionFolder =
@@ -840,9 +840,9 @@ public class NewRetryTest extends BaseTestClass {
                     OSUtil.concat(OSUtil.OOZIE_EXAMPLE_INPUT_DATA, "lateData"));
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                bundles[0].getProcessObject().getRetry().getAttempts());
+                bundles[0].getProcess().getRetry().getAttempts());
 
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }
@@ -855,19 +855,19 @@ public class NewRetryTest extends BaseTestClass {
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         feed.setFeedPathValue(latePath);
         feed.insertLateFeedValue(new Frequency("minutes(1)"));
-        bundles[0].getDataSets().remove(bundles[0].getInputFeedFromBundle());
-        bundles[0].getDataSets().add(feed.toString());
+        bundles[0].getFeeds().remove(bundles[0].getInputFeedFromBundle());
+        bundles[0].getFeeds().add(feed);
 
         bundles[0].setRetry(retry);
 
-        for (String data : bundles[0].getDataSets()) {
+        for (FeedMerlin data : bundles[0].getFeeds()) {
             AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(data));
         }
 
 
         //submit and schedule process
         ServiceResponse response =
-            prism.getProcessHelper().submitEntity(bundles[0].getProcessData());
+            prism.getProcessHelper().submitEntity(bundles[0].getProcess());
         if (retry.getAttempts() <= 0 || retry.getDelay().getFrequencyAsInt() <= 0) {
             AssertUtil.assertFailed(response);
         } else {
@@ -875,32 +875,32 @@ public class NewRetryTest extends BaseTestClass {
             HadoopUtil.deleteDirIfExists(lateDir, clusterFS);
             HadoopUtil.lateDataReplenish(clusterFS, 20, 0, lateDir);
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().schedule(bundles[0].getProcessData()));
+                prism.getProcessHelper().schedule(bundles[0].getProcess()));
             //now wait till the process is over
             String bundleId = OozieUtil.getBundles(clusterOC,
                 bundles[0].getProcessName(), EntityType.PROCESS).get(0);
 
             validateRetry(clusterOC, bundleId,
-                (bundles[0].getProcessObject().getRetry().getAttempts()) / 2);
+                (bundles[0].getProcess().getRetry().getAttempts()) / 2);
 
             AssertUtil.assertSucceeded(
-                prism.getProcessHelper().delete((bundles[0].getProcessData())));
+                prism.getProcessHelper().delete((bundles[0].getProcess())));
 
             if (retry.getPolicy() == PolicyType.EXP_BACKOFF) {
                 TimeUnit.MINUTES.sleep(retry.getDelay().getFrequencyAsInt() * ((retry.getAttempts()
-                    - (bundles[0].getProcessObject().getRetry().getAttempts()) / 2) ^ 2));
+                    - (bundles[0].getProcess().getRetry().getAttempts()) / 2) ^ 2));
             } else {
                 TimeUnit.MINUTES
                     .sleep(retry.getDelay().getFrequencyAsInt()
-                        * ((bundles[0].getProcessObject().getRetry().getAttempts())
-                        - (bundles[0].getProcessObject().getRetry().getAttempts()) / 2));
+                        * ((bundles[0].getProcess().getRetry().getAttempts())
+                        - (bundles[0].getProcess().getRetry().getAttempts()) / 2));
             }
 
             //now to validate all failed instances to check if they were retried or not.
             validateRetry(clusterOC, bundleId,
-                (bundles[0].getProcessObject().getRetry().getAttempts()) / 2);
+                (bundles[0].getProcess().getRetry().getAttempts()) / 2);
 
-            if (bundles[0].getProcessObject().getRetry().getAttempts() > 0) {
+            if (bundles[0].getProcess().getRetry().getAttempts() > 0) {
                 checkIfRetriesWereTriggeredCorrectly(cluster, retry, bundleId);
             }
         }

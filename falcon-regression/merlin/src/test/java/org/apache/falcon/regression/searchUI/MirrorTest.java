@@ -157,7 +157,7 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.save();
 
         AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
-            createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
+            createFakeProcessForRecipe(bundles[0].getProcess(), recipeMerlin).getName()));
     }
 
     /**
@@ -177,7 +177,7 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.next();
         mirrorPage.save();
         AssertUtil.assertSucceeded(prism.getProcessHelper().getStatus(
-            createFakeProcessForRecipe(bundles[0].getProcessObject(), recipeMerlin)));
+            createFakeProcessForRecipe(bundles[0].getProcess(), recipeMerlin).getName()));
     }
 
     @DataProvider
@@ -200,9 +200,9 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.applyRecipe(recipeMerlin, false);
         mirrorPage.next();
         mirrorPage.save();
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         process.setName(recipeMerlin.getName());
-        process = new ProcessMerlin(cluster.getProcessHelper().getEntityDefinition(process.toString()).getMessage());
+        process = new ProcessMerlin(cluster.getProcessHelper().getEntityDefinition(process.getName()).getMessage());
         String drNotificationReceivers = process.getProperty("drNotificationReceivers");
         Assert.assertTrue(drNotificationReceivers != null && drNotificationReceivers.equals("NA"),
             "Default value for drNotificationReceivers should be NA.");
@@ -230,9 +230,9 @@ public class MirrorTest extends BaseUITestClass {
         mirrorPage.applyRecipe(recipeMerlin, false);
         mirrorPage.next();
         mirrorPage.save();
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         process.setName(recipeMerlin.getName());
-        process = new ProcessMerlin(cluster.getProcessHelper().getEntityDefinition(process.toString()).getMessage());
+        process = new ProcessMerlin(cluster.getProcessHelper().getEntityDefinition(process.getName()).getMessage());
 
         // check that that Hive DR UI doesn't picks thrift server end point in place of Hive server2 end point
         String expectedUri = recipeMerlin.getTgtCluster().getInterfaceEndpoint(Interfacetype.REGISTRY)
@@ -405,9 +405,9 @@ public class MirrorTest extends BaseUITestClass {
      * @param recipe recipe object that need to be faked
      * @return
      */
-    private String createFakeProcessForRecipe(ProcessMerlin processMerlin, RecipeMerlin recipe) {
+    private ProcessMerlin createFakeProcessForRecipe(ProcessMerlin processMerlin, RecipeMerlin recipe) {
         processMerlin.setName(recipe.getName());
-        return processMerlin.toString();
+        return processMerlin;
     }
 
 

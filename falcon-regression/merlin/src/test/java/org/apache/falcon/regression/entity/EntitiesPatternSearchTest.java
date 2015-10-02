@@ -72,7 +72,7 @@ public class EntitiesPatternSearchTest extends BaseTestClass {
 
         //submit different clusters, feeds and processes
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         ClusterMerlin cluster = bundles[0].getClusterElement();
         String clusterNamePrefix = bundles[0].getClusterElement().getName() + '-';
         String processNamePrefix = bundles[0].getProcessName() + '-';
@@ -80,13 +80,13 @@ public class EntitiesPatternSearchTest extends BaseTestClass {
         List randomNames = getPatternName();
         for (Object randomName : randomNames) {
             process.setName(processNamePrefix + randomName);
-            AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+            AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
 
             feed.setName(feedNamePrefix + randomName);
-            AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
             cluster.setName(clusterNamePrefix + randomName);
-            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(cluster.toString()));
+            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(cluster));
         }
     }
 

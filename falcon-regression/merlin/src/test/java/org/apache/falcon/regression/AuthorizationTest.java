@@ -19,12 +19,12 @@
 package org.apache.falcon.regression;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
-import org.apache.falcon.entity.v0.EntityType;
-import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
 import org.apache.falcon.regression.core.util.AssertUtil;
@@ -34,11 +34,11 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
+import org.apache.log4j.Logger;
 import org.apache.oozie.client.BundleJob;
 import org.apache.oozie.client.CoordinatorAction;
 import org.apache.oozie.client.CoordinatorJob;
@@ -50,7 +50,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.apache.log4j.Logger;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
@@ -93,7 +92,7 @@ public class AuthorizationTest extends BaseTestClass {
     public void u1SubmitU2DeleteCluster() throws Exception {
         bundles[0].submitClusters(prism);
         final ServiceResponse serviceResponse = prism.getClusterHelper().delete(
-            bundles[0].getClusters().get(0), MerlinConstants.USER2_NAME);
+            bundles[0].getClusters().get(0).getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Entity submitted by first user should not be deletable by second user");
     }
@@ -105,7 +104,7 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitProcess(true);
         final ServiceResponse serviceResponse = prism.getProcessHelper().delete(
-            bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            bundles[0].getProcess().getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Entity submitted by first user should not be deletable by second user");
     }
@@ -117,7 +116,7 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeed();
         final ServiceResponse serviceResponse = prism.getFeedHelper().delete(
-            bundles[0].getDataSets().get(0), MerlinConstants.USER2_NAME);
+            bundles[0].getFeeds().get(0).getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Entity submitted by first user should not be deletable by second user");
     }
@@ -129,11 +128,10 @@ public class AuthorizationTest extends BaseTestClass {
         throws Exception {
         //submit, schedule process by U1
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
         //try to delete process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper()
-            .delete(bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            .delete(bundles[0].getProcess().getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process scheduled by first user should not be deleted by second user");
     }
@@ -142,13 +140,14 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1ScheduleU2DeleteFeed() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         //submit, schedule feed by U1
         bundles[0].submitClusters(prism);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
         //delete feed by U2
-        final ServiceResponse serviceResponse = prism.getFeedHelper().delete(feed, MerlinConstants.USER2_NAME);
+        final ServiceResponse serviceResponse =
+            prism.getFeedHelper().delete(feed.getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Feed scheduled by first user should not be deleted by second user");
     }
@@ -159,14 +158,12 @@ public class AuthorizationTest extends BaseTestClass {
     public void u1SuspendU2DeleteProcess() throws Exception {
         //submit, schedule, suspend process by U1
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.RUNNING);
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess()));
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.SUSPENDED);
         //try to delete process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper()
-            .delete(bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            .delete(bundles[0].getProcess().getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process suspended by first user should not be deleted by second user");
     }
@@ -175,15 +172,15 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1SuspendU2DeleteFeed() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         //submit, schedule, suspend feed by U1
         bundles[0].submitClusters(prism);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
         //delete feed by U2
         final ServiceResponse serviceResponse = prism.getFeedHelper()
-            .delete(feed, MerlinConstants.USER2_NAME);
+            .delete(feed.getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Feed scheduled by first user should not be deleted by second user");
     }
@@ -195,14 +192,14 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1ScheduleU2SuspendFeed() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         //submit, schedule by U1
         bundles[0].submitClusters(prism);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
         //try to suspend by U2
         final ServiceResponse serviceResponse = prism.getFeedHelper()
-            .suspend(feed, MerlinConstants.USER2_NAME);
+            .suspend(feed.getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Feed scheduled by first user should not be suspended by second user");
     }
@@ -212,11 +209,10 @@ public class AuthorizationTest extends BaseTestClass {
     @Test(enabled = false)
     public void u1ScheduleU2SuspendProcess() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
         //try to suspend process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper()
-            .suspend(bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            .suspend(bundles[0].getProcess().getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process scheduled by first user should not be suspended by second user");
     }
@@ -228,15 +224,15 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1SuspendU2ResumeFeed() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         //submit, schedule and then suspend feed by User1
         bundles[0].submitClusters(prism);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
         //try to resume feed by User2
         final ServiceResponse serviceResponse = prism.getFeedHelper()
-            .resume(feed, MerlinConstants.USER2_NAME);
+            .resume(feed.getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Feed suspended by first user should not be resumed by second user");
     }
@@ -247,12 +243,11 @@ public class AuthorizationTest extends BaseTestClass {
     public void u1SuspendU2ResumeProcess() throws Exception {
         //submit, schedule, suspend process by U1
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcessData()));
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.SUSPENDED);
+        AssertUtil.assertSucceeded(prism.getProcessHelper().suspend(bundles[0].getProcess()));
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.SUSPENDED);
         //try to resume process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper()
-            .resume(bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            .resume(bundles[0].getProcess().getName(), MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process suspended by first user should not be resumed by second user");
     }
@@ -283,7 +278,7 @@ public class AuthorizationTest extends BaseTestClass {
         HadoopUtil.flattenAndPutDataInFolder(clusterFS, OSUtil.NORMAL_INPUT, prefix, dataDates);
 
         //submit, schedule process by U1
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
 
         //check that there are 3 running instances
@@ -345,7 +340,7 @@ public class AuthorizationTest extends BaseTestClass {
         HadoopUtil.flattenAndPutDataInFolder(clusterFS, OSUtil.NORMAL_INPUT, prefix, dataDates);
 
         //submit, schedule process by U1
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
 
         //check that there are 3 running instances
@@ -391,7 +386,7 @@ public class AuthorizationTest extends BaseTestClass {
         HadoopUtil.flattenAndPutDataInFolder(clusterFS, OSUtil.NORMAL_INPUT, prefix, dataDates);
 
         //submit, schedule process by U1
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
 
         //check that there are 3 running instances
@@ -452,7 +447,7 @@ public class AuthorizationTest extends BaseTestClass {
         HadoopUtil.flattenAndPutDataInFolder(clusterFS, OSUtil.NORMAL_INPUT, prefix, dataDates);
 
         //submit, schedule process by U1
-        LOGGER.info("Process data: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("Process data: " + bundles[0].getProcess().toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
 
         //check that there are 4 running instances
@@ -491,8 +486,8 @@ public class AuthorizationTest extends BaseTestClass {
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         //submit feed
         bundles[0].submitClusters(prism);
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed.toString()));
-        String definition = prism.getFeedHelper().getEntityDefinition(feed.toString()).getMessage();
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed));
+        String definition = prism.getFeedHelper().getEntityDefinition(feed.getName()).getMessage();
         Assert.assertTrue(definition.contains(feed.getName()) && !definition.contains("(feed) not found"),
             "Feed should be already submitted");
         //update feed definition
@@ -512,8 +507,8 @@ public class AuthorizationTest extends BaseTestClass {
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         //submit and schedule feed
         bundles[0].submitClusters(prism);
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed.toString(), Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
         //update feed definition
         FeedMerlin newFeed = new FeedMerlin(feed);
         newFeed.setFeedPathValue(baseTestDir + "/randomPath" + MINUTE_DATE_PATTERN);
@@ -533,7 +528,7 @@ public class AuthorizationTest extends BaseTestClass {
         //submit process
         bundles[0].submitBundle(prism);
         String definition = prism.getProcessHelper()
-            .getEntityDefinition(bundles[0].getProcessData()).getMessage();
+            .getEntityDefinition(bundles[0].getProcess().getName()).getMessage();
         Assert.assertTrue(definition.contains(processName)
                 &&
             !definition.contains("(process) not found"), "Process should be already submitted");
@@ -541,7 +536,7 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2020-01-02T01:04Z");
         //try to update process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper().update(bundles[0]
-                .getProcessData(), bundles[0].getProcessData(),
+                .getProcess().toString(), bundles[0].getProcess().toString(),
             MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process submitted by first user should not be updated by second user");
@@ -554,13 +549,12 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2010-01-02T01:04Z");
         //submit, schedule process by U1
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(),
-            Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
         //update process definition
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2020-01-02T01:04Z");
         //try to update process by U2
         final ServiceResponse serviceResponse = prism.getProcessHelper().update(bundles[0]
-                .getProcessData(), bundles[0].getProcessData(),
+                .getProcess().toString(), bundles[0].getProcess().toString(),
             MerlinConstants.USER2_NAME);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process scheduled by first user should not be updated by second user");
@@ -576,14 +570,14 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         //schedule input feed by U1
-        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.toString()));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed.toString(), Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.getName()));
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
 
         //by U2 schedule process dependant on scheduled feed by U1
         ServiceResponse serviceResponse = prism.getProcessHelper()
-            .submitAndSchedule(bundles[0].getProcessData(), MerlinConstants.USER2_NAME);
+            .submitAndSchedule(bundles[0].getProcess(), MerlinConstants.USER2_NAME);
         AssertUtil.assertSucceeded(serviceResponse);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(), Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
 
         //get old process details
         String oldProcessBundleId = OozieUtil
@@ -604,13 +598,13 @@ public class AuthorizationTest extends BaseTestClass {
         AssertUtil.assertSucceeded(serviceResponse);
 
         //new feed bundle should be created by U1
-        OozieUtil.verifyNewBundleCreation(clusterOC, oldFeedBundleId, null, newFeed.toString(), true, false);
+        OozieUtil.verifyNewBundleCreation(clusterOC, oldFeedBundleId, null, newFeed, true, false);
         String newFeedUser = getBundleUser(clusterOC, newFeed.getName(), EntityType.FEED);
         Assert.assertEquals(oldFeedUser, newFeedUser, "User should be the same");
 
         //new process bundle should be created by U2
         OozieUtil.verifyNewBundleCreation(
-            clusterOC, oldProcessBundleId, null, bundles[0].getProcessData(), true, false);
+            clusterOC, oldProcessBundleId, null, bundles[0].getProcess(), true, false);
         String newProcessUser =
             getBundleUser(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertEquals(oldProcessUser, newProcessUser, "User should be the same");
@@ -626,14 +620,14 @@ public class AuthorizationTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         //schedule input feed by U1
-        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.toString()));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed.toString(), Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.getName()));
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
 
         //by U2 schedule process dependent on scheduled feed by U1
-        ServiceResponse serviceResponse = prism.getProcessHelper().submitAndSchedule(bundles[0].getProcessData(),
-                MerlinConstants.USER2_NAME);
+        ServiceResponse serviceResponse = prism.getProcessHelper().submitAndSchedule(
+            bundles[0].getProcess(), MerlinConstants.USER2_NAME);
         AssertUtil.assertSucceeded(serviceResponse);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(), Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
 
         //update feed definition
         FeedMerlin newFeed = new FeedMerlin(feed);
@@ -654,14 +648,14 @@ public class AuthorizationTest extends BaseTestClass {
         AssertUtil.assertSucceeded(serviceResponse);
 
         //new feed bundle should be created by U2
-        OozieUtil.verifyNewBundleCreation(clusterOC, oldFeedBundleId, null, newFeed.toString(), true, false);
+        OozieUtil.verifyNewBundleCreation(clusterOC, oldFeedBundleId, null, newFeed, true, false);
         String newFeedUser = getBundleUser(clusterOC, newFeed.getName(), EntityType.FEED);
         Assert.assertNotEquals(oldFeedUser, newFeedUser, "User should not be the same");
         Assert.assertEquals(MerlinConstants.USER2_NAME, newFeedUser);
 
         //new process bundle should be created by U2
         OozieUtil.verifyNewBundleCreation(
-            clusterOC, oldProcessBundleId, null, bundles[0].getProcessData(), true, false);
+            clusterOC, oldProcessBundleId, null, bundles[0].getProcess(), true, false);
         String newProcessUser = getBundleUser(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
         Assert.assertEquals(oldProcessUser, newProcessUser, "User should be the same");
     }
@@ -670,19 +664,20 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1ScheduleFeedU1ScheduleDependantProcessU1UpdateProcess() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2099-01-02T01:00Z");
         //submit both feeds
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         //schedule input feed by U1
-        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.getName()));
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
 
         //by U1 schedule process dependent on scheduled feed by U1
-        ServiceResponse serviceResponse = prism.getProcessHelper().submitAndSchedule(bundles[0].getProcessData());
+        ServiceResponse serviceResponse =
+            prism.getProcessHelper().submitAndSchedule(bundles[0].getProcess());
         AssertUtil.assertSucceeded(serviceResponse);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(), Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
 
         //get old process details
         String oldProcessBundleId = OozieUtil
@@ -690,11 +685,11 @@ public class AuthorizationTest extends BaseTestClass {
         String oldProcessUser = getBundleUser(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
 
         //get old feed details
-        String oldFeedBundleId = OozieUtil.getLatestBundleID(clusterOC, Util.readEntityName(feed), EntityType.FEED);
+        String oldFeedBundleId = OozieUtil.getLatestBundleID(clusterOC, feed.getName(), EntityType.FEED);
 
         //update process by U1
-        ProcessMerlin processObj = bundles[0].getProcessObject().withProperty("randomProp", "randomVal");
-        serviceResponse = prism.getProcessHelper().update(bundles[0].getProcessData(), processObj.toString());
+        ProcessMerlin processObj = bundles[0].getProcess().withProperty("randomProp", "randomVal");
+        serviceResponse = prism.getProcessHelper().update(bundles[0].getProcess(), processObj);
         AssertUtil.assertSucceeded(serviceResponse);
 
         //new feed bundle should not be created
@@ -702,7 +697,7 @@ public class AuthorizationTest extends BaseTestClass {
 
         //new process bundle should be created by U1
         OozieUtil.verifyNewBundleCreation(
-            clusterOC, oldProcessBundleId, null, bundles[0].getProcessData(), true, false);
+            clusterOC, oldProcessBundleId, null, bundles[0].getProcess(), true, false);
         String newProcessUser = getBundleUser(clusterOC, processObj.getName(), EntityType.PROCESS);
         Assert.assertEquals(oldProcessUser, newProcessUser, "User should be the same");
     }
@@ -711,19 +706,20 @@ public class AuthorizationTest extends BaseTestClass {
     // .org/jira/browse/FALCON-388
     @Test(enabled = false)
     public void u1ScheduleFeedU1ScheduleDependantProcessU2UpdateProcess() throws Exception {
-        String feed = bundles[0].getInputFeedFromBundle();
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
         bundles[0].setProcessValidity("2010-01-02T01:00Z", "2099-01-02T01:00Z");
         //submit both feeds
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         //schedule input feed by U1
-        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed.getName()));
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.RUNNING);
 
         //by U1 schedule process dependent on scheduled feed by U1
-        ServiceResponse serviceResponse = prism.getProcessHelper().submitAndSchedule(bundles[0].getProcessData());
+        ServiceResponse serviceResponse =
+            prism.getProcessHelper().submitAndSchedule(bundles[0].getProcess());
         AssertUtil.assertSucceeded(serviceResponse);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, bundles[0].getProcessData(), Job.Status.RUNNING);
+        AssertUtil.checkStatus(clusterOC, bundles[0].getProcess(), Job.Status.RUNNING);
 
         //get old process details
         String oldProcessBundleId = OozieUtil
@@ -731,11 +727,11 @@ public class AuthorizationTest extends BaseTestClass {
         String oldProcessUser = getBundleUser(clusterOC, bundles[0].getProcessName(), EntityType.PROCESS);
 
         //get old feed details
-        String oldFeedBundleId = OozieUtil.getLatestBundleID(clusterOC, Util.readEntityName(feed), EntityType.FEED);
+        String oldFeedBundleId = OozieUtil.getLatestBundleID(clusterOC, feed.getName(), EntityType.FEED);
 
         //update process by U2
-        ProcessMerlin processObj = bundles[0].getProcessObject().withProperty("randomProp", "randomVal");
-        serviceResponse = prism.getProcessHelper().update(bundles[0].getProcessData(), processObj.toString(),
+        ProcessMerlin processObj = bundles[0].getProcess().withProperty("randomProp", "randomVal");
+        serviceResponse = prism.getProcessHelper().update(bundles[0].getProcess().toString(), processObj.toString(),
             MerlinConstants.USER2_NAME);
         AssertUtil.assertSucceeded(serviceResponse);
 
@@ -744,7 +740,7 @@ public class AuthorizationTest extends BaseTestClass {
 
         //new process bundle should be created by U2
         OozieUtil.verifyNewBundleCreation(
-            clusterOC, oldProcessBundleId, null, bundles[0].getProcessData(), true, false);
+            clusterOC, oldProcessBundleId, null, bundles[0].getProcess(), true, false);
         String newProcessUser = getBundleUser(clusterOC, processObj.getName(), EntityType.PROCESS);
         Assert.assertNotEquals(oldProcessUser, newProcessUser, "User should not be the same");
         Assert.assertEquals(MerlinConstants.USER2_NAME, newProcessUser);

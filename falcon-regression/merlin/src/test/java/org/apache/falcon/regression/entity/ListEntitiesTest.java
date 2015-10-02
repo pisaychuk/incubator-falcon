@@ -82,7 +82,7 @@ public class ListEntitiesTest extends BaseTestClass {
 
         //submit 10 different clusters, feeds and processes
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         ClusterMerlin cluster = bundles[0].getClusterElement();
         String clusterNamePrefix = bundles[0].getClusterElement().getName() + '-';
         String processNamePrefix = bundles[0].getProcessName() + '-';
@@ -91,22 +91,22 @@ public class ListEntitiesTest extends BaseTestClass {
             process.setName(processNamePrefix + i);
             process.setTags(getRandomTags());
             if (i % 2 == 0) {
-                AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process.toString()));
+                AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process));
             } else {
-                AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process.toString()));
+                AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(process));
             }
 
             feed.setName(feedNamePrefix + i);
             feed.setTags(getRandomTags());
             if (i % 2 == 0) {
-                AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed.toString()));
+                AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed));
             } else {
-                AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed.toString()));
+                AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
             }
 
             cluster.setName(clusterNamePrefix + i);
             cluster.setTags(getRandomTags());
-            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(cluster.toString()));
+            AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(cluster));
         }
     }
 

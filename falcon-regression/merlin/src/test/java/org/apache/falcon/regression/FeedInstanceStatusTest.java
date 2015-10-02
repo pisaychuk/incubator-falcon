@@ -18,17 +18,16 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.hadoop.fs.FileSystem;
@@ -94,42 +93,38 @@ public class FeedInstanceStatusTest extends BaseTestClass {
         AssertUtil.assertSucceeded(prism.getClusterHelper()
             .submitEntity(bundles[2].getClusters().get(0)));
 
-        String feed = bundles[0].getDataSets().get(0);
-        String feedName = Util.readEntityName(feed);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        String feedName = feed.getName();
+        feed.clearFeedClusters();
         String startTime = TimeUtil.getTimeWrtSystemTime(-50);
         final String startPlus20Min = TimeUtil.addMinsToTime(startTime, 20);
         final String startPlus40Min = TimeUtil.addMinsToTime(startTime, 40);
         final String startPlus100Min = TimeUtil.addMinsToTime(startTime, 100);
 
-        feed = FeedMerlin.fromString(feed)
-            .addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
+                bundles[1].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, TimeUtil.addMinsToTime(startTime, 65))
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("US/${cluster.colo}")
-                .build())
-            .toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+                .build());
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startPlus20Min,
                     TimeUtil.addMinsToTime(startTime, 85))
                 .withClusterType(ClusterType.TARGET)
-                .build())
-            .toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+                .build());
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startPlus40Min,
                     TimeUtil.addMinsToTime(startTime, 110))
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("UK/${cluster.colo}")
-                .build())
-            .toString();
+                .build());
 
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         //status before submit
         prism.getFeedHelper().getProcessInstanceStatus(feedName, "?start=" + startPlus100Min

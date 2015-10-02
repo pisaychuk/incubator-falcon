@@ -24,6 +24,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jcraft.jsch.JSchException;
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.feed.LocationType;
 import org.apache.falcon.regression.Entities.ClusterMerlin;
@@ -168,20 +169,6 @@ public final class Util {
     }
 
     /**
-     * @param data entity definition
-     * @return entity name
-     */
-    public static String readEntityName(String data) {
-        if (data.contains("uri:falcon:feed")) {
-            return new FeedMerlin(data).getName();
-        } else if (data.contains("uri:falcon:process")) {
-            return new ProcessMerlin(data).getName();
-        } else {
-            return new ClusterMerlin(data).getName();
-        }
-    }
-
-    /**
      * Retrieves all hadoop data directories from a specific data path.
      * @param fs filesystem
      * @param feed feed definition
@@ -189,10 +176,10 @@ public final class Util {
      * @return all
      * @throws IOException
      */
-    public static List<String> getHadoopDataFromDir(FileSystem fs, String feed, String dir)
+    public static List<String> getHadoopDataFromDir(FileSystem fs, FeedMerlin feed, String dir)
         throws IOException {
         List<String> finalResult = new ArrayList<>();
-        String feedPath = new FeedMerlin(feed).getFeedPath(LocationType.DATA);
+        String feedPath = feed.getFeedPath(LocationType.DATA);
         int depth = feedPath.split(dir)[1].split("/").length - 1;
         List<Path> results = HadoopUtil.getAllDirsRecursivelyHDFS(fs, new Path(dir), depth);
         for (Path result : results) {
@@ -342,12 +329,12 @@ public final class Util {
      * @param entity entity which is under analysis
      * @return entity type
      */
-    public static EntityType getEntityType(String entity) {
-        if (entity.contains("uri:falcon:process:0.1")) {
+    public static EntityType getEntityType(Entity entity) {
+        if (entity instanceof ProcessMerlin) {
             return EntityType.PROCESS;
-        } else if (entity.contains("uri:falcon:cluster:0.1")) {
+        } else if (entity instanceof ClusterMerlin) {
             return EntityType.CLUSTER;
-        } else if (entity.contains("uri:falcon:feed:0.1")) {
+        } else if (entity instanceof FeedMerlin) {
             return EntityType.FEED;
         }
         return null;
@@ -360,8 +347,7 @@ public final class Util {
      * @param entity entity which is under analysis
      * @return are definitions identical
      */
-    public static boolean isDefinitionSame(ColoHelper server1, ColoHelper server2,
-                                           String entity)
+    public static boolean isDefinitionSame(ColoHelper server1, ColoHelper server2, Entity entity)
         throws URISyntaxException, IOException, AuthenticationException, JAXBException,
         SAXException, InterruptedException {
         return XmlUtil.isIdentical(getEntityDefinition(server1, entity, true),
@@ -486,6 +472,15 @@ public final class Util {
     }
 
     /**
+     * Prints entity in readable form.
+     * @param entity entity definition
+     * @return formatted xmlString
+     */
+    public static String prettyPrintXml(final Entity entity) {
+        return prettyPrintXml(entity.toString());
+    }
+
+    /**
      * Converts json string to readable form.
      * @param jsonString json string
      * @return formatted string
@@ -528,7 +523,7 @@ public final class Util {
      * @return entity definition
      */
     public static String getEntityDefinition(ColoHelper cluster,
-                                             String entity,
+                                             Entity entity,
                                              boolean shouldReturn) throws
             JAXBException,
             IOException, URISyntaxException, AuthenticationException, InterruptedException {

@@ -76,12 +76,12 @@ public class EntitiesTableTest extends BaseUITestClass {
         bundles[0].submitClusters(prism);
         bundles[0].submitFeeds(prism);
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         baseProcessName = process.getName();
         for (int i = 1; i <= tags.length; i++) {
             process.setName(baseProcessName + '-' + i);
             process.setTags(StringUtils.join(Arrays.copyOfRange(tags, 0, i), ','));
-            AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process.toString()));
+            AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process));
         }
 
     }

@@ -25,6 +25,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.ResponseErrors;
@@ -691,12 +692,10 @@ public final class InstanceUtil {
      * @param bundleSeqNo bundle number if update has happened.
      * @throws OozieClientException
      */
-    public static void waitTillInstancesAreCreated(OozieClient oozieClient, String entity, int bundleSeqNo,
+    public static void waitTillInstancesAreCreated(OozieClient oozieClient, Entity entity, int bundleSeqNo,
             int totalMinutesToWait) throws OozieClientException {
-        String entityName = Util.readEntityName(entity);
         EntityType type = Util.getEntityType(entity);
-        String bundleID = OozieUtil.getSequenceBundleID(oozieClient, entityName,
-            type, bundleSeqNo);
+        String bundleID = OozieUtil.getSequenceBundleID(oozieClient, entity.getName(), type, bundleSeqNo);
         String coordID = OozieUtil.getDefaultCoordIDFromBundle(oozieClient, bundleID);
         for (int sleepCount = 0; sleepCount < totalMinutesToWait; sleepCount++) {
             CoordinatorJob coordInfo = oozieClient.getCoordJobInfo(coordID);
@@ -719,7 +718,7 @@ public final class InstanceUtil {
      * @param bundleSeqNo bundle number if update has happened.
      * @throws OozieClientException
      */
-    public static void waitTillInstancesAreCreated(OozieClient oozieClient, String entity, int bundleSeqNo
+    public static void waitTillInstancesAreCreated(OozieClient oozieClient, Entity entity, int bundleSeqNo
     ) throws OozieClientException {
         int sleep = INSTANCES_CREATED_TIMEOUT * 60 / 5;
         waitTillInstancesAreCreated(oozieClient, entity, bundleSeqNo, sleep);

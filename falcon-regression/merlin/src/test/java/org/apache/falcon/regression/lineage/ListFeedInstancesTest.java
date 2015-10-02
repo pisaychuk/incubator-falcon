@@ -21,6 +21,7 @@ import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -31,7 +32,6 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
@@ -95,27 +95,27 @@ public class ListFeedInstancesTest extends BaseTestClass {
             JAXBException, OozieClientException, InterruptedException {
         bundles[0].setInputFeedPeriodicity(5, Frequency.TimeUnit.minutes);
         bundles[0].setInputFeedDataPath(feedDataLocation);
-        String feed = bundles[0].getInputFeedFromBundle();
-        feedName = Util.readEntityName(feed);
-        String cluster1Def = bundles[0].getClusters().get(0);
-        String cluster2Def = bundles[1].getClusters().get(0);
+        FeedMerlin feed = bundles[0].getInputFeedFromBundle();
+        feedName = feed.getName();
+        ClusterMerlin cluster1Def = bundles[0].getClusters().get(0);
+        ClusterMerlin cluster2Def = bundles[1].getClusters().get(0);
         //erase all clusters from feed definition
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        feed.clearFeedClusters();
         //set cluster1 as source
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(cluster1Def))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(cluster1Def.getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.SOURCE)
-                .build()).toString();
+                .build());
         //set cluster2 as target
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(cluster2Def))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(cluster2Def.getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(targetDataLocation)
-                .build()).toString();
+                .build());
 
         //submit clusters
         AssertUtil.assertSucceeded(prism.getClusterHelper().submitEntity(cluster1Def));
@@ -141,7 +141,7 @@ public class ListFeedInstancesTest extends BaseTestClass {
                 .getMissingDependencies().split("#")));
             //only running instance can be killed, so we should make it running and then kill it
             InstanceUtil.waitTillInstanceReachState(cluster2OC, feedName, 1,
-                CoordinatorAction.Status.RUNNING, EntityType.FEED, 3);
+                CoordinatorAction.Status.RUNNING, EntityType.FEED);
             range = "?start=" + TimeUtil.addMinsToTime(startTime, i * 5 - 1)
                 + "&end=" + TimeUtil.addMinsToTime(startTime, i * 5 + 1);
             r = prism.getFeedHelper().getProcessInstanceKill(feedName, range);

@@ -18,11 +18,11 @@
 
 package org.apache.falcon.regression.security;
 
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.regression.core.helpers.entity.AbstractEntityHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.CleanupUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.log4j.Logger;
 
@@ -37,10 +37,10 @@ import java.util.List;
 enum EntityOp {
     status() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.getStatus(data, user);
+                response = helper.getStatus(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -59,10 +59,10 @@ enum EntityOp {
     },
     dependency() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.getEntityDependencies(data, user);
+                response = helper.getEntityDependencies(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -81,8 +81,8 @@ enum EntityOp {
     },
     listing() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
-            final String entityName = Util.readEntityName(data);
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
+            final String entityName = entity.getName();
             final List<String> entities;
             entities = CleanupUtil.getAllEntitiesOfOneType(helper, user);
             if (entities == null) {
@@ -94,10 +94,10 @@ enum EntityOp {
     },
     definition() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.getEntityDefinition(data, user);
+                response = helper.getEntityDefinition(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -116,10 +116,10 @@ enum EntityOp {
     },
     delete() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.delete(data, user);
+                response = helper.delete(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -138,10 +138,10 @@ enum EntityOp {
     },
     update() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.update(data, data, user);
+                response = helper.update(entity.toString(), entity.toString(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -160,10 +160,10 @@ enum EntityOp {
     },
     schedule() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.schedule(data, user);
+                response = helper.schedule(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -182,10 +182,10 @@ enum EntityOp {
     },
     submit() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.submitEntity(data, user);
+                response = helper.submitEntity(entity.toString(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -204,10 +204,10 @@ enum EntityOp {
     },
     submitAndSchedule() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.submitAndSchedule(data, user);
+                response = helper.submitAndSchedule(entity, user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -226,10 +226,10 @@ enum EntityOp {
     },
     suspend() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.suspend(data, user);
+                response = helper.suspend(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -248,10 +248,10 @@ enum EntityOp {
     },
     resume() {
         @Override
-        public boolean executeAs(String user, AbstractEntityHelper helper, String data) {
+        public boolean executeAs(String user, AbstractEntityHelper helper, Entity entity) {
             final ServiceResponse response;
             try {
-                response = helper.resume(data, user);
+                response = helper.resume(entity.getName(), user);
             } catch (IOException e) {
                 logger.error("Caught exception: " + e);
                 return false;
@@ -270,5 +270,5 @@ enum EntityOp {
     };
 
     private static Logger logger = Logger.getLogger(EntityOp.class);
-    public abstract boolean executeAs(String user, AbstractEntityHelper helper, String data);
+    public abstract boolean executeAs(String user, AbstractEntityHelper helper, Entity entity);
 }

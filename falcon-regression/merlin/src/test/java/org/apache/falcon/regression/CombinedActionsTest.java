@@ -119,7 +119,7 @@ public class CombinedActionsTest extends BaseTestClass {
         final String startDate = "2010-01-01T20:00Z";
         final String endDate = "2010-01-02T04:00Z";
 
-        String inputFeedMrPig = bundles[0].getFeed("sampleFeed1");
+        FeedMerlin inputFeedMrPig = bundles[0].getFeed("sampleFeed1");
         FeedMerlin feedObj = new FeedMerlin(inputFeedMrPig);
 
         HadoopUtil.deleteDirIfExists(pigMrTestDir + "/input", clusterFS);
@@ -169,23 +169,23 @@ public class CombinedActionsTest extends BaseTestClass {
         //input feed for both mr and pig jobs
         feedObj.setLocation(LocationType.DATA, inputPath);
         LOGGER.info(feedObj.toString());
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj));
 
         //output feed for pig jobs
-        String outputFeedPig = bundles[0].getFeed("sampleFeed2");
+        FeedMerlin outputFeedPig = bundles[0].getFeed("sampleFeed2");
         feedObj = new FeedMerlin(outputFeedPig);
         feedObj.setLocation(LocationType.DATA, outputPathPig);
         feedObj.setFrequency(new Frequency("5", Frequency.TimeUnit.minutes));
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj));
 
         //output feed for mr jobs
-        String outputFeedMr = bundles[0].getFeed("sampleFeed3");
+        FeedMerlin outputFeedMr = bundles[0].getFeed("sampleFeed3");
         feedObj = new FeedMerlin(outputFeedMr);
         feedObj.setLocation(LocationType.DATA, outputPathMr);
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj));
 
         //input feed for hcat jobs
-        String inputHive = bundles[0].getFeed("sampleFeedHCat1");
+        FeedMerlin inputHive = bundles[0].getFeed("sampleFeedHCat1");
         feedObj = new FeedMerlin(inputHive);
         feedObj.getTable().setUri(inputTableUri);
         feedObj.setFrequency(new Frequency("1", Frequency.TimeUnit.hours));
@@ -193,10 +193,10 @@ public class CombinedActionsTest extends BaseTestClass {
             .setStart(TimeUtil.oozieDateToDate(startDate).toDate());
         feedObj.getClusters().getClusters().get(0).getValidity()
             .setEnd(TimeUtil.oozieDateToDate(endDate).toDate());
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj));
 
         //output feed for hcat jobs
-        String outputHive = bundles[0].getFeed("sampleFeedHCat2");
+        FeedMerlin outputHive = bundles[0].getFeed("sampleFeedHCat2");
         feedObj = new FeedMerlin(outputHive);
         feedObj.getTable().setUri(outputTableUri);
         feedObj.setFrequency(new Frequency("1", Frequency.TimeUnit.hours));
@@ -204,13 +204,13 @@ public class CombinedActionsTest extends BaseTestClass {
             .setStart(TimeUtil.oozieDateToDate(startDate).toDate());
         feedObj.getClusters().getClusters().get(0).getValidity()
             .setEnd(TimeUtil.oozieDateToDate(endDate).toDate());
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj.toString()));
+        AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feedObj));
 
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setProcessValidity(startDate, endDate);
         bundles[0].setProcessPeriodicity(1, Frequency.TimeUnit.hours);
         bundles[0].setProcessInputStartEnd("now(0,0)", "now(0,0)");
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(bundles[0].getProcessData()));
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(bundles[0].getProcess()));
         InstanceUtil.waitTillInstanceReachState(clusterOC, bundles[0].getProcessName(),
             1, CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
     }

@@ -105,7 +105,7 @@ public class InstanceParamTest extends BaseTestClass {
         processBundle.addClusterToBundle(bundles[2].getClusters().get(0),
             ClusterType.SOURCE, null, null);
         processBundle.submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 0);
         InstancesResult r = prism.getProcessHelper().getInstanceParams(processName,
             "?start=" + startTime);
         r.getMessage();
@@ -124,7 +124,7 @@ public class InstanceParamTest extends BaseTestClass {
         processBundle.addClusterToBundle(bundles[2].getClusters().get(0),
             ClusterType.SOURCE, null, null);
         processBundle.submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster1, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(cluster1OC, processName, 1,
             CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS, 10);
@@ -146,7 +146,7 @@ public class InstanceParamTest extends BaseTestClass {
         processBundle.addClusterToBundle(bundles[2].getClusters().get(0),
             ClusterType.SOURCE, null, null);
         processBundle.submitFeedsScheduleProcess(prism);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, processBundle.getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster1, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(cluster1OC, processName, 0,
             CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS); //change according to test case

@@ -18,11 +18,11 @@
 
 package org.apache.falcon.regression.prism;
 
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
@@ -30,7 +30,6 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -88,8 +87,8 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
         bundles[0].setInputFeedDataPath(inputPath);
         Bundle.submitCluster(bundles[0], bundles[1], bundles[2]);
 
-        String feed = bundles[0].getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        feed = feed.clearFeedClusters();
 
         String postFix = "/US/" + cluster2.getClusterHelper().getColoName();
         String prefix = bundles[0].getFeedDataPathPrefix();
@@ -104,36 +103,36 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
 
         String startTime = TimeUtil.getTimeWrtSystemTime(-30);
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("US/${cluster.colo}")
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("UK/${cluster.colo}")
-                .build()).toString();
+                .build());
 
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         prism.getFeedHelper().submitAndSchedule(feed);
         TimeUtil.sleepSeconds(10);
 
         String bundleId =
-            OozieUtil.getLatestBundleID(cluster1OC, Util.readEntityName(feed), EntityType.FEED);
+            OozieUtil.getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
 
         //wait till 1st instance of replication coord is SUCCEEDED
         List<String> replicationCoordIDTarget = OozieUtil
@@ -171,36 +170,36 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
         bundles[0].setInputFeedDataPath(inputPath);
         Bundle.submitCluster(bundles[0], bundles[1], bundles[2]);
 
-        String feed = bundles[0].getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        feed.clearFeedClusters();
 
         String startTime = TimeUtil.getTimeWrtSystemTime(3);
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("US/${cluster.colo}")
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("UK/${cluster.colo}")
-                .build()).toString();
+                .build());
 
 
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         prism.getFeedHelper().submitAndSchedule(feed);
         TimeUtil.sleepSeconds(10);
@@ -219,7 +218,7 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
 
         //wait till 1st instance of replication coord is SUCCEEDED
         String bundleId = OozieUtil
-            .getLatestBundleID(cluster1OC, Util.readEntityName(feed), EntityType.FEED);
+            .getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
         List<String> replicationCoordIDTarget = OozieUtil.getReplicationCoordID(bundleId,
             cluster1.getFeedHelper());
 
@@ -327,32 +326,32 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
     public void mixedTest01() throws Exception {
         bundles[0].setInputFeedDataPath(inputPath);
         Bundle.submitCluster(bundles[0], bundles[1], bundles[2]);
-        String feed = bundles[0].getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        feed.clearFeedClusters();
         final String startTime = TimeUtil.getTimeWrtSystemTime(3);
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("ua1/${cluster.colo}")
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("ua1/${cluster.colo}")
-                .build()).toString();
+                .build());
 
         //create data in colos
         String prefix = bundles[0].getFeedDataPathPrefix();
@@ -382,7 +381,7 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
 
         //wait till 1st instance of replication coord is SUCCEEDED
         String bundleId =
-            OozieUtil.getLatestBundleID(cluster1OC, Util.readEntityName(feed), EntityType.FEED);
+            OozieUtil.getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
 
         List<String> replicationCoordIDTarget =
             OozieUtil.getReplicationCoordID(bundleId, cluster1.getFeedHelper());
@@ -505,33 +504,33 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
         bundles[0].setInputFeedAvailabilityFlag("_SUCCESS");
 
         //get feed
-        String feed = bundles[0].getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        feed.clearFeedClusters();
 
         String startTime = TimeUtil.getTimeWrtSystemTime(3);
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("ua1/${cluster.colo}")
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[0].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[0].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.TARGET)
-                .build()).toString();
+                .build());
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("hours(10)", ActionType.DELETE)
                 .withValidity(startTime, "2099-01-01T00:00Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("ua1/${cluster.colo}")
-                .build()).toString();
+                .build());
 
         //create data in colos
 
@@ -565,14 +564,14 @@ public class PrismFeedLateReplicationTest extends BaseTestClass {
         TimeUtil.sleepSeconds(15);
 
         //submit and schedule feed
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         prism.getFeedHelper().submitAndSchedule(feed);
         TimeUtil.sleepSeconds(10);
 
         //wait till 1st instance of replication coord is SUCCEEDED
         String bundleId =
-            OozieUtil.getLatestBundleID(cluster1OC, Util.readEntityName(feed), EntityType.FEED);
+            OozieUtil.getLatestBundleID(cluster1OC, feed.getName(), EntityType.FEED);
 
         List<String> replicationCoordIDTarget =
             OozieUtil.getReplicationCoordID(bundleId, cluster1.getFeedHelper());

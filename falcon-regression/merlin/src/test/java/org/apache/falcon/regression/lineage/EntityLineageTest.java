@@ -128,11 +128,11 @@ public class EntityLineageTest extends BaseTestClass {
         deleteFeed(Arrays.asList(feedMerlins));
 
         for (FeedMerlin feed : feedMerlins) {
-            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(feed));
         }
 
         for(ProcessMerlin process : processMerlins) {
-            AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process.toString()));
+            AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(process));
         }
 
         LineageGraphResult lineageGraphResult = prism.getProcessHelper().getEntityLineage("pipeline=" + pipelineName)
@@ -149,7 +149,7 @@ public class EntityLineageTest extends BaseTestClass {
     public ProcessMerlin createProcess(String processName, String pipelineName, String[] inputFeed,
                                        String[] outputFeed) throws URISyntaxException, AuthenticationException,
                                        InterruptedException, IOException, JAXBException {
-        ProcessMerlin processMerlin = new ProcessMerlin(bundles[0].getProcessObject().toString());
+        ProcessMerlin processMerlin = new ProcessMerlin(bundles[0].getProcess().toString());
         processMerlin.setName(processName);
         processMerlin.setPipelineTag(pipelineName);
         setProcessData(processMerlin, inputFeed, outputFeed);
@@ -190,14 +190,14 @@ public class EntityLineageTest extends BaseTestClass {
     private void deleteProcess(List<ProcessMerlin> processMerlins) throws InterruptedException, IOException,
             URISyntaxException, JAXBException, AuthenticationException {
         for(ProcessMerlin process : processMerlins) {
-            AssertUtil.assertSucceeded(prism.getProcessHelper().delete(process.toString()));
+            AssertUtil.assertSucceeded(prism.getProcessHelper().delete(process));
         }
     }
 
     private void deleteFeed(List<FeedMerlin> feedMerlins) throws InterruptedException, IOException,
             URISyntaxException, JAXBException, AuthenticationException {
         for(FeedMerlin feed : feedMerlins) {
-            AssertUtil.assertSucceeded(prism.getFeedHelper().delete(feed.toString()));
+            AssertUtil.assertSucceeded(prism.getFeedHelper().delete(feed));
         }
     }
 

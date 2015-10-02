@@ -26,14 +26,19 @@ import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.process.ACL;
 import org.apache.falcon.entity.v0.process.Cluster;
+import org.apache.falcon.entity.v0.process.Clusters;
 import org.apache.falcon.entity.v0.process.EngineType;
+import org.apache.falcon.entity.v0.process.ExecutionType;
 import org.apache.falcon.entity.v0.process.Input;
 import org.apache.falcon.entity.v0.process.Inputs;
+import org.apache.falcon.entity.v0.process.LateInput;
+import org.apache.falcon.entity.v0.process.LateProcess;
 import org.apache.falcon.entity.v0.process.Output;
 import org.apache.falcon.entity.v0.process.Outputs;
 import org.apache.falcon.entity.v0.process.Process;
 import org.apache.falcon.entity.v0.process.Properties;
 import org.apache.falcon.entity.v0.process.Property;
+import org.apache.falcon.entity.v0.process.Retry;
 import org.apache.falcon.entity.v0.process.Sla;
 import org.apache.falcon.entity.v0.process.Validity;
 import org.apache.falcon.entity.v0.process.Workflow;
@@ -51,6 +56,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 /** Class for representing a process xml. */
 public class ProcessMerlin extends Process {
     private static final Logger LOGGER = Logger.getLogger(ProcessMerlin.class);
@@ -58,12 +64,145 @@ public class ProcessMerlin extends Process {
         this((Process) TestEntityUtil.fromString(EntityType.PROCESS, processData));
     }
 
+    /**
+     * Creates a shallow copy of a given process.
+     * @param process a process
+     */
     public ProcessMerlin(final Process process) {
         try {
             PropertyUtils.copyProperties(this, process);
         } catch (ReflectiveOperationException e) {
             Assert.fail("Can't create ProcessMerlin: " + ExceptionUtils.getStackTrace(e));
         }
+    }
+
+    /**
+     * Create template process definition. Fills it with compulsory fields: name, order, clusters, frequency, workflow.
+     */
+    public ProcessMerlin() {
+        setName("process");
+        setOrder(ExecutionType.FIFO);
+        setClusters(new Clusters());
+        addProcessCluster(new ProcessClusterBuilder("cluster")
+            .withValidity("2015-10-01T01:00Z", "2099-05-01T00:00Z").build());
+        setFrequency(new Frequency("minutes(20)"));
+        setWorkflow("/tmp/falcon-regression/", null, null);
+    }
+
+    /**
+     * Creates deep copy of a process.
+     * @return clone process object
+     */
+    public ProcessMerlin getClone() {
+        ProcessMerlin processCopy = new ProcessMerlin();
+        //copy compulsory properties
+        processCopy.setName(this.getName());
+        processCopy.setFrequency(new Frequency(this.getFrequency().toString()));
+        processCopy.setOrder(this.getOrder());
+
+        Workflow workflow = new Workflow();
+        workflow.setName(this.getWorkflow().getName());
+        workflow.setPath(this.getWorkflow().getPath());
+        workflow.setVersion(this.getWorkflow().getVersion());
+        workflow.setEngine(this.getWorkflow().getEngine());
+        processCopy.setWorkflow(workflow);
+
+        processCopy.setClusters(new Clusters());
+        for (Cluster cluster : this.getClusters().getClusters()) {
+            processCopy.addProcessCluster(new ProcessClusterBuilder(cluster.getName())
+                    .withValidity(TimeUtil.dateToOozieDate(cluster.getValidity().getStart()),
+                        TimeUtil.dateToOozieDate(cluster.getValidity().getEnd())).build()
+            );
+        }
+        //copy optional properties
+        processCopy.setPipelines(this.getPipelines());
+        processCopy.setTags(this.getTags());
+        processCopy.setTimezone(this.getTimezone());
+        processCopy.setParallel(this.getParallel());
+        if (this.getACL() != null) {
+            processCopy.setACL(this.getACL().getOwner(), this.getACL().getGroup(), this.getACL().getPermission());
+        }
+        if (this.getTimeout() != null) {
+            processCopy.setTimeout(new Frequency(this.getTimeout().toString()));
+        }
+        if (this.getRetry() != null) {
+            Retry retry = new Retry();
+            retry.setAttempts(this.getRetry().getAttempts());
+            retry.setDelay(this.getRetry().getDelay());
+            retry.setPolicy(this.getRetry().getPolicy());
+            processCopy.setRetry(retry);
+        }
+        if (this.getLateProcess() != null) {
+            LateProcess lateProcess = new LateProcess();
+            lateProcess.setPolicy(this.getLateProcess().getPolicy());
+            lateProcess.setDelay(this.getLateProcess().getDelay());
+            lateProcess.getLateInputs().clear();
+            for (LateInput lateInput : this.getLateProcess().getLateInputs()) {
+                LateInput lateInputCopy = new LateInput();
+                lateInputCopy.setInput(lateInput.getInput());
+                lateInputCopy.setWorkflowPath(lateInput.getWorkflowPath());
+                lateProcess.getLateInputs().add(lateInputCopy);
+            }
+            processCopy.setLateProcess(lateProcess);
+        }
+        if (this.getProperties() != null) {
+            processCopy.setProperties(new Properties());
+            for (Property property : this.getProperties().getProperties()) {
+                processCopy.withProperty(property.getName(), property.getValue());
+            }
+        }
+        if (this.getInputs() != null) {
+            processCopy.setInputs(new Inputs());
+            for (Input input : this.getInputs().getInputs()) {
+                processCopy.addInput(input.getName(), input.getFeed(), input.getStart(),
+                    input.getEnd(), input.getPartition(), input.isOptional() ? true : null);
+            }
+        }
+        if (this.getOutputs() != null) {
+            processCopy.setOutputs(new Outputs());
+            for (Output output : this.getOutputs().getOutputs()) {
+                processCopy.addOutput(output.getName(), output.getFeed(), output.getInstance());
+            }
+        }
+        if (getSla() != null) {
+            processCopy.setSla(new Frequency(getSla().getShouldStartIn().getFrequency()),
+                new Frequency(getSla().getShouldEndIn().getFrequency()));
+        }
+        return processCopy;
+    }
+
+    /**
+     * Simplifies input addition to process by delegation.
+     * @param name input name compulsory parameter
+     * @param feedName input feed name compulsory parameter
+     * @param start input start compulsory parameter
+     * @param end input end compulsory parameter
+     * @param partition input partition optional parameter
+     * @param optional whether input is optional or compulsory
+     */
+    public void addInput(String name, String feedName, String start, String end, String partition, Boolean optional) {
+        Input input = new Input();
+        input.setName(name);
+        input.setFeed(feedName);
+        input.setStart(start);
+        input.setEnd(end);
+        input.setPartition(partition);
+        input.setOptional(optional);
+        getInputs().getInputs().add(input);
+    }
+
+    /**
+     * Simplifies input addition to process by delegation.
+     * @param name input name compulsory parameter
+     * @param feedName input feed name compulsory parameter
+     * @param instance to be produced as output
+     */
+    public void addOutput(String name, String feedName, String instance) {
+        Output output = new Output();
+        output.setName(name);
+        output.setFeed(feedName);
+        output.setInstance(instance);
+        getOutputs().getOutputs().add(output);
     }
 
     public ProcessMerlin clearProcessCluster() {
@@ -165,20 +304,17 @@ public class ProcessMerlin extends Process {
 
     /**
      * Method sets a number of clusters to process definition.
-     *
      * @param newClusters list of definitions of clusters which are to be set to process
      *                    (clusters on which process should run)
      * @param startTime start of process validity on every cluster
      * @param endTime end of process validity on every cluster
      */
-    public void setProcessClusters(List<String> newClusters, String startTime, String endTime) {
+    public void setProcessClusters(List<ClusterMerlin> newClusters, String startTime, String endTime) {
         clearProcessCluster();
-        for (String newCluster : newClusters) {
-            final Cluster processCluster = new ProcessClusterBuilder(
-                new ClusterMerlin(newCluster).getName())
+        for (ClusterMerlin newCluster : newClusters) {
+            addProcessCluster(new ProcessClusterBuilder(newCluster.getName())
                 .withValidity(startTime, endTime)
-                .build();
-            addProcessCluster(processCluster);
+                .build());
         }
     }
 
@@ -195,9 +331,8 @@ public class ProcessMerlin extends Process {
      * @return this
      */
     public final ProcessMerlin withProperty(String name, String value) {
-        final List<Property> properties = getProperties().getProperties();
         //if property with same name exists, just replace the value
-        for (Property property : properties) {
+        for (Property property : getProperties().getProperties()) {
             if (property.getName().equals(name)) {
                 LOGGER.info(String.format("Overwriting property name = %s oldVal = %s newVal = %s",
                     property.getName(), property.getValue(), value));
@@ -209,7 +344,7 @@ public class ProcessMerlin extends Process {
         final Property property = new Property();
         property.setName(name);
         property.setValue(value);
-        properties.add(property);
+        this.getProperties().getProperties().add(property);
         return this;
     }
 
@@ -231,6 +366,13 @@ public class ProcessMerlin extends Process {
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Prints process in readable xml form.
+     */
+    public String toPrettyXml() {
+        return Util.prettyPrintXml(this);
     }
 
     public void renameClusters(Map<String, String> clusterNameMap) {
@@ -278,13 +420,12 @@ public class ProcessMerlin extends Process {
      * Method sets optional/compulsory inputs and outputs of process according to list of feed
      * definitions and matching numeric parameters. Optional inputs are set first and then
      * compulsory ones.
-     *
      * @param newDataSets list of feed definitions
      * @param numberOfInputs number of desired inputs
      * @param numberOfOptionalInput how many inputs should be optional
      * @param numberOfOutputs number of outputs
      */
-    public void setProcessFeeds(List<String> newDataSets,
+    public void setProcessFeeds(List<FeedMerlin> newDataSets,
                                 int numberOfInputs, int numberOfOptionalInput,
                                 int numberOfOutputs) {
         int numberOfOptionalSet = 0;
@@ -308,7 +449,7 @@ public class ProcessMerlin extends Process {
                     in.setName("inputData" + i);
                 }
             }
-            in.setFeed(new FeedMerlin(newDataSets.get(i)).getName());
+            in.setFeed(newDataSets.get(i).getName());
             is.getInputs().add(in);
         }
 
@@ -320,7 +461,7 @@ public class ProcessMerlin extends Process {
         Outputs os = new Outputs();
         for (int i = 0; i < numberOfOutputs; i++) {
             Output op = new Output();
-            op.setFeed(new FeedMerlin(newDataSets.get(numberOfInputs - i)).getName());
+            op.setFeed(newDataSets.get(numberOfInputs - i).getName());
             op.setName("outputData");
             op.setInstance("now(0,0)");
             os.getOutputs().add(op);
@@ -477,7 +618,7 @@ public class ProcessMerlin extends Process {
     }
 
     public void setWorkflow(String wfPath, String libPath, EngineType engineType) {
-        Workflow w = this.getWorkflow();
+        Workflow w = this.getWorkflow() != null ? this.getWorkflow() : new Workflow();
         if (engineType != null) {
             w.setEngine(engineType);
         }
@@ -602,7 +743,7 @@ public class ProcessMerlin extends Process {
      */
     public void assertEquals(ProcessMerlin process) {
         LOGGER.info(String.format("Comparing General Properties: source: %n%s%n and process: %n%n%s",
-            Util.prettyPrintXml(toString()), Util.prettyPrintXml(process.toString())));
+            Util.prettyPrintXml(this), Util.prettyPrintXml(process)));
         assertGeneralProperties(process);
         assertInputValues(process);
         assertOutputValues(process);
@@ -669,8 +810,8 @@ public class ProcessMerlin extends Process {
      * Adds array of feeds as input.
      */
     public void addInputFeeds(String[] ipFeed) {
-        for(int i=0; i<ipFeed.length; i++){
-            addInputFeed(ipFeed[i], ipFeed[i]);
+        for (String anIpFeed : ipFeed) {
+            addInputFeed(anIpFeed, anIpFeed);
         }
     }
 
@@ -678,8 +819,8 @@ public class ProcessMerlin extends Process {
      * Adds array of feeds as output.
      */
     public void addOutputFeeds(String[] opFeed) {
-        for(int i=0; i<opFeed.length; i++){
-            addOutputFeed(opFeed[i], opFeed[i]);
+        for (String anOpFeed : opFeed) {
+            addOutputFeed(anOpFeed, anOpFeed);
         }
     }
 

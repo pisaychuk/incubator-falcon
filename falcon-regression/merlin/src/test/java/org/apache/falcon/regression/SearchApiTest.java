@@ -106,10 +106,10 @@ public class SearchApiTest extends BaseTestClass {
 
         FeedMerlin basicFeed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
         basicFeed.setName(prefix + "0-input-feed");
-        AssertUtil.assertSucceeded(cluster.getFeedHelper().submitAndSchedule(basicFeed.toString()));
+        AssertUtil.assertSucceeded(cluster.getFeedHelper().submitAndSchedule(basicFeed));
         basicFeed = new FeedMerlin(bundles[0].getOutputFeedFromBundle());
         basicFeed.setName(prefix + "0-output-feed");
-        AssertUtil.assertSucceeded(cluster.getFeedHelper().submitAndSchedule(basicFeed.toString()));
+        AssertUtil.assertSucceeded(cluster.getFeedHelper().submitAndSchedule(basicFeed));
 
         /* Submit 3 bundles of feeds */
         FeedMerlin feed = new FeedMerlin(bundles[0].getInputFeedFromBundle());
@@ -121,11 +121,11 @@ public class SearchApiTest extends BaseTestClass {
                 tags += ",partial=b1b2";
             }
             feed.setTags(tags);
-            AssertUtil.assertSucceeded(cluster.getFeedHelper().submitEntity(feed.toString()));
+            AssertUtil.assertSucceeded(cluster.getFeedHelper().submitEntity(feed));
         }
 
         /* Submit 3 bundles of processes */
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
 
         //replace input and output with feeds of bundle0
         process.addInputFeed("input", prefix + "0-input-feed");
@@ -140,7 +140,7 @@ public class SearchApiTest extends BaseTestClass {
                 tags += ",partial=b1b2";
             }
             process.setTags(tags);
-            AssertUtil.assertSucceeded(cluster.getProcessHelper().submitEntity(process.toString()));
+            AssertUtil.assertSucceeded(cluster.getProcessHelper().submitEntity(process));
 
             //submit a mirroring process
             if (i % 2 == 1) {
@@ -150,7 +150,7 @@ public class SearchApiTest extends BaseTestClass {
             }
             process.setName(prefix + i + "-mirror-process");
             process.setTags(tags);
-            AssertUtil.assertSucceeded(cluster.getProcessHelper().submitEntity(process.toString()));
+            AssertUtil.assertSucceeded(cluster.getProcessHelper().submitEntity(process));
         }
     }
 

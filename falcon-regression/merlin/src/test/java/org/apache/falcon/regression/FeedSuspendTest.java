@@ -18,7 +18,7 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
@@ -40,7 +40,7 @@ public class FeedSuspendTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);
     private OozieClient clusterOC = serverOC.get(0);
-    private String feed;
+    private FeedMerlin feed;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
@@ -74,7 +74,7 @@ public class FeedSuspendTest extends BaseTestClass {
 
         response = prism.getFeedHelper().suspend(feed);
         AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
     }
 
     /**
@@ -90,11 +90,11 @@ public class FeedSuspendTest extends BaseTestClass {
 
         response = prism.getFeedHelper().suspend(feed);
         AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
         response = prism.getFeedHelper().suspend(feed);
 
         AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        AssertUtil.checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
     }
 
     /**

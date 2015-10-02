@@ -24,7 +24,6 @@ import org.apache.falcon.entity.v0.Frequency;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
 import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.feed.ClusterType;
-import org.apache.falcon.entity.v0.feed.Feed;
 import org.apache.falcon.entity.v0.process.Cluster;
 import org.apache.falcon.entity.v0.process.EngineType;
 import org.apache.falcon.entity.v0.process.LateProcess;
@@ -61,28 +60,28 @@ public class Bundle {
     private static ColoHelper prismHelper = new ColoHelper(PRISM_PREFIX);
     private static final Logger LOGGER = Logger.getLogger(Bundle.class);
 
-    private List<String> clusters;
-    private List<String> dataSets;
-    private String processData;
+    private List<ClusterMerlin> clusters;
+    private List<FeedMerlin> feeds;
+    private ProcessMerlin process;
 
     public void submitFeed()
         throws URISyntaxException, IOException, AuthenticationException, JAXBException,
         InterruptedException {
         submitClusters(prismHelper);
 
-        AssertUtil.assertSucceeded(prismHelper.getFeedHelper().submitEntity(dataSets.get(0)));
+        AssertUtil.assertSucceeded(prismHelper.getFeedHelper().submitEntity(feeds.get(0)));
     }
 
     public void submitAndScheduleFeed() throws Exception {
         submitClusters(prismHelper);
 
-        AssertUtil.assertSucceeded(prismHelper.getFeedHelper().submitAndSchedule(dataSets.get(0)));
+        AssertUtil.assertSucceeded(prismHelper.getFeedHelper().submitAndSchedule(feeds.get(0)));
     }
 
     public void submitAndScheduleFeedUsingColoHelper(ColoHelper coloHelper) throws Exception {
         submitFeed();
 
-        AssertUtil.assertSucceeded(coloHelper.getFeedHelper().schedule(dataSets.get(0)));
+        AssertUtil.assertSucceeded(coloHelper.getFeedHelper().schedule(feeds.get(0)));
     }
 
     public void submitAndScheduleAllFeeds()
@@ -90,7 +89,7 @@ public class Bundle {
         InterruptedException {
         submitClusters(prismHelper);
 
-        for (String feed : dataSets) {
+        for (FeedMerlin feed : feeds) {
             AssertUtil.assertSucceeded(prismHelper.getFeedHelper().submitAndSchedule(feed));
         }
     }
@@ -99,7 +98,7 @@ public class Bundle {
         IOException, URISyntaxException, AuthenticationException, InterruptedException {
         submitClusters(prismHelper);
         submitFeeds(prismHelper);
-        ServiceResponse r = prismHelper.getProcessHelper().submitEntity(processData);
+        ServiceResponse r = prismHelper.getProcessHelper().submitEntity(process);
         if (shouldSucceed) {
             AssertUtil.assertSucceeded(r);
         } else {
@@ -113,39 +112,44 @@ public class Bundle {
 
         submitFeeds(prismHelper);
 
-        AssertUtil.assertSucceeded(prismHelper.getProcessHelper().submitAndSchedule(processData));
+        AssertUtil.assertSucceeded(prismHelper.getProcessHelper().submitAndSchedule(process));
     }
 
 
     public void submitAndScheduleProcess() throws Exception {
         submitAndScheduleAllFeeds();
 
-        AssertUtil.assertSucceeded(prismHelper.getProcessHelper().submitAndSchedule(processData));
+        AssertUtil.assertSucceeded(prismHelper.getProcessHelper().submitAndSchedule(process));
     }
 
     public void submitAndScheduleProcessUsingColoHelper(ColoHelper coloHelper) throws Exception {
         submitProcess(true);
 
-        AssertUtil.assertSucceeded(coloHelper.getProcessHelper().schedule(processData));
+        AssertUtil.assertSucceeded(coloHelper.getProcessHelper().schedule(process));
     }
 
-    public List<String> getClusters() {
+    public List<ClusterMerlin> getClusters() {
         return clusters;
     }
 
-    public Bundle(String clusterData, List<String> dataSets, String processData) {
-        this.dataSets = dataSets;
-        this.processData = processData;
+    public Bundle(ClusterMerlin cluster, List<FeedMerlin> feeds, ProcessMerlin process) {
+        this.feeds = feeds;
+        this.process = process;
         this.clusters = new ArrayList<>();
-        this.clusters.add(clusterData);
+        this.clusters.add(cluster);
     }
 
     public Bundle(Bundle bundle, String prefix) {
-        this.dataSets = new ArrayList<>(bundle.getDataSets());
-        this.processData = bundle.getProcessData();
+        this.feeds = new ArrayList<>();
+        for (FeedMerlin feed : bundle.getFeeds()) {
+            feeds.add(feed.getClone());
+        }
+        if (bundle.getProcess() != null) {
+            this.process = bundle.getProcess().getClone();
+        }
         this.clusters = new ArrayList<>();
-        for (String cluster : bundle.getClusters()) {
-            this.clusters.add(BundleUtil.getEnvClusterXML(cluster, prefix).toString());
+        for (ClusterMerlin cluster : bundle.getClusters()) {
+            this.clusters.add(BundleUtil.getEnvClusterXML(cluster.getClone(), prefix));
         }
     }
 
@@ -153,18 +157,18 @@ public class Bundle {
         this(bundle, helper.getPrefix());
     }
 
-    public void setClusterData(List<String> pClusters) {
+    public void setClusters(List<ClusterMerlin> pClusters) {
         this.clusters = new ArrayList<>(pClusters);
     }
     /**
      * Unwraps cluster element to string and writes it to bundle.
      *
-     * @param c      Cluster object to be unwrapped and set into bundle
+     * @param cluster      Cluster object to be unwrapped and set into bundle
      */
-    public void writeClusterElement(org.apache.falcon.entity.v0.cluster.Cluster c) {
-        final List<String> newClusters = new ArrayList<>();
-        newClusters.add(c.toString());
-        setClusterData(newClusters);
+    public void writeClusterElement(ClusterMerlin cluster) {
+        final List<ClusterMerlin> newClusters = new ArrayList<>();
+        newClusters.add(cluster);
+        setClusters(newClusters);
     }
 
     /**
@@ -173,32 +177,32 @@ public class Bundle {
      * @return cluster definition in a form of Cluster object
      */
     public ClusterMerlin getClusterElement() {
-        return new ClusterMerlin(getClusters().get(0));
+        return getClusters().get(0);
     }
 
 
     public List<String> getClusterNames() {
         List<String> clusterNames = new ArrayList<>();
-        for (String cluster : clusters) {
-            clusterNames.add(new ClusterMerlin(cluster).getName());
+        for (ClusterMerlin cluster : clusters) {
+            clusterNames.add(cluster.getName());
         }
         return clusterNames;
     }
 
-    public List<String> getDataSets() {
-        return dataSets;
+    public List<FeedMerlin> getFeeds() {
+        return feeds;
     }
 
-    public void setDataSets(List<String> dataSets) {
-        this.dataSets = dataSets;
+    public void setFeeds(List<FeedMerlin> feeds) {
+        this.feeds = feeds;
     }
 
-    public String getProcessData() {
-        return processData;
+    public ProcessMerlin getProcess() {
+        return process;
     }
 
-    public void setProcessData(String processData) {
-        this.processData = processData;
+    public void setProcess(ProcessMerlin process) {
+        this.process = process;
     }
 
     /**
@@ -215,39 +219,22 @@ public class Bundle {
      */
     public void generateUniqueBundle(String prefix) {
         /* creating new names */
-        List<ClusterMerlin> clusterMerlinList = BundleUtil.getClustersFromStrings(clusters);
         Map<String, String> clusterNameMap = new HashMap<>();
-        for (ClusterMerlin clusterMerlin : clusterMerlinList) {
+        for (ClusterMerlin clusterMerlin : clusters) {
             clusterNameMap.putAll(clusterMerlin.setUniqueName(prefix));
         }
-
-        List<FeedMerlin> feedMerlinList = FeedMerlin.fromString(dataSets);
         Map<String, String> feedNameMap = new HashMap<>();
-        for (FeedMerlin feedMerlin : feedMerlinList) {
+        for (FeedMerlin feedMerlin : feeds) {
             feedNameMap.putAll(feedMerlin.setUniqueName(prefix));
         }
-
         /* setting new names in feeds and process */
-        for (FeedMerlin feedMerlin : feedMerlinList) {
+        for (FeedMerlin feedMerlin : feeds) {
             feedMerlin.renameClusters(clusterNameMap);
         }
-
-        /* setting variables */
-        clusters.clear();
-        for (ClusterMerlin clusterMerlin : clusterMerlinList) {
-            clusters.add(clusterMerlin.toString());
-        }
-        dataSets.clear();
-        for (FeedMerlin feedMerlin : feedMerlinList) {
-            dataSets.add(feedMerlin.toString());
-        }
-
-        if (StringUtils.isNotEmpty(processData)) {
-            ProcessMerlin processMerlin = new ProcessMerlin(processData);
-            processMerlin.setUniqueName(prefix);
-            processMerlin.renameClusters(clusterNameMap);
-            processMerlin.renameFeeds(feedNameMap);
-            processData = processMerlin.toString();
+        if (process != null) {
+            process.setUniqueName(prefix);
+            process.renameClusters(clusterNameMap);
+            process.renameFeeds(feedNameMap);
         }
     }
 
@@ -260,7 +247,7 @@ public class Bundle {
         //lets submit all data first
         submitFeeds(helper);
 
-        return helper.getProcessHelper().submitEntity(getProcessData());
+        return helper.getProcessHelper().submitEntity(getProcess());
     }
 
     /**
@@ -282,7 +269,7 @@ public class Bundle {
         }
 
         //lets schedule the damn thing now :)
-        ServiceResponse scheduleResult = helper.getProcessHelper().schedule(getProcessData());
+        ServiceResponse scheduleResult = helper.getProcessHelper().schedule(getProcess());
         AssertUtil.assertSucceeded(scheduleResult);
         TimeUtil.sleepSeconds(7);
         return scheduleResult;
@@ -295,9 +282,7 @@ public class Bundle {
      * @param endEl its end in terms of EL expression
      */
     public void setProcessInput(String startEl, String endEl) {
-        ProcessMerlin process = getProcessObject();
-        process.setInputFeedWithEl(Util.readEntityName(getInputFeedFromBundle()), startEl, endEl);
-        this.setProcessData(process.toString());
+        process.setInputFeedWithEl(getInputFeedFromBundle().getName(), startEl, endEl);
     }
 
     public void setInvalidData() {
@@ -308,14 +293,14 @@ public class Bundle {
             oldLocation.substring(0, oldLocation.indexOf('$')) + "invalid/"
                     + oldLocation.substring(oldLocation.indexOf('$')));
         LOGGER.info("new location: " + dataElement.getLocations().getLocations().get(0).getPath());
-        setInputFeed(dataElement.toString());
+        setInputFeed(dataElement);
     }
 
-    public void setInputFeed(String newFeed) {
+    public void setInputFeed(FeedMerlin newFeed) {
         String inputFeedName = getInputFeedNameFromBundle();
-        for (int i = 0; i < dataSets.size(); i++) {
-            if (new FeedMerlin(dataSets.get(i)).getName().equals(inputFeedName)) {
-                dataSets.set(i, newFeed);
+        for (int i = 0; i < feeds.size(); i++) {
+            if (new FeedMerlin(feeds.get(i)).getName().equals(inputFeedName)) {
+                feeds.set(i, newFeed);
                 return;
             }
         }
@@ -337,13 +322,13 @@ public class Bundle {
     }
 
     public Date getStartInstanceProcess(Calendar time) {
-        ProcessMerlin processElement = getProcessObject();
+        ProcessMerlin processElement = getProcess();
         LOGGER.info("start instance: " + processElement.getInputs().getInputs().get(0).getStart());
         return TimeUtil.getMinutes(processElement.getInputs().getInputs().get(0).getStart(), time);
     }
 
     public Date getEndInstanceProcess(Calendar time) {
-        ProcessMerlin processElement = getProcessObject();
+        ProcessMerlin processElement = getProcess();
         LOGGER.info("end instance: " + processElement.getInputs().getInputs().get(0).getEnd());
         LOGGER.info("timezone in getendinstance: " + time.getTimeZone().toString());
         LOGGER.info("time in getendinstance: " + time.getTime());
@@ -351,43 +336,34 @@ public class Bundle {
     }
 
     public void setDatasetInstances(String startInstance, String endInstance) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setDatasetInstances(startInstance, endInstance);
-        setProcessData(processElement.toString());
+        process.setDatasetInstances(startInstance, endInstance);
     }
 
     public void setProcessPeriodicity(int frequency, TimeUnit periodicity) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setPeriodicity(frequency, periodicity);
-        setProcessData(processElement.toString());
+        process.setPeriodicity(frequency, periodicity);
     }
 
     public void setProcessInputStartEnd(String start, String end) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setProcessInputStartEnd(start, end);
-        setProcessData(processElement.toString());
+        process.setProcessInputStartEnd(start, end);
     }
 
     public void setOutputFeedPeriodicity(int frequency, TimeUnit periodicity) {
-        ProcessMerlin processElement = new ProcessMerlin(processData);
-        String outputDataset = null;
+        FeedMerlin outputFeed = null;
         int datasetIndex;
-        for (datasetIndex = 0; datasetIndex < dataSets.size(); datasetIndex++) {
-            outputDataset = dataSets.get(datasetIndex);
-            if (outputDataset.contains(processElement.getOutputs().getOutputs().get(0).getFeed())) {
+        for (datasetIndex = 0; datasetIndex < feeds.size(); datasetIndex++) {
+            outputFeed = feeds.get(datasetIndex);
+            if (outputFeed.getName().equals(process.getOutputs().getOutputs().get(0).getFeed())) {
                 break;
             }
         }
-
-        FeedMerlin feedElement = new FeedMerlin(outputDataset);
-
-        feedElement.setFrequency(new Frequency("" + frequency, periodicity));
-        dataSets.set(datasetIndex, feedElement.toString());
-        LOGGER.info("modified o/p dataSet is: " + dataSets.get(datasetIndex));
+        Assert.assertNotNull(outputFeed, "Output feed should be present.");
+        outputFeed.setFrequency(new Frequency("" + frequency, periodicity));
+        feeds.set(datasetIndex, outputFeed);
+        LOGGER.info("modified o/p dataSet is: " + feeds.get(datasetIndex));
     }
 
     public int getProcessConcurrency() {
-        return getProcessObject().getParallel();
+        return getProcess().getParallel();
     }
 
     public void setOutputFeedLocationData(String path) {
@@ -398,9 +374,7 @@ public class Bundle {
     }
 
     public void setProcessConcurrency(int concurrency) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setParallel((concurrency));
-        setProcessData(processElement.toString());
+        process.setParallel((concurrency));
     }
 
     public void setProcessWorkflow(String wfPath) {
@@ -412,40 +386,25 @@ public class Bundle {
     }
 
     public void setProcessWorkflow(String wfPath, String libPath, EngineType engineType) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setWorkflow(wfPath, libPath, engineType);
-        setProcessData(processElement.toString());
-    }
-
-    public ProcessMerlin getProcessObject() {
-        return new ProcessMerlin(getProcessData());
+        process.setWorkflow(wfPath, libPath, engineType);
     }
 
     public FeedMerlin getFeedElement(String feedName) {
-        return new FeedMerlin(getFeed(feedName));
+        return getFeed(feedName);
     }
 
-
-    public String getFeed(String feedName) {
-        for (String feed : getDataSets()) {
-            if (Util.readEntityName(feed).contains(feedName)) {
+    public FeedMerlin getFeed(String feedName) {
+        for (FeedMerlin feed : getFeeds()) {
+            if (feed.getName().equals(feedName)) {
                 return feed;
             }
         }
-
         return null;
     }
 
-
-    public void writeFeedElement(FeedMerlin feedElement, String feedName) {
-        writeFeedElement(feedElement.toString(), feedName);
+    public void writeFeedElement(FeedMerlin feed, String feedName) {
+        feeds.set(feeds.indexOf(getFeed(feedName)), feed);
     }
-
-
-    public void writeFeedElement(String feedString, String feedName) {
-        dataSets.set(dataSets.indexOf(getFeed(feedName)), feedString);
-    }
-
 
     public void setInputFeedPeriodicity(int frequency, TimeUnit periodicity) {
         String feedName = getInputFeedNameFromBundle();
@@ -480,60 +439,49 @@ public class Bundle {
     }
 
     public void setProcessValidity(String startDate, String endDate) {
-        ProcessMerlin processElement = new ProcessMerlin(processData);
-        processElement.setValidity(startDate, endDate);
-        processData = processElement.toString();
+        process.setValidity(startDate, endDate);
     }
 
     public void setProcessLatePolicy(LateProcess lateProcess) {
-        ProcessMerlin processElement = new ProcessMerlin(processData);
-        processElement.setLateProcess(lateProcess);
-        processData = processElement.toString();
+        process.setLateProcess(lateProcess);
     }
-
 
     public void verifyDependencyListing(ColoHelper coloHelper)
         throws InterruptedException, IOException, AuthenticationException, URISyntaxException {
         //display dependencies of process:
         String dependencies = coloHelper.getProcessHelper().getDependencies(
-            Util.readEntityName(getProcessData())).getEntityList().toString();
+            getProcess().getName()).getEntityList().toString();
 
         //verify presence
-        for (String cluster : clusters) {
-            Assert.assertTrue(dependencies.contains("(cluster) " + Util.readEntityName(cluster)));
+        for (ClusterMerlin cluster : clusters) {
+            Assert.assertTrue(dependencies.contains("(cluster) " + cluster.getName()));
         }
-        for (String feed : getDataSets()) {
-            Assert.assertTrue(dependencies.contains("(feed) " + Util.readEntityName(feed)));
-            for (String cluster : clusters) {
+        for (FeedMerlin feed : getFeeds()) {
+            Assert.assertTrue(dependencies.contains("(feed) " + feed.getName()));
+            for (ClusterMerlin cluster : clusters) {
                 Assert.assertTrue(coloHelper.getFeedHelper().getDependencies(
-                    Util.readEntityName(feed)).getEntityList().toString()
-                    .contains("(cluster) " + Util.readEntityName(cluster)));
+                    feed.getName()).getEntityList().toString()
+                    .contains("(cluster) " + cluster.getName()));
             }
             Assert.assertFalse(coloHelper.getFeedHelper().getDependencies(
-                Util.readEntityName(feed)).getEntityList().toString()
-                .contains("(process)" + Util.readEntityName(getProcessData())));
+                feed.getName()).getEntityList().toString()
+                .contains("(process)" + getProcess().getName()));
         }
     }
 
     public void addProcessInput(String inputName, String feedName) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.addInputFeed(inputName, feedName);
-        setProcessData(processElement.toString());
+        process.addInputFeed(inputName, feedName);
     }
 
     public void setProcessName(String newName) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setName(newName);
-        setProcessData(processElement.toString());
+        process.setName(newName);
 
     }
 
     public void setRetry(Retry retry) {
-        LOGGER.info("old process: " + Util.prettyPrintXml(processData));
-        ProcessMerlin processObject = getProcessObject();
-        processObject.setRetry(retry);
-        processData = processObject.toString();
-        LOGGER.info("updated process: " + Util.prettyPrintXml(processData));
+        LOGGER.info("old process: " + process.toPrettyXml());
+        process.setRetry(retry);
+        LOGGER.info("updated process: " + process.toPrettyXml());
     }
 
     public void setInputFeedAvailabilityFlag(String flag) {
@@ -564,23 +512,20 @@ public class Bundle {
     }
 
     public void setInputFeedTableUri(String tableUri) {
-        final String feedStr = getInputFeedFromBundle();
-        FeedMerlin feed = new FeedMerlin(feedStr);
+        FeedMerlin feed = getInputFeedFromBundle();
         feed.setTableUri(tableUri);
         writeFeedElement(feed, feed.getName());
     }
 
     public void setOutputFeedTableUri(String tableUri) {
-        final String feedStr = getOutputFeedFromBundle();
-        FeedMerlin feed = new FeedMerlin(feedStr);
+        FeedMerlin feed = getOutputFeedFromBundle();
         feed.setTableUri(tableUri);
         writeFeedElement(feed, feed.getName());
     }
 
-    public void setCLusterWorkingPath(String clusterData, String path) {
-        ClusterMerlin c = new ClusterMerlin(clusterData);
-        c.setWorkingLocationPath(path);
-        writeClusterElement(c);
+    public void setCLusterWorkingPath(ClusterMerlin clusterData, String path) {
+        clusterData.setWorkingLocationPath(path);
+        writeClusterElement(clusterData);
     }
 
 
@@ -593,46 +538,43 @@ public class Bundle {
     public void submitClusters(ColoHelper helper, String user)
         throws JAXBException, IOException, URISyntaxException, AuthenticationException,
         InterruptedException {
-        for (String cluster : this.clusters) {
-            AssertUtil.assertSucceeded(helper.getClusterHelper().submitEntity(cluster, user));
+        for (ClusterMerlin cluster : this.clusters) {
+            AssertUtil.assertSucceeded(helper.getClusterHelper().submitEntity(cluster.toString(), user));
         }
     }
 
     public void submitFeeds(ColoHelper helper)
         throws JAXBException, IOException, URISyntaxException, AuthenticationException,
         InterruptedException {
-        for (String feed : this.dataSets) {
+        for (FeedMerlin feed : this.feeds) {
             AssertUtil.assertSucceeded(helper.getFeedHelper().submitEntity(feed));
         }
     }
 
-    public void addClusterToBundle(String clusterData, ClusterType type,
+    public void addClusterToBundle(ClusterMerlin clusterData, ClusterType type,
                                    String startTime, String endTime) {
-        clusterData = setNewClusterName(clusterData);
-
         this.clusters.add(clusterData);
         //now to add clusters to feeds
-        for (int i = 0; i < dataSets.size(); i++) {
-            FeedMerlin feedObject = new FeedMerlin(dataSets.get(i));
+        for (int i = 0; i < feeds.size(); i++) {
+            FeedMerlin feedObject = new FeedMerlin(feeds.get(i));
             org.apache.falcon.entity.v0.feed.Cluster cluster =
                 new org.apache.falcon.entity.v0.feed.Cluster();
-            cluster.setName(new ClusterMerlin(clusterData).getName());
+            cluster.setName(clusterData.getName());
             cluster.setValidity(feedObject.getClusters().getClusters().get(0).getValidity());
             cluster.setType(type);
             cluster.setRetention(feedObject.getClusters().getClusters().get(0).getRetention());
             feedObject.getClusters().getClusters().add(cluster);
 
-            dataSets.remove(i);
-            dataSets.add(i, feedObject.toString());
+            feeds.remove(i);
+            feeds.add(i, feedObject);
 
         }
 
         //now to add cluster to process
-        ProcessMerlin processObject = new ProcessMerlin(processData);
         Cluster cluster = new Cluster();
-        cluster.setName(new ClusterMerlin(clusterData).getName());
+        cluster.setName(clusterData.getName());
         org.apache.falcon.entity.v0.process.Validity v =
-            processObject.getClusters().getClusters().get(0).getValidity();
+            this.process.getClusters().getClusters().get(0).getValidity();
         if (StringUtils.isNotEmpty(startTime)) {
             v.setStart(TimeUtil.oozieDateToDate(startTime).toDate());
         }
@@ -640,36 +582,26 @@ public class Bundle {
             v.setEnd(TimeUtil.oozieDateToDate(endTime).toDate());
         }
         cluster.setValidity(v);
-        processObject.getClusters().getClusters().add(cluster);
-        this.processData = processObject.toString();
-
-    }
-
-    private String setNewClusterName(String clusterData) {
-        ClusterMerlin clusterObj = new ClusterMerlin(clusterData);
-        clusterObj.setName(clusterObj.getName() + this.clusters.size() + 1);
-        return clusterObj.toString();
+        this.process.getClusters().getClusters().add(cluster);
     }
 
     public void deleteBundle(ColoHelper helper) {
-
         try {
-            helper.getProcessHelper().delete(getProcessData());
+            helper.getProcessHelper().delete(getProcess().getName());
         } catch (Exception e) {
             e.getStackTrace();
         }
-
-        for (String dataset : getDataSets()) {
+        for (FeedMerlin dataset : getFeeds()) {
             try {
-                helper.getFeedHelper().delete(dataset);
+                helper.getFeedHelper().delete(dataset.getName());
             } catch (Exception e) {
                 e.getStackTrace();
             }
         }
 
-        for (String cluster : this.getClusters()) {
+        for (ClusterMerlin cluster : this.getClusters()) {
             try {
-                helper.getClusterHelper().delete(cluster);
+                helper.getClusterHelper().delete(cluster.getName());
             } catch (Exception e) {
                 e.getStackTrace();
             }
@@ -679,31 +611,24 @@ public class Bundle {
     }
 
     public String getProcessName() {
-        return new ProcessMerlin(this.processData).getName();
+        return new ProcessMerlin(this.process).getName();
     }
 
     public void setProcessLibPath(String libPath) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.getWorkflow().setLib(libPath);
-        setProcessData(processElement.toString());
+        this.process.getWorkflow().setLib(libPath);
     }
 
     public void setProcessTimeOut(int magnitude, TimeUnit unit) {
-        ProcessMerlin processElement = getProcessObject();
-        processElement.setTimeOut(magnitude, unit);
-        setProcessData(processElement.toString());
+        this.process.setTimeOut(magnitude, unit);
     }
 
     public static void submitCluster(Bundle... bundles)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-
         for (Bundle bundle : bundles) {
             ServiceResponse r =
                 prismHelper.getClusterHelper().submitEntity(bundle.getClusters().get(0));
             Assert.assertTrue(r.getMessage().contains("SUCCEEDED"), r.getMessage());
         }
-
-
     }
 
     /**
@@ -723,37 +648,35 @@ public class Bundle {
                                        String inputBasePaths, int numberOfOutputs, String startTime,
                                        String endTime) {
         //generate and set clusters
-        ClusterMerlin c = new ClusterMerlin(getClusters().get(0));
-        List<String> newClusters = new ArrayList<>();
-        final String clusterName = c.getName();
+        ClusterMerlin newCluster = getClusters().get(0);
+        List<ClusterMerlin> newClusters = new ArrayList<>();
+        final String clusterName = newCluster.getName();
         for (int i = 0; i < numberOfClusters; i++) {
-            c.setName(clusterName + i);
-            newClusters.add(i, c.toString());
+            newCluster.setName(clusterName + i);
+            newClusters.add(i, newCluster.getClone());
         }
-        setClusterData(newClusters);
+        setClusters(newClusters);
 
-        //generate and set newDataSets
-        List<String> newDataSets = new ArrayList<>();
+        //generate and set newFeeds
+        List<FeedMerlin> newFeeds = new ArrayList<>();
         for (int i = 0; i < numberOfInputs; i++) {
-            final FeedMerlin feed = new FeedMerlin(getDataSets().get(0));
+            final FeedMerlin feed = getFeeds().get(0).getClone();
             feed.setName(feed.getName() + "-input" + i);
             feed.setFeedClusters(newClusters, inputBasePaths + "/input" + i, startTime, endTime);
-            newDataSets.add(feed.toString());
+            newFeeds.add(feed);
         }
         for (int i = 0; i < numberOfOutputs; i++) {
-            final FeedMerlin feed = new FeedMerlin(getDataSets().get(0));
+            final FeedMerlin feed = getFeeds().get(0).getClone();
             feed.setName(feed.getName() + "-output" + i);
             feed.setFeedClusters(newClusters, inputBasePaths + "/output" + i,  startTime, endTime);
-            newDataSets.add(feed.toString());
+            newFeeds.add(feed);
         }
-        setDataSets(newDataSets);
+        setFeeds(newFeeds);
 
         //add clusters and feed to process
-        ProcessMerlin processMerlin = new ProcessMerlin(getProcessData());
-        processMerlin.setProcessClusters(newClusters, startTime, endTime);
-        processMerlin.setProcessFeeds(newDataSets, numberOfInputs,
+        getProcess().setProcessClusters(newClusters, startTime, endTime);
+        getProcess().setProcessFeeds(newFeeds, numberOfInputs,
             numberOfOptionalInput, numberOfOutputs);
-        setProcessData(processMerlin.toString());
     }
 
     public void submitAndScheduleBundle(ColoHelper helper, boolean checkSuccess)
@@ -767,13 +690,13 @@ public class Bundle {
                 AssertUtil.assertSucceeded(r);
             }
         }
-        for (int i = 0; i < getDataSets().size(); i++) {
-            ServiceResponse r = helper.getFeedHelper().submitAndSchedule(getDataSets().get(i));
+        for (int i = 0; i < getFeeds().size(); i++) {
+            ServiceResponse r = helper.getFeedHelper().submitAndSchedule(getFeeds().get(i));
             if (checkSuccess) {
                 AssertUtil.assertSucceeded(r);
             }
         }
-        ServiceResponse r = helper.getProcessHelper().submitAndSchedule(getProcessData());
+        ServiceResponse r = helper.getProcessHelper().submitAndSchedule(getProcess());
         if (checkSuccess) {
             AssertUtil.assertSucceeded(r);
         }
@@ -785,18 +708,14 @@ public class Bundle {
      * @param names desired names of inputs
      */
     public void setProcessInputNames(String... names) {
-        ProcessMerlin p = new ProcessMerlin(processData);
-        p.setInputNames(names);
-        processData = p.toString();
+        this.process.setInputNames(names);
     }
 
     /**
      * Adds optional property to process definition.
-     *
-     * @param properties desired properties to be added
      */
     public void addProcessProperty(String propName, String propValue) {
-        processData = new ProcessMerlin(processData).withProperty(propName, propValue).toString();
+        this.process.withProperty(propName, propValue);
     }
 
     /**
@@ -805,9 +724,7 @@ public class Bundle {
      * @param partition partitions to be set
      */
     public void setProcessInputPartition(String... partition) {
-        ProcessMerlin p = new ProcessMerlin(processData);
-        p.setInputPartition(partition);
-        processData = p.toString();
+        this.process.setInputPartition(partition);
     }
 
     /**
@@ -816,30 +733,21 @@ public class Bundle {
      * @param names new names of the outputs
      */
     public void setProcessOutputNames(String... names) {
-        ProcessMerlin p = new ProcessMerlin(processData);
-        p.setOutputNames(names);
-        processData = p.toString();
+        this.process.setOutputNames(names);
     }
 
-    public void addInputFeedToBundle(String feedRefName, Feed feed) {
-        this.getDataSets().add(feed.toString());
-
-        ProcessMerlin processObject = new ProcessMerlin(processData);
-        processObject.addInputFeed(feedRefName, feed.getName());
-        setProcessData(processObject.toString());
+    public void addInputFeedToBundle(String feedRefName, FeedMerlin feed) {
+        this.getFeeds().add(feed);
+        this.process.addInputFeed(feedRefName, feed.getName());
     }
 
-    public void addOutputFeedToBundle(String feedRefName, Feed feed) {
-        this.getDataSets().add(feed.toString());
-
-        ProcessMerlin processObject = getProcessObject();
-        processObject.addOutputFeed(feedRefName, feed.getName());
-        setProcessData(processObject.toString());
+    public void addOutputFeedToBundle(String feedRefName, FeedMerlin feed) {
+        this.getFeeds().add(feed);
+        this.process.addOutputFeed(feedRefName, feed.getName());
     }
 
     public void setProcessProperty(String property, String value) {
-        ProcessMerlin process = getProcessObject().withProperty(property, value);
-        this.setProcessData(process.toString());
+        this.process.withProperty(property, value);
     }
 
     public String getDatasetPath() {
@@ -847,26 +755,20 @@ public class Bundle {
         return dataElement.getLocations().getLocations().get(0).getPath();
     }
 
-    public String getInputFeedFromBundle() {
-        ProcessMerlin processObject = new ProcessMerlin(getProcessData());
-        return getFeed(processObject.getInputs().getInputs().get(0).getFeed());
+    public FeedMerlin getInputFeedFromBundle() {
+        return getFeed(this.process.getInputs().getInputs().get(0).getFeed());
     }
 
-    public String getOutputFeedFromBundle() {
-        ProcessMerlin processObject = new ProcessMerlin(getProcessData());
-        return getFeed(processObject.getOutputs().getOutputs().get(0).getFeed());
+    public FeedMerlin getOutputFeedFromBundle() {
+        return getFeed(this.process.getOutputs().getOutputs().get(0).getFeed());
     }
 
     public String getOutputFeedNameFromBundle() {
-        String feedData = getOutputFeedFromBundle();
-        FeedMerlin feedObject = new FeedMerlin(feedData);
-        return feedObject.getName();
+        return getOutputFeedFromBundle().getName();
     }
 
     public String getInputFeedNameFromBundle() {
-        String feedData = getInputFeedFromBundle();
-        FeedMerlin feedObject = new FeedMerlin(feedData);
-        return feedObject.getName();
+        return getInputFeedFromBundle().getName();
     }
 
     /**
@@ -874,9 +776,7 @@ public class Bundle {
      * @param pipelines proposed pipelines
      */
     public void setProcessPipeline(String... pipelines){
-        ProcessMerlin process = new ProcessMerlin(getProcessData());
-        process.setPipelineTag(pipelines);
-        setProcessData(process.toString());
+        this.process.setPipelineTag(pipelines);
     }
 
     /**
@@ -903,18 +803,14 @@ public class Bundle {
      * Set ACL of bundle's process.
      */
     public void setProcessACL(String owner, String group, String permission) {
-        ProcessMerlin processMerlin = getProcessObject();
-        processMerlin.setACL(owner, group, permission);
-        setProcessData(processMerlin.toString());
+        this.process.setACL(owner, group, permission);
     }
 
     /**
      * Set custom tags for a process. Key-value pairs are valid.
      */
     public void setProcessTags(String value) {
-        ProcessMerlin processMerlin = getProcessObject();
-        processMerlin.setTags(value);
-        setProcessData(processMerlin.toString());
+        this.process.setTags(value);
     }
 
 

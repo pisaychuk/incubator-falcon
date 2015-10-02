@@ -97,12 +97,12 @@ public final class BundleUtil {
         } catch (URISyntaxException e) {
             Assert.fail("could not find dir: " + folderPath);
         }
-        final Collection<File> list = FileUtils.listFiles(directory, new String[] {"xml"}, true);
+        final Collection<File> list = FileUtils.listFiles(directory, new String[]{"xml"}, true);
         File[] files = list.toArray(new File[list.size()]);
         Arrays.sort(files);
-        String clusterData = "";
-        final List<String> dataSets = new ArrayList<>();
-        String processData = "";
+        ClusterMerlin cluster = null;
+        final List<FeedMerlin> feeds = new ArrayList<>();
+        ProcessMerlin process = null;
 
         for (File file : files) {
             LOGGER.info("Loading data from path: " + file.getAbsolutePath());
@@ -110,53 +110,51 @@ public final class BundleUtil {
 
             if (data.contains("uri:falcon:cluster:0.1")) {
                 LOGGER.info("data been added to cluster");
-                ClusterMerlin clusterMerlin = new ClusterMerlin(data);
+                cluster = new ClusterMerlin(data);
                 //set ACL
-                clusterMerlin.setACL(MerlinConstants.CURRENT_USER_NAME,
-                        MerlinConstants.CURRENT_USER_GROUP, "*");
+                cluster.setACL(MerlinConstants.CURRENT_USER_NAME,
+                    MerlinConstants.CURRENT_USER_GROUP, "*");
                 //set staging and working locations
-                clusterMerlin.getLocations().getLocations().clear();
+                cluster.getLocations().getLocations().clear();
                 final Location staging = new Location();
                 staging.setName(ClusterLocationType.STAGING);
                 staging.setPath(MerlinConstants.STAGING_LOCATION);
-                clusterMerlin.getLocations().getLocations().add(staging);
+                cluster.getLocations().getLocations().add(staging);
                 final Location working = new Location();
                 working.setName(ClusterLocationType.WORKING);
                 working.setPath(MerlinConstants.WORKING_LOCATION);
-                clusterMerlin.getLocations().getLocations().add(working);
+                cluster.getLocations().getLocations().add(working);
                 final Location temp = new Location();
                 temp.setName(ClusterLocationType.TEMP);
                 temp.setPath(MerlinConstants.TEMP_LOCATION);
-                clusterMerlin.getLocations().getLocations().add(temp);
+                cluster.getLocations().getLocations().add(temp);
                 final String protectionPropName = "hadoop.rpc.protection";
                 final String protectionPropValue = Config.getProperty(protectionPropName);
                 if (StringUtils.isNotEmpty(protectionPropValue)) {
-                    clusterMerlin.withProperty(protectionPropName, protectionPropValue.trim());
+                    cluster.withProperty(protectionPropName, protectionPropValue.trim());
                 }
-                clusterData = clusterMerlin.toString();
             } else if (data.contains("uri:falcon:feed:0.1")) {
                 LOGGER.info("data been added to feed");
-                FeedMerlin feedMerlin = new FeedMerlin(data);
-                feedMerlin.setACL(MerlinConstants.CURRENT_USER_NAME,
-                        MerlinConstants.CURRENT_USER_GROUP, "*");
-                dataSets.add(feedMerlin.toString());
+                FeedMerlin feed = new FeedMerlin(data);
+                feed.setACL(MerlinConstants.CURRENT_USER_NAME,
+                    MerlinConstants.CURRENT_USER_GROUP, "*");
+                feeds.add(feed);
             } else if (data.contains("uri:falcon:process:0.1")) {
                 LOGGER.info("data been added to process");
-                ProcessMerlin processMerlin = new ProcessMerlin(data);
-                processMerlin.setACL(MerlinConstants.CURRENT_USER_NAME,
+                process = new ProcessMerlin(data);
+                process.setACL(MerlinConstants.CURRENT_USER_NAME,
                         MerlinConstants.CURRENT_USER_GROUP, "*");
-                processData = processMerlin.toString();
             }
         }
-        Assert.assertNotNull(clusterData, "expecting cluster data to be non-empty");
-        Assert.assertTrue(!dataSets.isEmpty(), "expecting feed data to be non-empty");
-        return new Bundle(clusterData, dataSets, processData);
+        Assert.assertNotNull(cluster, "expecting cluster data to be non-empty");
+        Assert.assertTrue(!feeds.isEmpty(), "expecting feed data to be non-empty");
+        return new Bundle(cluster, feeds, process);
     }
 
-    public static void submitAllClusters(ColoHelper prismHelper, Bundle... b)
+    public static void submitAllClusters(ColoHelper prismHelper, Bundle... bundles)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        for (Bundle aB : b) {
-            ServiceResponse r = prismHelper.getClusterHelper().submitEntity(aB.getClusters().get(0));
+        for (Bundle bundle : bundles) {
+            ServiceResponse r = prismHelper.getClusterHelper().submitEntity(bundle.getClusters().get(0));
             Assert.assertTrue(r.getMessage().contains("SUCCEEDED"));
 
         }
@@ -168,8 +166,7 @@ public final class BundleUtil {
      * @param prefix current cluster prefix
      * @return modified cluster definition
      */
-    public static ClusterMerlin getEnvClusterXML(String cluster, String prefix) {
-        ClusterMerlin clusterObject = new ClusterMerlin(cluster);
+    public static ClusterMerlin getEnvClusterXML(ClusterMerlin cluster, String prefix) {
         if ((null == prefix) || prefix.isEmpty()) {
             prefix = "";
         } else {
@@ -178,7 +175,7 @@ public final class BundleUtil {
         String hcatEndpoint = Config.getProperty(prefix + "hcat_endpoint");
 
         //now read and set relevant values
-        for (Interface iface : clusterObject.getInterfaces().getInterfaces()) {
+        for (Interface iface : cluster.getInterfaces().getInterfaces()) {
             if (iface.getType() == Interfacetype.READONLY) {
                 iface.setEndpoint(Config.getProperty(prefix + "cluster_readonly"));
             } else if (iface.getType() == Interfacetype.WRITE) {
@@ -194,34 +191,34 @@ public final class BundleUtil {
             }
         }
         //set colo name:
-        clusterObject.setColo(Config.getProperty(prefix + "colo"));
+        cluster.setColo(Config.getProperty(prefix + "colo"));
         // properties in the cluster needed when secure mode is on
         if (MerlinConstants.IS_SECURE) {
             // add the namenode principal to the properties object
-            clusterObject.withProperty("dfs.namenode.kerberos.principal",
+            cluster.withProperty("dfs.namenode.kerberos.principal",
                 Config.getProperty(prefix + "namenode.kerberos.principal", "none"));
 
             // add the hive meta store principal to the properties object
-            clusterObject.withProperty("hive.metastore.kerberos.principal",
+            cluster.withProperty("hive.metastore.kerberos.principal",
                 Config.getProperty(prefix + "hive.metastore.kerberos.principal", "none"));
 
             // Until oozie has better integration with secure hive we need to send the properties to
             // falcon.
             // hive.metastore.sasl.enabled = true
-            clusterObject.withProperty("hive.metastore.sasl.enabled", "true");
+            cluster.withProperty("hive.metastore.sasl.enabled", "true");
             // Only set the metastore uri if its not empty or null.
         }
         String hiveMetastoreUris = Config.getProperty(prefix + "hive.metastore.uris");
         if (StringUtils.isNotBlank(hiveMetastoreUris)) {
             //hive.metastore.uris
-            clusterObject.withProperty("hive.metastore.uris", hiveMetastoreUris);
+            cluster.withProperty("hive.metastore.uris", hiveMetastoreUris);
         }
         String hiveServer2Uri = Config.getProperty(prefix + "hive.server2.uri");
         if (StringUtils.isNotBlank(hiveServer2Uri)) {
             //hive.metastore.uris
-            clusterObject.withProperty("hive.server2.uri", hiveServer2Uri);
+            cluster.withProperty("hive.server2.uri", hiveServer2Uri);
         }
-        return clusterObject;
+        return cluster;
     }
 
     public static List<ClusterMerlin> getClustersFromStrings(List<String> clusterStrings) {

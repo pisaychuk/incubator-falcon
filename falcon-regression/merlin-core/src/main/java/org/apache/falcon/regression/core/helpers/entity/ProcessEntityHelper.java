@@ -18,8 +18,6 @@
 
 package org.apache.falcon.regression.core.helpers.entity;
 
-import org.apache.falcon.regression.Entities.ProcessMerlin;
-
 /** Helper class to work with process endpoints of a colo. */
 public class ProcessEntityHelper extends AbstractEntityHelper {
 
@@ -29,10 +27,6 @@ public class ProcessEntityHelper extends AbstractEntityHelper {
 
     public String getEntityType() {
         return "process";
-    }
-
-    public String getEntityName(String entity) {
-        return new ProcessMerlin(entity).getName();
     }
 
 }

@@ -56,7 +56,7 @@ public class ProcessAclTest extends BaseTestClass {
     private String aggregateWorkflowDir = baseTestDir + "/aggregator";
     private String feedInputPath = baseTestDir + "/input" + MINUTE_DATE_PATTERN;
     private final AbstractEntityHelper processHelper = prism.getProcessHelper();
-    private String processString;
+    private ProcessMerlin processMerlin;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -72,11 +72,10 @@ public class ProcessAclTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         bundles[0].setProcessACL(MerlinConstants.CURRENT_USER_NAME,
             MerlinConstants.CURRENT_USER_GROUP, "*");
-        final ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        processMerlin = bundles[0].getProcess();
         //setting end date of the process to 10 minutes in future
         final Date tenMinInFuture = new DateTime(DateTimeZone.UTC).plusMinutes(10).toDate();
         processMerlin.getClusters().getClusters().get(0).getValidity().setEnd(tenMinInFuture);
-        processString = processMerlin.toString();
     }
 
     /**
@@ -90,7 +89,7 @@ public class ProcessAclTest extends BaseTestClass {
     public void othersReadProcess(final String user, final EntityOp op, final boolean isAllowed)
         throws Exception {
         bundles[0].submitProcess(true);
-        final boolean executeRes = op.executeAs(user, processHelper, processString);
+        final boolean executeRes = op.executeAs(user, processHelper, processMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -129,9 +128,9 @@ public class ProcessAclTest extends BaseTestClass {
         throws Exception {
         bundles[0].submitProcess(true);
         if (op == EntityOp.update) {
-            processString = new ProcessMerlin(processString).withProperty("abc", "xyz").toString();
+            processMerlin.withProperty("abc", "xyz");
         }
-        final boolean executeRes = op.executeAs(user, processHelper, processString);
+        final boolean executeRes = op.executeAs(user, processHelper, processMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -170,13 +169,13 @@ public class ProcessAclTest extends BaseTestClass {
     public void othersEditScheduledProcess(final String user, final EntityOp op, boolean isAllowed)
         throws Exception {
         bundles[0].submitFeedsScheduleProcess();
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         if (op == EntityOp.resume) {
-            processHelper.suspend(processString);
+            processHelper.suspend(processMerlin);
         } else if (op == EntityOp.update) {
-            processString = new ProcessMerlin(processString).withProperty("abc", "xyz").toString();
+            processMerlin.withProperty("abc", "xyz");
         }
-        final boolean executeRes = op.executeAs(user, processHelper, processString);
+        final boolean executeRes = op.executeAs(user, processHelper, processMerlin);
         Assert.assertEquals(executeRes, isAllowed, "Unexpected result user " + user
             + " performing: " + op);
     }
@@ -213,10 +212,9 @@ public class ProcessAclTest extends BaseTestClass {
     @Test(dataProvider = "generateAclOwnerAndGroup")
     public void processAclUpdate(final String newOwner, final String newGroup) throws Exception {
         bundles[0].submitFeedsScheduleProcess();
-        final ProcessMerlin processMerlin = new ProcessMerlin(processString);
-        processMerlin.setACL(newOwner, newGroup, "*");
-        final String newProcess = processMerlin.toString();
-        AssertUtil.assertFailed(processHelper.update(processString, newProcess),
+        final ProcessMerlin newProcess = processMerlin.getClone();
+        newProcess.setACL(newOwner, newGroup, "*");
+        AssertUtil.assertFailed(processHelper.update(processMerlin, newProcess),
             "AuthorizationException: Permission denied");
     }
 

@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 public class FeedSubmitTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);
-    private String feed;
+    private FeedMerlin feed;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
@@ -128,7 +128,7 @@ public class FeedSubmitTest extends BaseTestClass {
     public void submitFeedWithEmptyDataPath() throws Exception {
         FeedMerlin feedObj = new FeedMerlin(feed);
         feedObj.setLocation(LocationType.DATA, "");
-        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj.toString());
+        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj);
         AssertUtil.assertFailedWithStatus(response, HttpStatus.SC_BAD_REQUEST,
                 "Can not create a Path from an empty string");
     }
@@ -143,7 +143,7 @@ public class FeedSubmitTest extends BaseTestClass {
     public void submitFeedWithNoStatsPath() throws Exception {
         FeedMerlin feedObj = new FeedMerlin(feed);
         feedObj.getLocations().getLocations().set(1, null);
-        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj.toString());
+        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj);
         AssertUtil.assertSucceeded(response);
     }
 
@@ -156,7 +156,7 @@ public class FeedSubmitTest extends BaseTestClass {
     public void submitFeedWithNoDataPath() throws Exception {
         FeedMerlin feedObj = new FeedMerlin(feed);
         feedObj.getLocations().getLocations().set(0, null);
-        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj.toString());
+        ServiceResponse response = prism.getFeedHelper().submitEntity(feedObj);
         AssertUtil.assertFailedWithStatus(response, HttpStatus.SC_BAD_REQUEST,
                 "FileSystem based feed but it doesn't contain location type - data");
     }

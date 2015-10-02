@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.prism;
 
+import org.apache.falcon.regression.Entities.ClusterMerlin;
 import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.EntityType;
@@ -54,7 +55,7 @@ public class PrismFeedSnSTest extends BaseTestClass {
     private String baseTestHDFSDir = cleanAndGetTestDir();
     private String aggregateWorkflowDir = baseTestHDFSDir + "/aggregator";
     private static final Logger LOGGER = Logger.getLogger(PrismFeedSnSTest.class);
-    private String feed1, feed2;
+    private FeedMerlin feed1, feed2;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -70,8 +71,8 @@ public class PrismFeedSnSTest extends BaseTestClass {
             bundles[i].generateUniqueBundle(this);
             bundles[i].setProcessWorkflow(aggregateWorkflowDir);
         }
-        feed1 = bundles[0].getDataSets().get(0);
-        feed2 = bundles[1].getDataSets().get(0);
+        feed1 = bundles[0].getFeeds().get(0);
+        feed2 = bundles[1].getFeeds().get(0);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -120,11 +121,11 @@ public class PrismFeedSnSTest extends BaseTestClass {
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed1));
         //ensure only one bundle is there
         Assert.assertEquals(OozieUtil.getBundles(cluster1OC,
-            Util.readEntityName(feed1), EntityType.FEED).size(), 1);
+            feed1.getName(), EntityType.FEED).size(), 1);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed2));
         //ensure only one bundle is there
         Assert.assertEquals(OozieUtil.getBundles(cluster2OC,
-            Util.readEntityName(feed2), EntityType.FEED).size(), 1);
+            feed2.getName(), EntityType.FEED).size(), 1);
         //now check if they have been scheduled correctly or not
         AssertUtil.checkStatus(cluster1OC, EntityType.FEED, bundles[0], Job.Status.RUNNING);
         AssertUtil.checkStatus(cluster2OC, EntityType.FEED, bundles[1], Job.Status.RUNNING);
@@ -147,7 +148,7 @@ public class PrismFeedSnSTest extends BaseTestClass {
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed1));
         AssertUtil.checkStatus(cluster1OC, EntityType.FEED, bundles[0], Job.Status.SUSPENDED);
         Assert.assertEquals(OozieUtil.getBundles(cluster1OC,
-            Util.readEntityName(feed1), EntityType.FEED).size(), 1);
+            feed1.getName(), EntityType.FEED).size(), 1);
 
         AssertUtil.assertSucceeded(cluster1.getFeedHelper().resume(feed1));
         AssertUtil.checkStatus(cluster1OC, EntityType.FEED, bundles[0], Job.Status.RUNNING);
@@ -159,7 +160,7 @@ public class PrismFeedSnSTest extends BaseTestClass {
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed2));
         AssertUtil.checkStatus(cluster2OC, EntityType.FEED, bundles[1], Job.Status.SUSPENDED);
         Assert.assertEquals(OozieUtil.getBundles(cluster2OC,
-            Util.readEntityName(feed2), EntityType.FEED).size(), 1);
+            feed2.getName(), EntityType.FEED).size(), 1);
         AssertUtil.assertSucceeded(cluster2.getFeedHelper().resume(feed2));
         AssertUtil.checkStatus(cluster2OC, EntityType.FEED, bundles[1], Job.Status.RUNNING);
     }
@@ -363,43 +364,42 @@ public class PrismFeedSnSTest extends BaseTestClass {
     @Test(groups = {"prism", "0.2", "distributed"})
     public void testFeedSnSOn1ColoWhileThatColoIsDownUsingColoHelper() throws Exception {
         restartRequired = true;
-        String clust1 = bundles[0].getClusters().get(0);
-        String clust2 = bundles[1].getClusters().get(0);
+        ClusterMerlin clust1 = bundles[0].getClusters().get(0);
+        ClusterMerlin clust2 = bundles[1].getClusters().get(0);
 
         bundles[0].setCLusterColo(cluster1.getClusterHelper().getColoName());
-        LOGGER.info("cluster bundles[0]: " + Util.prettyPrintXml(clust1));
+        LOGGER.info("cluster bundles[0]: " + clust1.toPrettyXml());
         ServiceResponse r = prism.getClusterHelper().submitEntity(clust1);
         Assert.assertTrue(r.getMessage().contains("SUCCEEDED"));
 
         bundles[1].setCLusterColo(cluster2.getClusterHelper().getColoName());
-        LOGGER.info("cluster bundles[1]: " + Util.prettyPrintXml(clust2));
+        LOGGER.info("cluster bundles[1]: " + clust2.toPrettyXml());
         r = prism.getClusterHelper().submitEntity(clust2);
         Assert.assertTrue(r.getMessage().contains("SUCCEEDED"));
 
         String startTimeUA1 = "2012-10-01T12:00Z";
         String startTimeUA2 = "2012-10-01T12:00Z";
 
-        String feed = bundles[0].getDataSets().get(0);
-        feed = FeedMerlin.fromString(feed).clearFeedClusters().toString();
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
+        feed.clearFeedClusters();
 
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(clust1))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(clust1.getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTimeUA1, "2099-10-01T12:10Z")
                 .withClusterType(ClusterType.SOURCE)
                 .withPartition("${cluster.colo}")
                 .withDataLocation(baseTestHDFSDir + "/localDC/rc/billing" + MINUTE_DATE_PATTERN)
-                .build())
-            .toString();
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(clust2))
+                .build());
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(clust2.getName())
                 .withRetention("days(10000)", ActionType.DELETE)
                 .withValidity(startTimeUA2, "2099-10-01T12:25Z")
                 .withClusterType(ClusterType.TARGET)
                 .withDataLocation(
                     baseTestHDFSDir + "/clusterPath/localDC/rc/billing" + MINUTE_DATE_PATTERN)
-                .build()).toString();
-        LOGGER.info("feed: " + Util.prettyPrintXml(feed));
+                .build());
+        LOGGER.info("feed: " + feed.toPrettyXml());
 
         Util.shutDownService(cluster1.getFeedHelper());
 

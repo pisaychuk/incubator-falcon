@@ -18,7 +18,6 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
 import org.apache.falcon.entity.v0.process.EngineType;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
@@ -26,14 +25,12 @@ import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.ResponseErrors;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.falcon.resource.InstancesResult.WorkflowStatus;
@@ -48,6 +45,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.List;
+
+import static org.apache.falcon.regression.core.util.AssertUtil.checkStatus;
 
 /**
  * Embedded pig script test.
@@ -65,7 +64,7 @@ public class EmbeddedPigScriptTest extends BaseTestClass {
     private static final Logger LOGGER = Logger.getLogger(EmbeddedPigScriptTest.class);
     private static final double TIMEOUT = 15;
     private String processName;
-    private String process;
+    private ProcessMerlin process;
 
     @BeforeClass(alwaysRun = true)
     public void createTestData() throws Exception {
@@ -98,13 +97,13 @@ public class EmbeddedPigScriptTest extends BaseTestClass {
         bundles[0].setProcessPeriodicity(5, TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(5, TimeUnit.minutes);
 
-        final ProcessMerlin processElement = bundles[0].getProcessObject();
+        final ProcessMerlin processElement = bundles[0].getProcess();
         processElement.clearProperties().withProperty("queueName", "default");
         processElement.getWorkflow().setEngine(EngineType.PIG);
-        bundles[0].setProcessData(processElement.toString());
+        bundles[0].setProcess(processElement);
         bundles[0].submitFeedsScheduleProcess(prism);
-        process = bundles[0].getProcessData();
-        processName = Util.readEntityName(process);
+        process = bundles[0].getProcess();
+        processName = process.getName();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -114,14 +113,14 @@ public class EmbeddedPigScriptTest extends BaseTestClass {
 
     @Test(groups = {"singleCluster"}, timeOut = 600000)
     public void getResumedProcessInstance() throws Exception {
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
         prism.getProcessHelper().suspend(process);
         TimeUtil.sleepSeconds(TIMEOUT);
         ServiceResponse status = prism.getProcessHelper().getStatus(process);
         Assert.assertTrue(status.getMessage().contains("SUSPENDED"), "Process not suspended.");
         prism.getProcessHelper().resume(process);
         TimeUtil.sleepSeconds(TIMEOUT);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccess(r, bundles[0], WorkflowStatus.RUNNING);
     }
@@ -130,14 +129,14 @@ public class EmbeddedPigScriptTest extends BaseTestClass {
     public void getSuspendedProcessInstance() throws Exception {
         prism.getProcessHelper().suspend(process);
         TimeUtil.sleepSeconds(TIMEOUT);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.SUSPENDED);
+        checkStatus(clusterOC, process, Job.Status.SUSPENDED);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccessWOInstances(r);
     }
 
     @Test(groups = {"singleCluster"}, timeOut = 600000)
     public void getRunningProcessInstance() throws Exception {
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
         TimeUtil.sleepSeconds(TIMEOUT);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccess(r, bundles[0], WorkflowStatus.RUNNING);
@@ -153,11 +152,11 @@ public class EmbeddedPigScriptTest extends BaseTestClass {
 
     @Test(groups = {"singleCluster"}, timeOut = 6000000)
     public void getSucceededProcessInstance() throws Exception {
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
         InstancesResult r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccess(r, bundles[0], WorkflowStatus.RUNNING);
         int counter = OSUtil.IS_WINDOWS ? 100 : 50;
-        OozieUtil.waitForBundleToReachState(clusterOC, bundles[0].getProcessName(), Job.Status.SUCCEEDED, counter);
+        OozieUtil.waitForBundleToReachState(clusterOC, bundles[0].getProcess(), Job.Status.SUCCEEDED, counter);
         r = prism.getProcessHelper().getRunningInstance(processName);
         InstanceUtil.validateSuccessWOInstances(r);
     }

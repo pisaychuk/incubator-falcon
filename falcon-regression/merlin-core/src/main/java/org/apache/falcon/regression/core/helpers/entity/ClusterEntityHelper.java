@@ -18,8 +18,8 @@
 
 package org.apache.falcon.regression.core.helpers.entity;
 
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.resource.InstancesResult;
 import org.apache.falcon.resource.InstancesSummaryResult;
 
@@ -40,15 +40,11 @@ public class ClusterEntityHelper extends AbstractEntityHelper {
         return "cluster";
     }
 
-    public String getEntityName(String entity) {
-        return Util.readEntityName(entity);
-    }
-
     public ServiceResponse getStatus(String data, String user) {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 
-    public ServiceResponse resume(String data, String user) {
+    public ServiceResponse resume(String entityName, String user) {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 
@@ -56,16 +52,16 @@ public class ClusterEntityHelper extends AbstractEntityHelper {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 
-    public ServiceResponse submitAndSchedule(String data, String user) {
+    public ServiceResponse submitAndSchedule(Entity entity, String user) {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 
-    public ServiceResponse suspend(String data, String user) {
+    public ServiceResponse suspend(String entityName, String user) {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 
     @Override
-    public InstancesResult getRunningInstance(String name, String user) {
+    public InstancesResult getRunningInstance(String entityName, String user) {
         throw new UnsupportedOperationException(INVALID_ERR);
     }
 

@@ -18,11 +18,10 @@
 
 package org.apache.falcon.regression;
 
-import org.apache.falcon.entity.v0.EntityType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.oozie.client.Job;
@@ -30,6 +29,10 @@ import org.apache.oozie.client.OozieClient;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import static org.apache.falcon.regression.core.util.AssertUtil.assertFailed;
+import static org.apache.falcon.regression.core.util.AssertUtil.assertSucceeded;
+import static org.apache.falcon.regression.core.util.AssertUtil.checkStatus;
 
 
 /**
@@ -40,7 +43,7 @@ public class FeedScheduleTest extends BaseTestClass {
 
     private ColoHelper cluster = servers.get(0);
     private OozieClient clusterOC = serverOC.get(0);
-    private String feed;
+    private FeedMerlin feed;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
@@ -65,16 +68,16 @@ public class FeedScheduleTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void scheduleAlreadyScheduledFeed() throws Exception {
         ServiceResponse response = prism.getFeedHelper().submitEntity(feed);
-        AssertUtil.assertSucceeded(response);
+        assertSucceeded(response);
 
         response = prism.getFeedHelper().schedule(feed);
-        AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        assertSucceeded(response);
+        checkStatus(clusterOC, feed, Job.Status.RUNNING);
 
         //now try re-scheduling again
         response = prism.getFeedHelper().schedule(feed);
-        AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        assertSucceeded(response);
+        checkStatus(clusterOC, feed, Job.Status.RUNNING);
     }
 
     /**
@@ -86,12 +89,12 @@ public class FeedScheduleTest extends BaseTestClass {
     public void scheduleValidFeed() throws Exception {
         //submit feed
         ServiceResponse response = prism.getFeedHelper().submitEntity(feed);
-        AssertUtil.assertSucceeded(response);
+        assertSucceeded(response);
 
         //now schedule the thing
         response = prism.getFeedHelper().schedule(feed);
-        AssertUtil.assertSucceeded(response);
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.RUNNING);
+        assertSucceeded(response);
+        checkStatus(clusterOC, feed, Job.Status.RUNNING);
     }
 
     /**
@@ -101,14 +104,14 @@ public class FeedScheduleTest extends BaseTestClass {
      */
     @Test(groups = {"singleCluster"})
     public void scheduleSuspendedFeed() throws Exception {
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
+        assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
         //now suspend
-        AssertUtil.assertSucceeded(prism.getFeedHelper().suspend(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        assertSucceeded(prism.getFeedHelper().suspend(feed));
+        checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
         //now schedule this!
-        AssertUtil.assertSucceeded(prism.getFeedHelper().schedule(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.SUSPENDED);
+        assertSucceeded(prism.getFeedHelper().schedule(feed));
+        checkStatus(clusterOC, feed, Job.Status.SUSPENDED);
     }
 
     /**
@@ -118,13 +121,13 @@ public class FeedScheduleTest extends BaseTestClass {
      */
     @Test(groups = {"singleCluster"})
     public void scheduleKilledFeed() throws Exception {
-        AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
+        assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
 
         //now suspend
-        AssertUtil.assertSucceeded(prism.getFeedHelper().delete(feed));
-        AssertUtil.checkStatus(clusterOC, EntityType.FEED, feed, Job.Status.KILLED);
+        assertSucceeded(prism.getFeedHelper().delete(feed));
+        checkStatus(clusterOC, feed, Job.Status.KILLED);
         //now schedule this!
-        AssertUtil.assertFailed(prism.getFeedHelper().schedule(feed));
+        assertFailed(prism.getFeedHelper().schedule(feed));
     }
 
     /**
@@ -134,6 +137,6 @@ public class FeedScheduleTest extends BaseTestClass {
      */
     @Test(groups = {"singleCluster"})
     public void scheduleNonExistentFeed() throws Exception {
-        AssertUtil.assertFailed(prism.getFeedHelper().schedule(feed));
+        assertFailed(prism.getFeedHelper().schedule(feed));
     }
 }

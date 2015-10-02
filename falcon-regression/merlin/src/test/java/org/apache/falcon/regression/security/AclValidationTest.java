@@ -69,7 +69,7 @@ public class AclValidationTest extends BaseTestClass {
         bundles[0].setProcessWorkflow(aggregateWorkflowDir);
         clusterMerlin = bundles[0].getClusterElement();
         feedMerlin = new FeedMerlin(bundles[0].getInputFeedFromBundle());
-        processMerlin = bundles[0].getProcessObject();
+        processMerlin = bundles[0].getProcess();
     }
 
     /**
@@ -82,7 +82,7 @@ public class AclValidationTest extends BaseTestClass {
     public void submitClusterBadAcl(String aclOwner, String aclGroup) throws Exception {
         clusterMerlin.setACL(aclOwner, aclGroup, "*");
         final ServiceResponse serviceResponse =
-            prism.getClusterHelper().submitEntity(clusterMerlin.toString());
+            prism.getClusterHelper().submitEntity(clusterMerlin);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Cluster's ACL owner should be same as submitting user");
     }
@@ -98,7 +98,7 @@ public class AclValidationTest extends BaseTestClass {
         bundles[0].submitClusters(prism);
         feedMerlin.setACL(aclOwner, aclGroup, "*");
         final ServiceResponse serviceResponse =
-            prism.getFeedHelper().submitEntity(feedMerlin.toString());
+            prism.getFeedHelper().submitEntity(feedMerlin);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Feed's ACL owner should be same as submitting user");
     }
@@ -114,7 +114,7 @@ public class AclValidationTest extends BaseTestClass {
         bundles[0].submitAndScheduleAllFeeds();
         processMerlin.setACL(aclOwner, aclGroup, "*");
         final ServiceResponse serviceResponse =
-            prism.getProcessHelper().submitEntity(processMerlin.toString());
+            prism.getProcessHelper().submitEntity(processMerlin);
         AssertUtil.assertFailedWithStatus(serviceResponse, HttpStatus.SC_BAD_REQUEST,
             "Process's ACL owner should be same as submitting user");
     }

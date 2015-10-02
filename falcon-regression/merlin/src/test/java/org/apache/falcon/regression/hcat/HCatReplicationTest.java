@@ -19,13 +19,13 @@
 package org.apache.falcon.regression.hcat;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.falcon.regression.Entities.FeedMerlin;
-import org.apache.falcon.regression.core.bundle.Bundle;
-import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.Frequency;
+import org.apache.falcon.entity.v0.cluster.Interfacetype;
 import org.apache.falcon.entity.v0.feed.ActionType;
 import org.apache.falcon.entity.v0.feed.ClusterType;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
@@ -35,7 +35,6 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -176,24 +175,24 @@ public class HCatReplicationTest extends BaseTestClass {
         bundles[0].setInputFeedValidity(startDate, endDate);
         bundles[0].setInputFeedTableUri(tableUri);
 
-        String feed = bundles[0].getDataSets().get(0);
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
         // set the cluster 2 as the target.
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("months(9000)", ActionType.DELETE)
                 .withValidity(startDate, endDate)
                 .withClusterType(ClusterType.TARGET)
                 .withTableUri(tableUri)
-                .build()).toString();
+                .build());
 
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         TimeUtil.sleepSeconds(TIMEOUT);
         //check if all coordinators exist
-        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, Util.readEntityName(feed), "REPLICATION"), 1);
+        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "REPLICATION"), 1);
 
         //replication should start, wait while it ends
         // we will check for 2 instances so that both partitions are copied over.
-        InstanceUtil.waitTillInstanceReachState(cluster2OC, Util.readEntityName(feed), 2,
+        InstanceUtil.waitTillInstanceReachState(cluster2OC, feed.getName(), 2,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED, 30);
 
         //check if data was replicated correctly
@@ -261,40 +260,40 @@ public class HCatReplicationTest extends BaseTestClass {
         bundles[0].setInputFeedValidity(startDate, endDate);
         bundles[0].setInputFeedTableUri(tableUri);
 
-        String feed = bundles[0].getDataSets().get(0);
+        FeedMerlin feed = bundles[0].getFeeds().get(0);
         // set the cluster 2 as the target.
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[1].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[1].getClusters().get(0).getName())
                 .withRetention("months(9000)", ActionType.DELETE)
                 .withValidity(startDate, endDate)
                 .withClusterType(ClusterType.TARGET)
                 .withTableUri(tableUri)
-                .build()).toString();
+                .build());
         // set the cluster 3 as the target.
-        feed = FeedMerlin.fromString(feed).addFeedCluster(
-            new FeedMerlin.FeedClusterBuilder(Util.readEntityName(bundles[2].getClusters().get(0)))
+        feed.addFeedCluster(
+            new FeedMerlin.FeedClusterBuilder(bundles[2].getClusters().get(0).getName())
                 .withRetention("months(9000)", ActionType.DELETE)
                 .withValidity(startDate, endDate)
                 .withClusterType(ClusterType.TARGET)
                 .withTableUri(tableUri)
-                .build()).toString();
+                .build());
 
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitAndSchedule(feed));
         TimeUtil.sleepSeconds(TIMEOUT);
         //check if all coordinators exist
-        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, Util.readEntityName(feed), "REPLICATION"), 1);
+        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster2OC, feed.getName(), "REPLICATION"), 1);
 
         //check if all coordinators exist
-        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster3OC, Util.readEntityName(feed), "REPLICATION"), 1);
+        Assert.assertEquals(OozieUtil.checkIfFeedCoordExist(cluster3OC, feed.getName(), "REPLICATION"), 1);
 
         //replication should start, wait while it ends
         // we will check for 2 instances so that both partitions are copied over.
-        InstanceUtil.waitTillInstanceReachState(cluster2OC, Util.readEntityName(feed), 2,
+        InstanceUtil.waitTillInstanceReachState(cluster2OC, feed.getName(), 2,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED, 30);
 
         //replication should start, wait while it ends
         // we will check for 2 instances so that both partitions are copied over.
-        InstanceUtil.waitTillInstanceReachState(cluster3OC, Util.readEntityName(feed), 2,
+        InstanceUtil.waitTillInstanceReachState(cluster3OC, feed.getName(), 2,
             CoordinatorAction.Status.SUCCEEDED, EntityType.FEED);
 
         //check if data was replicated correctly

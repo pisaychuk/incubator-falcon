@@ -23,14 +23,12 @@ import org.apache.falcon.entity.v0.Frequency.TimeUnit;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
-import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -42,6 +40,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.List;
+
+import static org.apache.falcon.regression.core.util.AssertUtil.assertLogMoverPath;
+import static org.apache.falcon.regression.core.util.AssertUtil.checkStatus;
 
 /**
  * LogMover Test.
@@ -61,7 +62,7 @@ public class LogMoverTest extends BaseTestClass {
     private String propPath = pigTestDir + "/LogMover";
     private static final Logger LOGGER = Logger.getLogger(LogMoverTest.class);
     private String processName;
-    private String process;
+    private ProcessMerlin process;
     private String startDate;
     private String endDate;
 
@@ -93,11 +94,11 @@ public class LogMoverTest extends BaseTestClass {
                 bundles[0].getFeedDataPathPrefix(), dataDates);
 
         // Defining path to be used in pig script
-        final ProcessMerlin processElement = bundles[0].getProcessObject();
+        final ProcessMerlin processElement = bundles[0].getProcess();
         processElement.clearProperties().withProperty("inputPath", propPath);
-        bundles[0].setProcessData(processElement.toString());
-        process = bundles[0].getProcessData();
-        processName = Util.readEntityName(process);
+        bundles[0].setProcess(processElement);
+        process = bundles[0].getProcess();
+        processName = process.getName();
 
     }
 
@@ -113,17 +114,17 @@ public class LogMoverTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void logMoverSucceedTest() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
 
         //Copy data to let pig job succeed
         HadoopUtil.copyDataToFolder(clusterFS, propPath, OSUtil.concat(OSUtil.RESOURCES, "pig"));
 
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, bundles[0].getProcessName(), 1,
                 CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS);
 
-        AssertUtil.assertLogMoverPath(true, processName, clusterFS, "process", "Success logs are not present");
+        assertLogMoverPath(true, processName, clusterFS, "process", "Success logs are not present");
     }
 
     /**
@@ -133,14 +134,14 @@ public class LogMoverTest extends BaseTestClass {
     @Test(groups = {"singleCluster"})
     public void logMoverFailTest() throws Exception {
         bundles[0].submitFeedsScheduleProcess(prism);
-        AssertUtil.checkStatus(clusterOC, EntityType.PROCESS, process, Job.Status.RUNNING);
+        checkStatus(clusterOC, process, Job.Status.RUNNING);
 
-        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(clusterOC, bundles[0].getProcess(), 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
         InstanceUtil.waitTillInstanceReachState(clusterOC, bundles[0].getProcessName(), 1,
                         CoordinatorAction.Status.KILLED, EntityType.PROCESS);
 
-        AssertUtil.assertLogMoverPath(false, processName, clusterFS, "process", "Failed logs are not present");
+        assertLogMoverPath(false, processName, clusterFS, "process", "Failed logs are not present");
     }
 
 }

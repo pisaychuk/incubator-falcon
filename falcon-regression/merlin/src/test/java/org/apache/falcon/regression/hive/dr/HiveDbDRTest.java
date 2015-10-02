@@ -264,7 +264,7 @@ public class HiveDbDRTest extends BaseTestClass {
     @AfterMethod(alwaysRun = true)
     public void tearDown() throws IOException {
         try {
-            prism.getProcessHelper().deleteByName(recipeMerlin.getName(), null);
+            prism.getProcessHelper().delete(recipeMerlin.getName(), null);
         } catch (Exception e) {
             LOGGER.info("Deletion of process: " + recipeMerlin.getName() + " failed with exception: " + e);
         }

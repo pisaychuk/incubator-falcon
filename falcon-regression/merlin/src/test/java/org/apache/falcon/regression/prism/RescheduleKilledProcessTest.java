@@ -18,6 +18,7 @@
 
 package org.apache.falcon.regression.prism;
 
+import org.apache.falcon.regression.Entities.FeedMerlin;
 import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
@@ -75,25 +76,25 @@ public class RescheduleKilledProcessTest extends BaseTestClass {
     public void rescheduleKilledProcess() throws Exception {
         String processStartTime = TimeUtil.getTimeWrtSystemTime(-11);
         String processEndTime = TimeUtil.getTimeWrtSystemTime(6);
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         process.setName(Util.getEntityPrefix(this) + "-zeroInputProcess"
             + new Random().nextInt());
-        List<String> feed = new ArrayList<>();
+        List<FeedMerlin> feed = new ArrayList<>();
         feed.add(bundles[0].getOutputFeedFromBundle());
         process.setProcessFeeds(feed, 0, 0, 1);
 
         process.clearProcessCluster();
         process.addProcessCluster(
             new ProcessMerlin.ProcessClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withValidity(processStartTime, processEndTime)
                 .build()
         );
-        bundles[0].setProcessData(process.toString());
+        bundles[0].setProcess(process);
 
         bundles[0].submitFeedsScheduleProcess(prism);
 
-        String processData = bundles[0].getProcessData();
+        ProcessMerlin processData = bundles[0].getProcess();
         AssertUtil.assertSucceeded(prism.getProcessHelper().delete(processData));
         AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(processData));
         AssertUtil.assertSucceeded(prism.getProcessHelper().schedule(processData));
@@ -111,10 +112,10 @@ public class RescheduleKilledProcessTest extends BaseTestClass {
 
         bundles[0].setInputFeedDataPath(baseTestHDFSDir + "/rawLogs" + MINUTE_DATE_PATTERN);
 
-        LOGGER.info("process: " + Util.prettyPrintXml(bundles[0].getProcessData()));
+        LOGGER.info("process: " + bundles[0].getProcess().toPrettyXml());
 
         bundles[0].submitFeedsScheduleProcess(prism);
-        String processData = bundles[0].getProcessData();
+        ProcessMerlin processData = bundles[0].getProcess();
         AssertUtil.assertSucceeded(prism.getProcessHelper().delete(processData));
         AssertUtil.assertSucceeded(prism.getProcessHelper().submitEntity(processData));
         AssertUtil.assertSucceeded(prism.getProcessHelper().schedule(processData));

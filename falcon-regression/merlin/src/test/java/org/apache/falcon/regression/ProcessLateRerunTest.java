@@ -99,13 +99,13 @@ public class ProcessLateRerunTest extends BaseTestClass {
         bundles[0].setOutputFeedPeriodicity(10, Frequency.TimeUnit.minutes);
         bundles[0].setProcessConcurrency(2);
 
-        String inputName = bundles[0].getProcessObject().getFirstInputName();
+        String inputName = bundles[0].getProcess().getFirstInputName();
         bundles[0].setProcessLatePolicy(getLateData(2, "minutes", "periodic", inputName, aggregateWorkflowDir));
 
         bundles[0].submitAndScheduleProcess();
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
         TimeUtil.sleepSeconds(10);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcess(), 0);
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 1);
 
@@ -139,13 +139,13 @@ public class ProcessLateRerunTest extends BaseTestClass {
         bundles[0].setOutputFeedPeriodicity(5, Frequency.TimeUnit.minutes);
         bundles[0].setProcessConcurrency(2);
 
-        String inputName = bundles[0].getProcessObject().getFirstInputName();
+        String inputName = bundles[0].getProcess().getFirstInputName();
 
         bundles[0].setProcessLatePolicy(getLateData(4, "minutes", "periodic", inputName, aggregateWorkflowDir));
         bundles[0].submitAndScheduleProcess();
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
         TimeUtil.sleepSeconds(10);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcess(), 0);
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, true, 1);
 
@@ -178,7 +178,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
         bundles[0].setProcessValidity(startTime, endTime);
         bundles[0].setProcessPeriodicity(10, Frequency.TimeUnit.minutes);
         bundles[0].setOutputFeedPeriodicity(10, Frequency.TimeUnit.minutes);
-        String inputName = bundles[0].getProcessObject().getFirstInputName();
+        String inputName = bundles[0].getProcess().getFirstInputName();
 
         bundles[0].setProcessLatePolicy(getLateData(4, "minutes", "periodic", inputName, aggregateWorkflowDir));
         bundles[0].setProcessConcurrency(2);
@@ -189,7 +189,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
 
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
         TimeUtil.sleepSeconds(10);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcess(), 0);
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 3);
 
@@ -227,7 +227,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
         // Increase the window of input for process
         bundles[0].setDatasetInstances(startInstance, endInstance);
 
-        ProcessMerlin process = bundles[0].getProcessObject();
+        ProcessMerlin process = bundles[0].getProcess();
         String inputName = process.getFirstInputName();
         Input tempFeed = process.getInputs().getInputs().get(0);
 
@@ -237,7 +237,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
         gateInput.setEnd("now(0,1)");
         gateInput.setStart("now(0,1)");
         process.getInputs().getInputs().add(gateInput);
-        bundles[0].setProcessData(process.toString());
+        bundles[0].setProcess(process);
 
         bundles[0].setProcessLatePolicy(getLateData(4, "minutes", "periodic", inputName, aggregateWorkflowDir));
 
@@ -245,7 +245,7 @@ public class ProcessLateRerunTest extends BaseTestClass {
         AssertUtil.checkStatus(cluster1OC, EntityType.PROCESS, bundles[0], Job.Status.RUNNING);
 
         TimeUtil.sleepSeconds(10);
-        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcessData(), 0);
+        InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcess(), 0);
 
         getAndCreateDependencies(cluster1, bundles[0], cluster1OC, cluster1FS, false, 7);
 

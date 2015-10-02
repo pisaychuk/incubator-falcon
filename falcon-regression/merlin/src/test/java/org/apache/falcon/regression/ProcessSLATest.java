@@ -83,11 +83,11 @@ public class ProcessSLATest extends BaseTestClass {
     @Test
     public void scheduleValidProcessSLA() throws Exception {
 
-        ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        ProcessMerlin processMerlin = bundles[0].getProcess();
         processMerlin.setSla(new Frequency("3", Frequency.TimeUnit.hours),
                 new Frequency("6", Frequency.TimeUnit.hours));
-        bundles[0].setProcessData(processMerlin.toString());
-        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin.toString());
+        bundles[0].setProcess(processMerlin);
+        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin);
         AssertUtil.assertSucceeded(response);
     }
 
@@ -98,11 +98,11 @@ public class ProcessSLATest extends BaseTestClass {
     @Test
     public void scheduleProcessWithSameSLAStartSLAEnd() throws Exception {
 
-        ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        ProcessMerlin processMerlin = bundles[0].getProcess();
         processMerlin.setSla(new Frequency("3", Frequency.TimeUnit.hours),
                 new Frequency("3", Frequency.TimeUnit.hours));
-        bundles[0].setProcessData(processMerlin.toString());
-        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin.toString());
+        bundles[0].setProcess(processMerlin);
+        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin);
         AssertUtil.assertSucceeded(response);
     }
 
@@ -113,11 +113,11 @@ public class ProcessSLATest extends BaseTestClass {
     @Test
     public void scheduleProcessWithSLAEndLowerthanSLAStart() throws Exception {
 
-        ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        ProcessMerlin processMerlin = bundles[0].getProcess();
         processMerlin.setSla(new Frequency("4", Frequency.TimeUnit.hours),
                 new Frequency("2", Frequency.TimeUnit.hours));
-        bundles[0].setProcessData(processMerlin.toString());
-        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin.toString());
+        bundles[0].setProcess(processMerlin);
+        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin);
         LOGGER.info("response : " + response.getMessage());
 
         String message = "shouldStartIn of Process: " + processMerlin.getSla().getShouldStartIn().getTimeUnit() + "("
@@ -134,12 +134,12 @@ public class ProcessSLATest extends BaseTestClass {
     @Test
     public void scheduleProcessWithTimeoutGreaterThanSLAStart() throws Exception {
 
-        ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        ProcessMerlin processMerlin = bundles[0].getProcess();
         processMerlin.setTimeout(new Frequency("3", Frequency.TimeUnit.hours));
         processMerlin.setSla(new Frequency("2", Frequency.TimeUnit.hours),
                 new Frequency("4", Frequency.TimeUnit.hours));
-        bundles[0].setProcessData(processMerlin.toString());
-        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin.toString());
+        bundles[0].setProcess(processMerlin);
+        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin);
         AssertUtil.assertSucceeded(response);
     }
 
@@ -150,12 +150,12 @@ public class ProcessSLATest extends BaseTestClass {
     @Test
     public void scheduleProcessWithTimeoutLessThanSLAStart() throws Exception {
 
-        ProcessMerlin processMerlin = bundles[0].getProcessObject();
+        ProcessMerlin processMerlin = bundles[0].getProcess();
         processMerlin.setTimeout(new Frequency("1", Frequency.TimeUnit.hours));
         processMerlin.setSla(new Frequency("2", Frequency.TimeUnit.hours),
                 new Frequency("4", Frequency.TimeUnit.hours));
-        bundles[0].setProcessData(processMerlin.toString());
-        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin.toString());
+        bundles[0].setProcess(processMerlin);
+        ServiceResponse response = prism.getProcessHelper().submitAndSchedule(processMerlin);
 
         String message = "shouldStartIn of Process: " + processMerlin.getSla().getShouldStartIn().getTimeUnit() + "("
                 + processMerlin.getSla().getShouldStartIn().getFrequency() + ") is greater than timeout: "
@@ -170,5 +170,4 @@ public class ProcessSLATest extends BaseTestClass {
                 "Correct response was not present in process schedule. Process response is : "
                         + response.getMessage());
     }
-
 }

@@ -56,8 +56,8 @@ public class PrismProcessScheduleTest extends BaseTestClass {
     private String workflowForNoIpOp = baseTestHDFSDir + "/noinop";
     private String feedInputPath = baseTestHDFSDir + "/input" + MINUTE_DATE_PATTERN;
     private String feedOutputPath = baseTestHDFSDir + "/output" + MINUTE_DATE_PATTERN;
-    private String process1;
-    private String process2;
+    private ProcessMerlin process1;
+    private ProcessMerlin process2;
 
     @BeforeClass(alwaysRun = true)
     public void uploadWorkflow() throws Exception {
@@ -75,8 +75,8 @@ public class PrismProcessScheduleTest extends BaseTestClass {
             bundles[i].setInputFeedDataPath(feedInputPath);
             bundles[i].setOutputFeedLocationData(feedOutputPath);
         }
-        process1 = bundles[0].getProcessData();
-        process2 = bundles[1].getProcessData();
+        process1 = bundles[0].getProcess();
+        process2 = bundles[1].getProcess();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -326,7 +326,7 @@ public class PrismProcessScheduleTest extends BaseTestClass {
         bundles[0].setProcessValidity(TimeUtil.getTimeWrtSystemTime(-1),
                TimeUtil.getTimeWrtSystemTime(1));
         HadoopFileEditor hadoopFileEditor = null;
-        String process = bundles[0].getProcessData();
+        ProcessMerlin process = bundles[0].getProcess();
         try {
             hadoopFileEditor = new HadoopFileEditor(cluster1.getClusterHelper().getHadoopFS());
             hadoopFileEditor.edit(new ProcessMerlin(process).getWorkflow().getPath()
@@ -337,7 +337,7 @@ public class PrismProcessScheduleTest extends BaseTestClass {
 
             bundles[0].submitFeedsScheduleProcess(prism);
 
-            InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcessData(), 0);
+            InstanceUtil.waitTillInstancesAreCreated(cluster1OC, bundles[0].getProcess(), 0);
             OozieUtil.createMissingDependencies(cluster1, EntityType.PROCESS,
                     bundles[0].getProcessName(), 0);
             InstanceUtil.waitTillInstanceReachState(cluster1OC,
@@ -345,9 +345,9 @@ public class PrismProcessScheduleTest extends BaseTestClass {
                     CoordinatorAction.Status.RUNNING, EntityType.PROCESS, 5);
 
             OozieUtil.waitForBundleToReachState(cluster1OC,
-                Util.readEntityName(process), Job.Status.KILLED);
+                process, Job.Status.KILLED);
             String oldBundleID = OozieUtil.getLatestBundleID(cluster1OC,
-                Util.readEntityName(process), EntityType.PROCESS);
+                process.getName(), EntityType.PROCESS);
             prism.getProcessHelper().delete(process);
 
             bundles[0].submitAndScheduleProcess();
@@ -370,13 +370,12 @@ public class PrismProcessScheduleTest extends BaseTestClass {
     public void testScheduleWhenZeroInputs()throws Exception{
         bundles[0].submitClusters(prism);
         bundles[0].setProcessWorkflow(workflowForNoIpOp);
-        ProcessMerlin processObj = new ProcessMerlin(bundles[0].getProcessData());
+        ProcessMerlin processObj = new ProcessMerlin(bundles[0].getProcess());
         processObj.setInputs(null);
         processObj.setLateProcess(null);
         AssertUtil.assertSucceeded(prism.getFeedHelper().submitEntity(bundles[0].getOutputFeedFromBundle()));
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(
-            processObj.toString()));
-        InstanceUtil.waitTillInstanceReachState(cluster1OC, Util.readEntityName(processObj.toString()), 2,
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(processObj));
+        InstanceUtil.waitTillInstanceReachState(cluster1OC, processObj.getName(), 2,
                 CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS, 10);
     }
 
@@ -389,13 +388,12 @@ public class PrismProcessScheduleTest extends BaseTestClass {
     public void testScheduleWhenZeroInputsZeroOutputs()throws Exception{
         bundles[0].submitClusters(prism);
         bundles[0].setProcessWorkflow(workflowForNoIpOp);
-        ProcessMerlin processObj = new ProcessMerlin(bundles[0].getProcessData());
+        ProcessMerlin processObj = new ProcessMerlin(bundles[0].getProcess());
         processObj.setInputs(null);
         processObj.setOutputs(null);
         processObj.setLateProcess(null);
-        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(
-            processObj.toString()));
-        InstanceUtil.waitTillInstanceReachState(cluster1OC, Util.readEntityName(processObj.toString()), 2,
+        AssertUtil.assertSucceeded(prism.getProcessHelper().submitAndSchedule(processObj));
+        InstanceUtil.waitTillInstanceReachState(cluster1OC, processObj.getName(), 2,
                 CoordinatorAction.Status.SUCCEEDED, EntityType.PROCESS, 10);
     }
 }

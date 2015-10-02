@@ -27,7 +27,6 @@ import org.apache.falcon.regression.core.response.ServiceResponse;
 import org.apache.falcon.regression.core.util.AssertUtil;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.testng.Assert;
@@ -84,7 +83,7 @@ public class FeedSLATest extends BaseTestClass {
 
         feedMerlin.clearFeedClusters();
         feedMerlin.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withRetention("days(1000000)", ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .build());
@@ -93,7 +92,7 @@ public class FeedSLATest extends BaseTestClass {
         feedMerlin.setSla(new Frequency("3", Frequency.TimeUnit.hours), new Frequency("6", Frequency.TimeUnit.hours));
 
         final ServiceResponse serviceResponse =
-                prism.getFeedHelper().submitEntity(feedMerlin.toString());
+                prism.getFeedHelper().submitEntity(feedMerlin);
         AssertUtil.assertSucceeded(serviceResponse);
     }
 
@@ -107,7 +106,7 @@ public class FeedSLATest extends BaseTestClass {
 
         feedMerlin.clearFeedClusters();
         feedMerlin.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withRetention((new Frequency("2", Frequency.TimeUnit.hours)).toString(), ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .build());
@@ -116,7 +115,7 @@ public class FeedSLATest extends BaseTestClass {
         feedMerlin.setSla(new Frequency("3", Frequency.TimeUnit.hours), new Frequency("6", Frequency.TimeUnit.hours));
 
         final ServiceResponse serviceResponse =
-                prism.getFeedHelper().submitEntity(feedMerlin.toString());
+                prism.getFeedHelper().submitEntity(feedMerlin);
         String message = "Feed's retention limit: "
                 + feedMerlin.getClusters().getClusters().get(0).getRetention().getLimit()
                 + " of referenced cluster " + bundles[0].getClusterNames().get(0)
@@ -137,7 +136,7 @@ public class FeedSLATest extends BaseTestClass {
 
         feedMerlin.clearFeedClusters();
         feedMerlin.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withRetention((new Frequency("6", Frequency.TimeUnit.hours)).toString(), ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .build());
@@ -146,7 +145,7 @@ public class FeedSLATest extends BaseTestClass {
         feedMerlin.setSla(new Frequency("4", Frequency.TimeUnit.hours), new Frequency("2", Frequency.TimeUnit.hours));
 
         final ServiceResponse serviceResponse =
-                prism.getFeedHelper().submitEntity(feedMerlin.toString());
+                prism.getFeedHelper().submitEntity(feedMerlin);
         String message = "slaLow of Feed: " + feedMerlin.getSla().getSlaLow().getTimeUnit() + "("
                 + feedMerlin.getSla().getSlaLow().getFrequency() + ")is greater than slaHigh: "
                 + feedMerlin.getSla().getSlaHigh().getTimeUnit() + "(" + feedMerlin.getSla().getSlaHigh().getFrequency()
@@ -163,7 +162,7 @@ public class FeedSLATest extends BaseTestClass {
 
         feedMerlin.clearFeedClusters();
         feedMerlin.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withRetention((new Frequency("4", Frequency.TimeUnit.hours)).toString(), ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .build());
@@ -172,7 +171,7 @@ public class FeedSLATest extends BaseTestClass {
         feedMerlin.setSla(new Frequency("5", Frequency.TimeUnit.hours), new Frequency("6", Frequency.TimeUnit.hours));
 
         final ServiceResponse serviceResponse =
-                prism.getFeedHelper().submitEntity(feedMerlin.toString());
+                prism.getFeedHelper().submitEntity(feedMerlin);
         String message = "Feed's retention limit: "
                 + feedMerlin.getClusters().getClusters().get(0).getRetention().getLimit()
                 + " of referenced cluster " + bundles[0].getClusterNames().get(0)
@@ -191,7 +190,7 @@ public class FeedSLATest extends BaseTestClass {
 
         feedMerlin.clearFeedClusters();
         feedMerlin.addFeedCluster(new FeedMerlin.FeedClusterBuilder(
-                Util.readEntityName(bundles[0].getClusters().get(0)))
+                bundles[0].getClusters().get(0).getName())
                 .withRetention((new Frequency("7", Frequency.TimeUnit.hours)).toString(), ActionType.DELETE)
                 .withValidity(startTime, endTime)
                 .build());
@@ -200,7 +199,7 @@ public class FeedSLATest extends BaseTestClass {
         feedMerlin.setSla(new Frequency("3", Frequency.TimeUnit.hours), new Frequency("3", Frequency.TimeUnit.hours));
 
         final ServiceResponse serviceResponse =
-                prism.getFeedHelper().submitEntity(feedMerlin.toString());
+                prism.getFeedHelper().submitEntity(feedMerlin);
         AssertUtil.assertSucceeded(serviceResponse);
     }
 

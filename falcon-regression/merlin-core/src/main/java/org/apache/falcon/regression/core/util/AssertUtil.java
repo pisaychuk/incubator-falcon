@@ -20,6 +20,7 @@ package org.apache.falcon.regression.core.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.enumsAndConstants.MerlinConstants;
@@ -280,24 +281,16 @@ public final class AssertUtil {
      * Checks that status of some entity job is equal to expected. Method can wait
      * 100 seconds for expected status.
      *
+     * @param entity entity
      * @param oozieClient    OozieClient
-     * @param entityType     FEED or PROCESS
-     * @param data           feed or proceess XML
      * @param expectedStatus expected Job.Status of entity
      * @throws OozieClientException
      */
-    public static void checkStatus(OozieClient oozieClient, EntityType entityType, String data,
-                                   Job.Status expectedStatus)
+    public static void checkStatus(OozieClient oozieClient, Entity entity, Job.Status expectedStatus)
         throws OozieClientException {
-        String name = null;
-        if (entityType == EntityType.FEED) {
-            name = Util.readEntityName(data);
-        } else if (entityType == EntityType.PROCESS) {
-            name = Util.readEntityName(data);
-        }
         Assert.assertEquals(
-            OozieUtil.verifyOozieJobStatus(oozieClient, name, entityType, expectedStatus), true,
-            "Status should be " + expectedStatus);
+            OozieUtil.verifyOozieJobStatus(oozieClient, entity.getName(),
+                Util.getEntityType(entity), expectedStatus), true, "Status should be " + expectedStatus);
     }
 
     /**
@@ -313,13 +306,13 @@ public final class AssertUtil {
     public static void checkStatus(OozieClient oozieClient, EntityType entityType, Bundle bundle,
                                    Job.Status expectedStatus)
         throws OozieClientException {
-        String data = null;
+        Entity entity = null;
         if (entityType == EntityType.FEED) {
-            data = bundle.getDataSets().get(0);
+            entity = bundle.getFeeds().get(0);
         } else if (entityType == EntityType.PROCESS) {
-            data = bundle.getProcessData();
+            entity = bundle.getProcess();
         }
-        checkStatus(oozieClient, entityType, data, expectedStatus);
+        checkStatus(oozieClient, entity, expectedStatus);
     }
 
     /**
@@ -327,20 +320,14 @@ public final class AssertUtil {
      *
      * @param oozieClient    OozieClient
      * @param entityType     FEED or PROCESS
-     * @param data           feed or proceess XML
+     * @param entityName           feed or proceess XML
      * @param expectedStatus expected Job.Status of entity
      * @throws OozieClientException
      */
-    public static void checkNotStatus(OozieClient oozieClient, EntityType entityType, String data,
+    public static void checkNotStatus(OozieClient oozieClient, EntityType entityType, String entityName,
                                       Job.Status expectedStatus)
         throws OozieClientException {
-        String processName = null;
-        if (entityType == EntityType.FEED) {
-            processName = Util.readEntityName(data);
-        } else if (entityType == EntityType.PROCESS) {
-            processName = Util.readEntityName(data);
-        }
-        Assert.assertNotEquals(OozieUtil.getOozieJobStatus(oozieClient, processName,
+        Assert.assertNotEquals(OozieUtil.getOozieJobStatus(oozieClient, entityName,
             entityType), expectedStatus, "Status should not be " + expectedStatus);
     }
 
@@ -356,13 +343,13 @@ public final class AssertUtil {
     public static void checkNotStatus(OozieClient oozieClient, EntityType entityType,
                                       Bundle bundle, Job.Status expectedStatus)
         throws OozieClientException {
-        String data = null;
+        String entityName = null;
         if (entityType == EntityType.FEED) {
-            data = bundle.getDataSets().get(0);
+            entityName = bundle.getFeeds().get(0).getName();
         } else if (entityType == EntityType.PROCESS) {
-            data = bundle.getProcessData();
+            entityName = bundle.getProcess().getName();
         }
-        checkNotStatus(oozieClient, entityType, data, expectedStatus);
+        checkNotStatus(oozieClient, entityType, entityName, expectedStatus);
     }
 
     /**

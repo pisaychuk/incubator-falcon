@@ -26,7 +26,6 @@ import org.apache.falcon.regression.core.util.HadoopUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
@@ -137,7 +136,7 @@ public class ELValidationsTest extends BaseTestClass {
             bundle.setInvalidData();
             bundle.setDatasetInstances(startInstance, endInstance);
             String submitResponse = bundle.submitFeedsScheduleProcess(prism).getMessage();
-            LOGGER.info("processData in try is: " + Util.prettyPrintXml(bundle.getProcessData()));
+            LOGGER.info("processData in try is: " + bundle.getProcess().toPrettyXml());
             TimeUtil.sleepSeconds(45);
             if (isMatch) {
                 getAndMatchDependencies(serverOC.get(0), bundle);

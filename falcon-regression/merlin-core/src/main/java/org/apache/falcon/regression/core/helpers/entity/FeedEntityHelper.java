@@ -19,7 +19,6 @@
 package org.apache.falcon.regression.core.helpers.entity;
 
 import org.apache.falcon.regression.core.response.ServiceResponse;
-import org.apache.falcon.regression.core.util.Util;
 
 /** Helper class to work with feed endpoints of a colo. */
 public class FeedEntityHelper extends AbstractEntityHelper {
@@ -30,10 +29,6 @@ public class FeedEntityHelper extends AbstractEntityHelper {
 
     public String getEntityType() {
         return "feed";
-    }
-
-    public String getEntityName(String entity) {
-        return Util.readEntityName(entity);
     }
 
     @Override

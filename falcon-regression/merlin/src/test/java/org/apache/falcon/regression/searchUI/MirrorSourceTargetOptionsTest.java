@@ -146,7 +146,7 @@ public class MirrorSourceTargetOptionsTest extends BaseUITestClass{
         String clusterName = clusterMerlin.getName() + '-';
         for (int i = 0; i < 5; i++) {
             clusterMerlin.setName(clusterName + i);
-            prism.getClusterHelper().submitEntity(clusterMerlin.toString());
+            prism.getClusterHelper().submitEntity(clusterMerlin);
         }
         EntityList result =
             prism.getClusterHelper().listAllEntities().getEntityList();

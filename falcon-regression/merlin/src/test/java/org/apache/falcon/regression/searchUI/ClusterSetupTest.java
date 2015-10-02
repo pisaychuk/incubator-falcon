@@ -64,7 +64,7 @@ public class ClusterSetupTest extends BaseUITestClass{
         SearchPage homePage = LoginPage.open(getDriver()).doDefaultLogin();
         clusterSetup = homePage.getPageHeader().doCreateCluster();
         clusterSetup.checkPage();
-        sourceCluster = bundles[0].getClusterElement();
+        sourceCluster = bundles[0].getClusterElement().getClone();
         //add custom cluster properties
         sourceCluster.setTags("myTag1=myValue1");
         sourceCluster.setDescription("description");
@@ -98,7 +98,7 @@ public class ClusterSetupTest extends BaseUITestClass{
         clusterSetup.getPageHeader().validateNotificationCountAndCheckLast(1,
             "falcon/default/Submit successful (cluster) " + sourceCluster.getName());
         ClusterMerlin definition = new ClusterMerlin(cluster.getClusterHelper()
-            .getEntityDefinition(bundles[0].getClusterElement().toString()).getMessage());
+            .getEntityDefinition(bundles[0].getClusterElement().getName()).getMessage());
         //definition should be the same that the source
         sourceCluster.assertEquals(definition);
     }

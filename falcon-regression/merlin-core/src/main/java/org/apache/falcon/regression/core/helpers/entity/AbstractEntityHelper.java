@@ -22,6 +22,10 @@ import com.jcraft.jsch.JSchException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.falcon.entity.v0.Entity;
+import org.apache.falcon.regression.Entities.ClusterMerlin;
+import org.apache.falcon.regression.Entities.FeedMerlin;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
 import org.apache.falcon.regression.core.helpers.FalconClientBuilder;
 import org.apache.falcon.regression.core.response.ServiceResponse;
 import org.apache.falcon.regression.core.supportClasses.ExecResult;
@@ -138,6 +142,20 @@ public abstract class AbstractEntityHelper {
         this.hiveJdbcPassword = Config.getProperty(prefix + "hive.jdbc.password", "");
     }
 
+    /**
+     * @param data entity definition
+     * @return entity name
+     */
+    public static String readEntityName(String data) {
+        if (data.contains("uri:falcon:feed")) {
+            return new FeedMerlin(data).getName();
+        } else if (data.contains("uri:falcon:process")) {
+            return new ProcessMerlin(data).getName();
+        } else {
+            return new ClusterMerlin(data).getName();
+        }
+    }
+
     public String getActiveMQ() {
         return activeMQ;
     }
@@ -207,8 +225,6 @@ public abstract class AbstractEntityHelper {
     }
 
     public abstract String getEntityType();
-
-    public abstract String getEntityName(String entity);
 
     public String getNamenodePrincipal() {
         return namenodePrincipal;
@@ -288,23 +304,17 @@ public abstract class AbstractEntityHelper {
             + "numResults=" + Integer.MAX_VALUE, user);
     }
 
-    public ServiceResponse submitEntity(String data)
+    /**
+     * Usual validate entity method.
+     */
+    public ServiceResponse validateEntity(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return submitEntity(data, null);
+        return validateEntity(entity.toString(), null);
     }
 
-    public ServiceResponse validateEntity(String data)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return validateEntity(data, null);
-    }
-
-    public ServiceResponse submitEntity(String data, String user)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        LOGGER.info("Submitting " + getEntityType() + ": \n" + Util.prettyPrintXml(data));
-        return Util.sendRequest(createUrl(this.hostname + URLS.SUBMIT_URL.getValue(),
-            getEntityType() + colo), "post", data, user);
-    }
-
+    /**
+     * Use this method directly if specific string definition or another user is required.
+     */
     public ServiceResponse validateEntity(String data, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         LOGGER.info("Validating " + getEntityType() + ": \n" + Util.prettyPrintXml(data));
@@ -312,105 +322,193 @@ public abstract class AbstractEntityHelper {
             getEntityType() + colo), "post", data, user);
     }
 
-    public ServiceResponse schedule(String processData)
+    /**
+     * Method to wrap up entity.getName() invocation.
+     */
+    public ServiceResponse schedule(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return schedule(processData, null);
+        return schedule(entity.getName(), null);
     }
 
-    public ServiceResponse schedule(String processData, String user)
+    /**
+     * Usual method to schedule an entity.
+     */
+    public ServiceResponse schedule(String entityName)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return schedule(entityName, null);
+    }
+
+    /**
+     * Use this method directly if different user is needed.
+     */
+    public ServiceResponse schedule(String entityName, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         return Util.sendRequest(createUrl(this.hostname + URLS.SCHEDULE_URL.getValue(),
-            getEntityType(), getEntityName(processData) + colo), "post", user);
+            getEntityType(), entityName + colo), "post", user);
     }
 
-    public ServiceResponse submitAndSchedule(String data)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return submitAndSchedule(data, null);
+    /**
+     * Method to wrap up entity.getName() invocation.
+     */
+    public ServiceResponse delete(Entity entity)
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        return delete(entity.getName(), null);
     }
 
-    public ServiceResponse submitAndSchedule(String data, String user)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        LOGGER.info("Submitting " + getEntityType() + ": \n" + Util.prettyPrintXml(data));
-        return Util.sendRequest(createUrl(this.hostname + URLS.SUBMIT_AND_SCHEDULE_URL.getValue(),
-            getEntityType()), "post", data, user);
+    /**
+     * Usual method to delete an entity.
+     */
+    public ServiceResponse delete(String entityName)
+        throws URISyntaxException, AuthenticationException, InterruptedException, IOException {
+        return delete(entityName, null);
     }
 
-    public ServiceResponse deleteByName(String entityName, String user)
+    /**
+     * Use this method directly if different user is needed.
+     */
+    public ServiceResponse delete(String entityName, String user)
         throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
         return Util.sendRequest(createUrl(this.hostname + URLS.DELETE_URL.getValue(),
             getEntityType(), entityName + colo), "delete", user);
     }
 
-    public ServiceResponse delete(String data)
+    /**
+     * Method to wrap up entity.getName() invocation.
+     */
+    public ServiceResponse suspend(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return delete(data, null);
+        return suspend(entity.getName(), null);
     }
 
-    public ServiceResponse delete(String data, String user)
+    /**
+     * Usual method to delete an entity.
+     */
+    public ServiceResponse suspend(String entityName)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return Util.sendRequest(createUrl(this.hostname + URLS.DELETE_URL.getValue(),
-            getEntityType(), getEntityName(data) + colo), "delete", user);
+        return suspend(entityName, null);
     }
 
-    public ServiceResponse suspend(String data)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return suspend(data, null);
-    }
-
-    public ServiceResponse suspend(String data, String user)
+    /**
+     * Use this method directly if different user is needed.
+     */
+    public ServiceResponse suspend(String entityName, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         return Util.sendRequest(createUrl(this.hostname + URLS.SUSPEND_URL.getValue(),
-            getEntityType(), getEntityName(data) + colo), "post", user);
+            getEntityType(), entityName + colo), "post", user);
     }
 
-    public ServiceResponse resume(String data)
+    public ServiceResponse resume(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return resume(data, null);
+        return resume(entity.getName(), null);
     }
 
-    public ServiceResponse resume(String data, String user)
+    public ServiceResponse resume(String entityName, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         return Util.sendRequest(createUrl(this.hostname + URLS.RESUME_URL.getValue(),
-            getEntityType(), getEntityName(data) + colo), "post", user);
+            getEntityType(), entityName + colo), "post", user);
     }
 
-    public ServiceResponse getStatus(String data)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return getStatus(data, null);
-    }
-
-    public ServiceResponse getStatus(String data, String user)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return Util.sendRequest(createUrl(this.hostname + URLS.STATUS_URL.getValue(),
-            getEntityType(), getEntityName(data) + colo), "get", user);
-    }
-
-    public ServiceResponse getEntityDefinition(String data)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return getEntityDefinition(data, null);
-    }
-
-    public ServiceResponse getEntityDefinition(String data, String user)
-        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return Util.sendRequest(createUrl(this.hostname + URLS.GET_ENTITY_DEFINITION.getValue(),
-            getEntityType(), getEntityName(data) + colo), "get", user);
-    }
-
-    public ServiceResponse getEntityDependencies(String data, String user)
+    public ServiceResponse getEntityDependencies(String entityName, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         return Util.sendRequest(createUrl(this.hostname + URLS.DEPENDENCIES.getValue(),
-            getEntityType(), getEntityName(data) + colo), "get", user);
+            getEntityType(), entityName + colo), "get", user);
     }
 
-    public InstancesResult getRunningInstance(String name)
+    /**
+     * Usual method to submit an entity.
+     */
+    public ServiceResponse submitEntity(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return getRunningInstance(name, null);
+        return submitEntity(entity.toString(), null);
     }
 
-    public InstancesResult getRunningInstance(String name, String user)
+    /**
+     * Use this method directly if another user or non-trivial entity definition is required.
+     */
+    public ServiceResponse submitEntity(String data, String user)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        LOGGER.info("Submitting " + getEntityType() + ": \n" + Util.prettyPrintXml(data));
+        return Util.sendRequest(createUrl(this.hostname + URLS.SUBMIT_URL.getValue(),
+            getEntityType() + colo), "post", data, user);
+    }
+
+    /**
+     * Usual method to submit and schedule an entity.
+     */
+    public ServiceResponse submitAndSchedule(Entity entity)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return submitAndSchedule(entity, null);
+    }
+
+    /**
+     * Use this method directly only if another user is needed.
+     */
+    public ServiceResponse submitAndSchedule(Entity entity, String user)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        LOGGER.info("Submitting " + getEntityType() + ": \n" + Util.prettyPrintXml(entity));
+        return Util.sendRequest(createUrl(this.hostname + URLS.SUBMIT_AND_SCHEDULE_URL.getValue(),
+            getEntityType()), "post", entity.toString(), user);
+    }
+
+    /**
+     * Usual getStatus method.
+     */
+    public ServiceResponse getStatus(String entityName)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return getStatus(entityName, null);
+    }
+
+    /**
+     * Use this method directly only if another user is needed.
+     */
+    public ServiceResponse getStatus(String entityName, String user)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return Util.sendRequest(createUrl(this.hostname + URLS.STATUS_URL.getValue(),
+            getEntityType(), entityName + colo), "get", user);
+    }
+
+    /**
+     * Use this method to wrap up entity.getName() invocation.
+     */
+    public ServiceResponse getStatus(Entity entity)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return getStatus(entity.getName(), null);
+    }
+
+    /**
+     * Method to wrap invoking of entity.getName() method.
+     */
+    public ServiceResponse getEntityDefinition(Entity entity)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return getEntityDefinition(entity.getName(), null);
+    }
+
+    /**
+     * Usual getEntityDefinition method.
+     */
+    public ServiceResponse getEntityDefinition(String entityName)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return getEntityDefinition(entityName, null);
+    }
+
+    /**
+     * Use this method directly only if another user is needed.
+     */
+    public ServiceResponse getEntityDefinition(String entityName, String user)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return Util.sendRequest(createUrl(this.hostname + URLS.GET_ENTITY_DEFINITION.getValue(),
+            getEntityType(), entityName + colo), "get", user);
+    }
+
+    public InstancesResult getRunningInstance(String entityName)
+        throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
+        return getRunningInstance(entityName, null);
+    }
+
+    public InstancesResult getRunningInstance(String entityName, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         String url = createUrl(this.hostname + URLS.INSTANCE_RUNNING.getValue(), getEntityType(),
-            name + allColo);
+            entityName + allColo);
         return (InstancesResult) InstanceUtil.sendRequestProcessInstance(url, user);
     }
 
@@ -446,9 +544,9 @@ public abstract class AbstractEntityHelper {
     }
 
     public InstancesResult getProcessInstanceSuspend(
-        String readEntityName, String params)
+        String entityName, String params)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return getProcessInstanceSuspend(readEntityName, params, null);
+        return getProcessInstanceSuspend(entityName, params, null);
     }
 
     public InstancesResult getProcessInstanceSuspend(
@@ -460,23 +558,28 @@ public abstract class AbstractEntityHelper {
             .createAndSendRequestProcessInstance(url, params, allColo, user);
     }
 
-    public ServiceResponse update(String oldEntity, String newEntity)
+    /**
+     * Usual updated method.
+     */
+    public ServiceResponse update(Entity oldEntity, Entity newEntity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return update(oldEntity, newEntity, null);
+        return update(oldEntity.toString(), newEntity.toString(), null);
     }
 
+    /**
+     * Use this method directly only if another user is needed.
+     */
     public ServiceResponse update(String oldEntity, String newEntity, String user)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
         LOGGER.info("Updating " + getEntityType() + ": \n" + Util.prettyPrintXml(oldEntity));
         LOGGER.info("To " + getEntityType() + ": \n" + Util.prettyPrintXml(newEntity));
-        String url = createUrl(this.hostname + URLS.UPDATE.getValue(), getEntityType(),
-            getEntityName(oldEntity));
+        String url = createUrl(this.hostname + URLS.UPDATE.getValue(), getEntityType(), readEntityName(oldEntity));
         return Util.sendRequest(url + colo, "post", newEntity, user);
     }
 
-    public InstancesResult getProcessInstanceKill(String readEntityName, String params)
+    public InstancesResult getProcessInstanceKill(String entityName, String params)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return getProcessInstanceKill(readEntityName, params, null);
+        return getProcessInstanceKill(entityName, params, null);
     }
 
     public InstancesResult getProcessInstanceKill(String entityName, String params,
@@ -580,13 +683,12 @@ public abstract class AbstractEntityHelper {
 
     /**
      * Submit an entity through falcon client.
-     * @param entityStr string of the entity to be submitted
+     * @param entity entity
      * @throws IOException
      */
-    public ExecResult clientSubmit(final String entityStr) throws IOException {
-        LOGGER.info("Submitting " + getEntityType() + " through falcon client: \n"
-            + Util.prettyPrintXml(entityStr));
-        final String fileName = FileUtil.writeEntityToFile(entityStr);
+    public ExecResult clientSubmit(Entity entity) throws IOException {
+        LOGGER.info("Submitting " + getEntityType() + " through falcon client: \n" + Util.prettyPrintXml(entity));
+        final String fileName = FileUtil.writeEntityToFile(entity);
         final CommandLine commandLine = FalconClientBuilder.getBuilder()
                 .getSubmitCommand(getEntityType(), fileName).build();
         return ExecUtil.executeCommand(commandLine);
@@ -594,11 +696,9 @@ public abstract class AbstractEntityHelper {
 
     /**
      * Delete an entity through falcon client.
-     * @param entityStr string of the entity to be submitted
-     * @throws IOException
+     * @param entityName name of entity to be deleted
      */
-    public ExecResult clientDelete(final String entityStr, String user) throws IOException {
-        final String entityName = getEntityName(entityStr);
+    public ExecResult clientDelete(final String entityName, String user) throws IOException {
         LOGGER.info("Deleting " + getEntityType() + ": " + entityName);
         final CommandLine commandLine = FalconClientBuilder.getBuilder(user)
                 .getDeleteCommand(getEntityType(), entityName).build();
@@ -607,14 +707,14 @@ public abstract class AbstractEntityHelper {
 
     /**
      * Retrieves entities summary.
-     * @param clusterName compulsory parameter for request
+     * @param clusterNameParam compulsory parameter for request
      * @param params list of optional parameters
      * @return entity summary along with its instances.
      */
-    public ServiceResponse getEntitySummary(String clusterName, String params)
+    public ServiceResponse getEntitySummary(String clusterNameParam, String params)
         throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
         String url = createUrl(this.hostname + URLS.ENTITY_SUMMARY.getValue(),
-            getEntityType()) +"?cluster=" + clusterName;
+            getEntityType()) +"?cluster=" + clusterNameParam;
         if (StringUtils.isNotEmpty(params)) {
             url += "&" + params;
         }
@@ -654,16 +754,16 @@ public abstract class AbstractEntityHelper {
         return Util.sendRequest(url, "get", null, null);
     }
 
-    public ServiceResponse touchEntity(String data)
+    public ServiceResponse touchEntity(Entity entity)
         throws IOException, URISyntaxException, AuthenticationException, InterruptedException {
-        return touchEntity(Util.readEntityName(data), data, null);
+        return touchEntity(entity.getName(), entity.toString(), null);
     }
 
-    public ServiceResponse touchEntity(String entityName, String data, String user)
+    public ServiceResponse touchEntity(String entityName, String entity, String user)
         throws AuthenticationException, IOException, URISyntaxException, InterruptedException {
         String url = createUrl(this.hostname + URLS.TOUCH_URL.getValue(), getEntityType(),
                 entityName + colo);
-        return Util.sendRequest(url, "post", data, user);
+        return Util.sendRequest(url, "post", entity, user);
     }
 
     /**

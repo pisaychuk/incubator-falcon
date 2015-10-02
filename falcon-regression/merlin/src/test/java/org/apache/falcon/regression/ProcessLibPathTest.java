@@ -19,8 +19,9 @@
 package org.apache.falcon.regression;
 
 import org.apache.falcon.entity.v0.EntityType;
-import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.entity.v0.Frequency.TimeUnit;
+import org.apache.falcon.regression.Entities.ProcessMerlin;
+import org.apache.falcon.regression.core.bundle.Bundle;
 import org.apache.falcon.regression.core.helpers.ColoHelper;
 import org.apache.falcon.regression.core.util.BundleUtil;
 import org.apache.falcon.regression.core.util.HadoopUtil;
@@ -28,7 +29,6 @@ import org.apache.falcon.regression.core.util.InstanceUtil;
 import org.apache.falcon.regression.core.util.OSUtil;
 import org.apache.falcon.regression.core.util.OozieUtil;
 import org.apache.falcon.regression.core.util.TimeUtil;
-import org.apache.falcon.regression.core.util.Util;
 import org.apache.falcon.regression.testHelper.BaseTestClass;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -54,7 +54,7 @@ public class ProcessLibPathTest extends BaseTestClass {
     private String testLibDir = testDir + "/TestLib";
     private static final Logger LOGGER = Logger.getLogger(ProcessLibPathTest.class);
     private String processName;
-    private String process;
+    private ProcessMerlin process;
 
     @BeforeClass(alwaysRun = true)
     public void createTestData() throws Exception {
@@ -83,8 +83,8 @@ public class ProcessLibPathTest extends BaseTestClass {
         bundles[0].setOutputFeedLocationData(testDir + "/output-data" + MINUTE_DATE_PATTERN);
         bundles[0].setProcessConcurrency(1);
         bundles[0].setProcessLibPath(testLibDir);
-        process = bundles[0].getProcessData();
-        processName = Util.readEntityName(process);
+        process = bundles[0].getProcess();
+        processName = process.getName();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -102,11 +102,11 @@ public class ProcessLibPathTest extends BaseTestClass {
         String workflowDir = testLibDir + "/aggregatorLib1/";
         HadoopUtil.uploadDir(clusterFS, workflowDir, OSUtil.RESOURCES_OOZIE);
         bundles[0].setProcessWorkflow(workflowDir);
-        LOGGER.info("processData: " + Util.prettyPrintXml(process));
+        LOGGER.info("processData: " + process.toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
         InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
-        OozieUtil.waitForBundleToReachState(clusterOC, processName, Status.SUCCEEDED);
+        OozieUtil.waitForBundleToReachState(clusterOC, process, Status.SUCCEEDED);
     }
 
     /**
@@ -122,10 +122,10 @@ public class ProcessLibPathTest extends BaseTestClass {
         HadoopUtil.copyDataToFolder(clusterFS, workflowDir + "/lib/invalid.jar",
             OSUtil.concat(OSUtil.NORMAL_INPUT, "dataFile.xml"));
         bundles[0].setProcessWorkflow(workflowDir);
-        LOGGER.info("processData: " + Util.prettyPrintXml(process));
+        LOGGER.info("processData: " + process.toPrettyXml());
         bundles[0].submitFeedsScheduleProcess(prism);
         InstanceUtil.waitTillInstancesAreCreated(clusterOC, process, 0);
         OozieUtil.createMissingDependencies(cluster, EntityType.PROCESS, processName, 0);
-        OozieUtil.waitForBundleToReachState(clusterOC, processName, Status.SUCCEEDED);
+        OozieUtil.waitForBundleToReachState(clusterOC, process, Status.SUCCEEDED);
     }
 }

@@ -157,7 +157,7 @@ public class HCatFeedOperationsTest extends BaseTestClass {
      *
      * @throws Exception
      */
-    @Test(enabled = false)
+    @Test
     public void submitAndScheduleReplicationFeedWhenTableDoesNotExistOnTarget() throws Exception {
         Bundle.submitCluster(bundles[0], bundles[1]);
         final String startDate = "2010-01-01T20:00Z";

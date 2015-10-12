@@ -178,7 +178,8 @@ public abstract class AbstractSearchPage extends Page {
                 @Override
                 public Boolean apply(WebDriver webDriver) {
                     String style = alertsBlock.getAttribute("style");
-                    if (!style.contains("opacity: 1;") || style.contains("display: block;")) {
+                    if ((style.contains("opacity") && !style.contains("opacity: 1;"))
+                            || style.contains("display: block;")) {
                         pair.setLeft(System.currentTimeMillis());
                         return true;
                     }
@@ -215,7 +216,8 @@ public abstract class AbstractSearchPage extends Page {
                 @Override
                 public Boolean apply(WebDriver webDriver) {
                     String style = alertsBlock.getAttribute("style");
-                    return !style.contains("opacity: 1;") || style.contains("display: block;");
+                    return (style.contains("opacity") && !style.contains("opacity: 1;"))
+                            || style.contains("display: block;");
                 }
             });
             return true;

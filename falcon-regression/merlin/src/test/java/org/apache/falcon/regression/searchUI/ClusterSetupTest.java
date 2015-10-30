@@ -227,6 +227,27 @@ public class ClusterSetupTest extends BaseUITestClass{
     }
 
     /**
+     * Check that alert is shown if incomplete interface version is set.
+     */
+    @Test
+    public void testBadInterfaceVersion() {
+        for (Interface inface : sourceCluster.getInterfaces().getInterfaces()) {
+            //check that incomplete version isn't allowed and alert is shown
+            String partialVersion = "3.";
+            for (String c : new String[]{"2", ".", "0"}) {
+                inface.setVersion(partialVersion);
+                clusterSetup.setInterface(inface);
+                clusterSetup.assertVersionAlertPresent(inface.getType(), true);
+                partialVersion += c;
+            }
+            //considered as end of version string
+            inface.setVersion(partialVersion + " ");
+            clusterSetup.setInterface(inface);
+            clusterSetup.assertVersionAlertPresent(inface.getType(), false);
+        }
+    }
+
+    /**
      * Populate working location with value pointing to directory with wider permissions then 755.
      * Check that user is not allowed to create a cluster and is notified with an alert.
      */

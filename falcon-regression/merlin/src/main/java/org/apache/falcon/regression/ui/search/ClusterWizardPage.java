@@ -150,6 +150,20 @@ public class ClusterWizardPage extends EntityWizardPage {
         }
     }
 
+    public void assertVersionAlertPresent(Interfacetype interfacetype, boolean expected) {
+        WebElement alertLabel = getElementOrNull(
+            String.format(".//*[@id='interfaces-detail' and contains(., '%s')]" +
+            "//label[contains(@class, 'validationMessageGral')]", interfacetype.value()));
+        Assert.assertEquals((alertLabel != null && alertLabel.isDisplayed()), expected,
+            "Alert " + (expected ? "should" : "shouldn't") + " be present.");
+        if (expected && alertLabel != null) {
+            String actualMessage = alertLabel.getText();
+            Assert.assertEquals(actualMessage, "The version is invalid",
+                String.format("Invalid alert message for %s interface.", interfacetype.value()));
+        }
+
+    }
+
     /**
      * Populates form with tags.
      */

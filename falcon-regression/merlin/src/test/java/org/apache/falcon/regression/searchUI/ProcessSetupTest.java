@@ -899,6 +899,7 @@ public class ProcessSetupTest extends BaseUITestClass {
      */
     @Test
     public void testSummaryStepDefaultScenario() throws Exception{
+        process.getInputs().getInputs().get(0).setOptional(true);
 
         bundles[0].submitClusters(cluster);
         bundles[0].submitFeeds(prism);
@@ -927,6 +928,12 @@ public class ProcessSetupTest extends BaseUITestClass {
         // Assert the response using API to validate if the feed creation went successfully
         ServiceResponse response = prism.getProcessHelper().getEntityDefinition(process.toString());
         AssertUtil.assertSucceeded(response);
+
+        //particular check for optional param
+        ProcessMerlin submittedProcess = new ProcessMerlin(response.getMessage());
+        LOGGER.info(
+            String.format("Comparing source process: %n%s%n and submitted one: %n%s%n.", process, submittedProcess));
+        process.assertInputValues(submittedProcess);
     }
 
     /**

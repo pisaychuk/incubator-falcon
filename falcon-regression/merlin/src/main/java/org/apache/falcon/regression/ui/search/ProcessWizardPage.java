@@ -694,7 +694,12 @@ public class ProcessWizardPage extends EntityWizardPage {
             getInputFeed(i).selectByVisibleText(inputs.getInputs().get(i).getFeed());
             sendKeysSlowly(getInputStart(i), inputs.getInputs().get(i).getStart());
             sendKeysSlowly(getInputEnd(i), inputs.getInputs().get(i).getEnd());
+            clickCheckBoxSecurely(getOptionalCheckbox(), inputs.getInputs().get(i).isOptional());
         }
+    }
+
+    private WebElement getOptionalCheckbox() {
+        return formBox.findElement(By.xpath("//input[@ng-model='input.optional']"));
     }
 
     public void clickAddInput(){
